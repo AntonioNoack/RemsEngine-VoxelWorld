@@ -3,7 +3,7 @@
 This is a sample for [Rem's Engine](https://github.com/AntonioNoack/RemsEngine) to show how you could implement a blocky world like in Minecraft.
 It's just a sample, so feel free to modify it!
 
-![First Trees within this Mod](/progress/Trees.png)
+![First Trees within this Mod](/progress/Trees.jpg)
 
 This extension features:
 - Blocky world generation
