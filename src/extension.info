@@ -1,0 +1,3 @@
+mod-name: Minecraft
+author: Antonio Noack
+main-class: me.anno.minecraft.MinecraftMod
