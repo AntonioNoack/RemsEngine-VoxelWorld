@@ -5,6 +5,7 @@ import me.anno.extensions.ExtensionLoader
 import me.anno.extensions.mods.Mod
 import me.anno.io.ISaveable.Companion.registerCustomClass
 import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerController
 import me.anno.minecraft.visual.VisualChunk
 import me.anno.minecraft.visual.VisualDimension
 
@@ -13,6 +14,7 @@ class MinecraftMod : Mod() {
     override fun onPreInit() {
         super.onPreInit()
         registerCustomClass(Player())
+        registerCustomClass(PlayerController())
         registerCustomClass(VisualChunk())
         registerCustomClass(VisualDimension())
     }

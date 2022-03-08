@@ -6,6 +6,8 @@ import me.anno.ecs.interfaces.ControlReceiver
 import me.anno.gpu.GFX
 import me.anno.input.Input
 import org.lwjgl.glfw.GLFW
+import kotlin.math.cos
+import kotlin.math.sin
 
 class PlayerController : Component(), ControlReceiver {
 
@@ -22,8 +24,11 @@ class PlayerController : Component(), ControlReceiver {
 
     override fun onUpdate(): Int {
 
-        if (player == null) player = entity?.getComponent(Player::class)
-        if (camera == null) camera = entity?.getComponent(CameraComponent::class)
+        val entity = entity
+        if (entity != null) {
+            if (player == null) player = entity.getComponent(Player::class)
+            if (camera == null) camera = entity.getComponent(CameraComponent::class)
+        }
 
         controlX = 0f
         controlZ = 0f
@@ -33,10 +38,18 @@ class PlayerController : Component(), ControlReceiver {
         if (Input.isKeyDown('a')) controlX--
         if (Input.isKeyDown('d')) controlX++
 
-        val transform = camera?.transform
-        if (transform != null) {
-            transform.localRotation =
-                transform.localRotation
+        val selfT = transform
+        if (selfT != null) {
+            val cs = cos(camY).toDouble()
+            val sn = sin(camY).toDouble()
+            selfT.localPosition.add(cs * controlX - sn * controlZ, 0.0, -sn * controlX + cs * controlZ)
+            selfT.invalidateLocal()
+        }
+
+        val camT = camera?.transform
+        if (camT != null) {
+            camT.localRotation =
+                camT.localRotation
                     .identity()
                     .rotateX(camX.toDouble())
                     .rotateY(camY.toDouble())
@@ -81,5 +94,7 @@ class PlayerController : Component(), ControlReceiver {
         copy(clone)
         return clone
     }
+
+    override val className: String = "PlayerController"
 
 }

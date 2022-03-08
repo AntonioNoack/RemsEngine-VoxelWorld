@@ -3,8 +3,12 @@ package me.anno.minecraft.world.decorator
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.world.Chunk
+import org.joml.Vector3i
 
-abstract class SurfaceDecorator(val surfaceBlock: BlockType, density: Float, seed: Long) : N1NDecorator(density, seed) {
+abstract class SurfaceDecorator(
+    val surfaceBlock: BlockType,
+    maxExtends: Vector3i, density: Float, seed: Long
+) : N1NDecorator(density, maxExtends, seed) {
 
     override fun decorate(chunk: Chunk, lx: Int, lz: Int) {
         // find the surface y

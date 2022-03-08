@@ -8,46 +8,71 @@ import me.anno.io.serialization.NotSerializedProperty
 import me.anno.maths.patterns.SpiralPattern
 import me.anno.minecraft.block.BlockType.Companion.Dirt
 import me.anno.minecraft.block.BlockType.Companion.Grass
+import me.anno.minecraft.block.BlockType.Companion.Sand
+import me.anno.minecraft.block.BlockType.Companion.Sandstone
 import me.anno.minecraft.block.BlockType.Companion.Stone
+import me.anno.minecraft.block.BlockType.Companion.Water
 import me.anno.minecraft.multiplayer.MCProtocol
 import me.anno.minecraft.world.Dimension
+import me.anno.minecraft.world.decorator.CactiDecorator
+import me.anno.minecraft.world.decorator.PyramidDecorator
 import me.anno.minecraft.world.decorator.TreeDecorator
+import me.anno.minecraft.world.generator.Generator
 import me.anno.minecraft.world.generator.Perlin3dWorldGenerator
 import me.anno.minecraft.world.generator.PerlinWorldGenerator
 import me.anno.studio.StudioBase.Companion.addEvent
 import me.anno.utils.hpc.ProcessingGroup
-import me.anno.utils.hpc.ProcessingQueue
 import me.anno.utils.pooling.JomlPools
 import me.anno.utils.structures.maps.Maps.removeIf
 import org.joml.Vector3i
 import kotlin.math.floor
 
+// todo why is the generator generating seemingly random chunks in the wild?
 class VisualDimension : Component() {
 
-    val decorators = listOf(
-        TreeDecorator(0.03f, 5123L)
-    )
-
-    val dimension = when (1) {// can be changed to change the generator
-        0 -> Dimension(PerlinWorldGenerator(listOf(Stone, Dirt, Dirt, Dirt, Grass), 1234L), decorators)
-        else -> Dimension(Perlin3dWorldGenerator(listOf(Stone, Dirt, Dirt, Dirt, Grass), 1234L), decorators)
+    enum class TerrainType {
+        FOREST2D,
+        FOREST3D,
+        SAND_DESERT
     }
+
+    var usePrettyLoadingPattern = false
+        set(value) {
+            if (field != value) {
+                field = value
+                generationOrder = createViewOrder(dimension.generator, viewDistance)
+            }
+        }
+
+    var terrainType = TerrainType.FOREST3D
+        set(value) {
+            if (field != value) {
+                field = value
+                reset()
+                generationOrder = createViewOrder(dimension.generator, viewDistance)
+            }
+        }
+
+    var viewDistance = 6
+        set(value) {
+            if (field != value) {
+                field = value
+                generationOrder = createViewOrder(dimension.generator, viewDistance)
+            }
+        }
+
+    val dimension
+        get() = when (terrainType) {// can be changed to change the generator
+            TerrainType.FOREST2D -> perlin2dDim
+            TerrainType.FOREST3D -> perlin3dDim
+            TerrainType.SAND_DESERT -> sandDim
+        }
 
     @NotSerializedProperty
     private val visualChunks = HashMap<Vector3i, VisualChunk>()
 
     @NotSerializedProperty
-    private val generationOrder = if(dimension.generator is PerlinWorldGenerator){
-        SpiralPattern.roundSpiral2d(12, 0, false)
-            .map { v ->
-                (if (dimension.generator is PerlinWorldGenerator)
-                    Array(4) { Vector3i(v.x, it, v.z) }
-                else Array(7) { Vector3i(v.x, it - 3, v.z) }).toList()
-            }
-            .flatten()
-    } else {
-        SpiralPattern.spiral3d(12, false)
-    }
+    private var generationOrder = createViewOrder(dimension.generator, viewDistance)
 
     @DebugAction
     fun reset() {
@@ -99,15 +124,19 @@ class VisualDimension : Component() {
             v.y * dimension.sizeY.toDouble(),
             v.z * dimension.sizeZ.toDouble()
         )
+        transform.invalidateLocal()
+        transform.teleportUpdate()
         // generate mesh async as well
         visuals.ensureBuffer()
         addEvent {
-            // vector needs to be cloned, because it is a temporary value
-            entity2.add(visuals)
-            val entity1 = this.entity!!
-            entity1.add(entity2)
-            transform.teleportUpdate()
-            entity?.invalidateAABBsCompletely()
+            if (chunk.dim === dimension) {
+                entity2.add(visuals)
+                val entity1 = this.entity!!
+                entity1.add(entity2)
+                entity1.invalidateAABBsCompletely()
+            } else {
+                visualChunks.remove(v)
+            }
         }
         return true
     }
@@ -122,7 +151,6 @@ class VisualDimension : Component() {
 
     override fun onUpdate(): Int {
 
-        // todo prefer chunks in front of the camera
 
         // load & unload chunks
         for (c in visualChunks.values) {
@@ -135,6 +163,16 @@ class VisualDimension : Component() {
             MCProtocol.updatePlayers(entity)
         }
 
+        // prefer chunks in front of the camera
+        if (!usePrettyLoadingPattern) {
+            generationOrder.sortBy {
+                // [0.001, 2.001]
+                val dot =
+                    RenderView.camDirection.dot(it.x.toDouble(), it.y.toDouble(), it.z.toDouble()) + it.length() * 1.001
+                it.lengthSquared() / dot
+            }
+        }
+
         for (delta in generationOrder) {
             updateChunk(delta.x, delta.y, delta.z)
             if (chunkGenQueue.size < chunksPerFrame) {
@@ -143,7 +181,7 @@ class VisualDimension : Component() {
                     chunkGenQueue += { generateChunk(pair.first, pair.second) }
                     chunkGenQueue.start()
                 }
-            }// else break
+            }
         }
 
         visualChunks.values.removeIf { vc ->
@@ -176,7 +214,46 @@ class VisualDimension : Component() {
     override val className: String = "VisualDimension"
 
     companion object {
+
+        val decorators = listOf(
+            TreeDecorator(0.03f, 5123L),
+            PyramidDecorator(Sandstone, 10, Sand, 0.00001f, 49651L),
+            PyramidDecorator(Sandstone, 20, Sand, 0.00001f / 3f, 19651L),
+            PyramidDecorator(Sandstone, 27, Sand, 0.00001f / 9f, 29651L),
+            CactiDecorator(0.001f, 97845L)
+        )
+
+        val perlin2dDim = Dimension(
+            PerlinWorldGenerator(
+                listOf(Stone, Dirt, Dirt, Dirt, Grass),
+                Water, 30, 0.02f, 0f, 100f, 1234L
+            ),
+            decorators
+        )
+
+        val perlin3dDim = Dimension(
+            Perlin3dWorldGenerator(listOf(Stone, Dirt, Dirt, Dirt, Grass), 1234L),
+            decorators
+        )
+
+        val sandDim = Dimension(
+            PerlinWorldGenerator(
+                listOf(Stone, Sand, Sand),
+                Sand, -1, 0.015f, 0f, 30f, 5123L
+            ),
+            decorators
+        )
+
         val chunkGenQueue = ProcessingGroup("ChunkGen", 12)
+        fun createViewOrder(generator: Generator, viewDistance: Int): MutableList<Vector3i> {
+            return if (generator is PerlinWorldGenerator) {
+                SpiralPattern.roundSpiral2d(viewDistance, 0, false)
+                    .map { xz -> Array(4) { y -> Vector3i(xz.x, y, xz.z) }.toList() }
+                    .flatten()
+            } else {
+                SpiralPattern.spiral3d(viewDistance, false)
+            }.toMutableList()
+        }
     }
 
 }

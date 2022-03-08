@@ -14,12 +14,22 @@ open class BlockType(val color: Int, val id: Short) {
         val Lava = BlockType(black or 0xd97520, 5)
         val Log = BlockType(black or 0x835127, 6)
         val Leaves = BlockType(black or 0x187423, 7)
+        val Sand = BlockType(black or 0xeddc9e, 8)
+        val Sandstone = BlockType(black or 0x9f946b, 9)
+        val Cactus = BlockType(black or 0x77975a, 10)
 
         val library = hashSetOf(
-            Air, Stone, Grass, Dirt, Water, Lava, Log, Leaves
+            Air, Stone, Grass, Dirt, Water, Lava, Log, Leaves, Sand, Sandstone,
+            Cactus
         )
 
         val byId = HashMap(library.associateBy { it.id })
+
+        // for mods
+        fun register(blockType: BlockType) {
+            library.add(blockType)
+            byId[blockType.id] = blockType
+        }
 
     }
 

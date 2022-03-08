@@ -8,16 +8,22 @@ import me.anno.minecraft.block.BlockType.Companion.Stone
 import me.anno.minecraft.block.BlockType.Companion.Water
 import me.anno.minecraft.world.Chunk
 import me.anno.minecraft.world.Dimension
+import kotlin.math.log2
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
-class PerlinWorldGenerator(val blocks: List<BlockType>, seed: Long) : Generator() {
+class PerlinWorldGenerator(
+    val blocks: List<BlockType>,
+    val waterBlock: BlockType,
+    var waterLevel: Int,
+    val scale: Float,
+    minHeight: Float,
+    maxHeight: Float,
+    seed: Long
+) : Generator() {
 
-    val heightNoise = PerlinNoise(seed, 8, 0.5f, 1f, 100f)
-
-    val scale = 1f / 50f
-
-    var waterLevel = 30
+    val heightNoise = PerlinNoise(seed, log2(maxHeight - minHeight).roundToInt(), 0.5f, minHeight, maxHeight)
 
     fun getHeightAt(x: Int, z: Int) = heightNoise[x * scale, z * scale].toInt()
 
@@ -30,7 +36,7 @@ class PerlinWorldGenerator(val blocks: List<BlockType>, seed: Long) : Generator(
                 for (z in 0 until dim.sizeZ) {
                     val height0 = getHeightAt(x + x0, z + z0)
                     for (y in max(0, height0 - waterLevel) until min(waterLevel - chunk.y0, dim.sizeY)) {
-                        chunk.setBlockQuickly(x, y, z, Water)
+                        chunk.setBlockQuickly(x, y, z, waterBlock)
                     }
                     val heightY = height0 - chunk.y0
                     val offset = -heightY + blocks.size
@@ -45,7 +51,7 @@ class PerlinWorldGenerator(val blocks: List<BlockType>, seed: Long) : Generator(
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            val gen = PerlinWorldGenerator(listOf(Stone), 1234L)
+            val gen = PerlinWorldGenerator(listOf(Stone), Water, 30, 0.02f, 0f, 255f, 1234L)
             val dim = Dimension(gen, emptyList())
             ImageWriter.writeImageInt(100, 100, false, "255", 16) { x, z, _ ->
                 var maxY = 255

@@ -91,15 +91,26 @@ class Chunk(val dim: Dimension, x0: Int, y0: Int, z0: Int) {
         return setBlock(x, y, z, block.id)
     }
 
-    fun setBlockIfWithin(lx: Int, ly: Int, lz: Int, block: BlockType): Boolean {
+    fun setBlockWithin(lx: Int, ly: Int, lz: Int, block: BlockType): Boolean {
+        val dim = dim
         return if (lx in 0 until dim.sizeX && ly in 0 until dim.sizeY && lz in 0 until dim.sizeZ) {
             setBlock(lx, ly, lz, block)
         } else false
     }
 
+    fun addBlockWithin(lx: Int, ly: Int, lz: Int, block: BlockType): Boolean {
+        val dim = dim
+        return if (lx in 0 until dim.sizeX && ly in 0 until dim.sizeY && lz in 0 until dim.sizeZ) {
+            val index = dim.getYZXIndex(lx, ly, lz)
+            if (blocks[index] == 0.toShort()) {
+                blocks[index] = block.id
+                true
+            } else false
+        } else false
+    }
+
     fun setBlockQuickly(x: Int, y: Int, z: Int, block: Short) {
-        val key = dim.getYZXIndex(x, y, z)
-        blocks[key] = block
+        blocks[dim.getYZXIndex(x, y, z)] = block
     }
 
     fun setBlockQuickly(x: Int, y: Int, z: Int, block: BlockType) {

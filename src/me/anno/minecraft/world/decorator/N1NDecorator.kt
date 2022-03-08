@@ -1,9 +1,11 @@
 package me.anno.minecraft.world.decorator
 
+import me.anno.maths.Maths.ceilDiv
 import me.anno.maths.noise.FullNoise
 import me.anno.minecraft.world.Chunk
+import org.joml.Vector3i
 
-abstract class N1NDecorator(val density: Float, seed: Long = 5123L) : Decorator() {
+abstract class N1NDecorator(val density: Float, val maxExtends: Vector3i, seed: Long = 5123L) : Decorator() {
 
     private val random = FullNoise(seed)
 
@@ -13,10 +15,12 @@ abstract class N1NDecorator(val density: Float, seed: Long = 5123L) : Decorator(
 
         val dim = chunk.dim
         val instancesPerChunk = density * dim.sizeX * dim.sizeZ
+        val dcx = ceilDiv(maxExtends.x, dim.sizeX)
+        val dcz = ceilDiv(maxExtends.z, dim.sizeZ)
 
         // if 2d, let seed only depend on xz, else y as well
-        for (cz in -1..1) {
-            for (cx in -1..1) {
+        for (cz in -dcz..dcz) {
+            for (cx in -dcx..dcx) {
                 // round based on chunk random
                 val ix = cx + chunk.chunkX
                 val iz = cz + chunk.chunkZ

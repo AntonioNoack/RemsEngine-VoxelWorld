@@ -11,7 +11,6 @@ import me.anno.network.packets.POS1Packet
 import me.anno.network.packets.PingPacket
 import me.anno.utils.structures.maps.Maps.removeIf
 import org.apache.logging.log4j.LogManager
-import org.joml.Vector3d
 import java.io.DataInputStream
 import java.io.IOException
 import java.net.BindException
@@ -26,11 +25,26 @@ object MCProtocol {
     class POSXPacket : POS1Packet("POSX") {
         override fun receiveData(server: Server?, client: TCPClient, dis: DataInputStream, size: Int) {
             super.receiveData(server, client, dis, size)
-            println("${client.name}: $x $y $z")
             if (client.name != name) {
-                players[client.name]?.apply {
-                    val entity = entity!!
-                    entity.transform.localPosition = Vector3d(x, y, z)
+                val player = players.getOrPut(client.name) {
+                    val player = Player()
+                    // todo initial spawn location (?)
+                    synchronized(addedPlayers) {
+                        addedPlayers.add(player)
+                    }
+                    player
+                }
+                val entity = player.entity
+                if (entity != null) {
+                    val transform = entity.transform
+                    transform.localPosition.set(x, y, z)
+                    transform.localRotation
+                        .identity()
+                        .rotateY(ry.toDouble())
+                        .rotateX(rx.toDouble())
+                        .rotateZ(rz.toDouble())
+                    transform.invalidateLocal()
+                    transform.onChange()
                 }
             }
         }
@@ -41,9 +55,10 @@ object MCProtocol {
         protocol.register(POSXPacket())
     }
 
-    private val port = 65025
+    private val port = 65024
     private var server: Server? = null
     private var client: TCPClient? = null
+    private var addedPlayers = ArrayList<Player>()
     private val players = HashMap<String, Player>()
     private var name = "Gustav${Random(System.nanoTime()).nextInt(1000)}"
     private var player = Player()
@@ -51,9 +66,10 @@ object MCProtocol {
     var lastFailed = 0L
 
     fun updatePlayers(entities: Entity) {
+        // Packet.debugPackets = true
         // doesn't work yet
         // todo make multiplayer work
-        return
+        // return
         if (abs(Engine.gameTime - lastFailed) < 1e9) return
         try {
             if (server == null && (client == null || client!!.isClosed)) {
@@ -63,6 +79,12 @@ object MCProtocol {
             }
             if (player.entity == null) {
                 createPlayer(name, entities, player)
+            }
+            synchronized(addedPlayers) {
+                for (player in addedPlayers) {
+                    createPlayer(player.name, entities, player)
+                }
+                addedPlayers.clear()
             }
             val client = client
             val server = server
@@ -127,7 +149,7 @@ object MCProtocol {
             LOGGER.info("starting client")
             val socket = Socket("localhost", port)
             val client = TCPClient(socket, name)
-            client.startAsync(protocol)
+            client.startClientSideAsync(protocol)
             client
         } catch (e: Exception) {
             e.printStackTrace()
