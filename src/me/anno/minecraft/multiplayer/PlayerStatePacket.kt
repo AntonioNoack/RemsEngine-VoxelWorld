@@ -35,14 +35,19 @@ class PlayerStatePacket(magic: String = "JOIN") : Packet(magic) {
         super.onReceive(server, client)
         if (server == null) {
             client as MCClient
-            LOGGER.info("[${client.primary.name}] $name ${if (join) "joint" else "left"} the game")
+            // save all variables, because this packet instance will be reused
+            val name = name
+            val join = join
+            LOGGER.info("[${client.primary.name}] $name ${if (join) "joint" else "left"} the game | ${System.identityHashCode(client.network.players)}")
             addEvent {
                 val players = client.network.players
                 synchronized(players) {
                     if (join) {
                         players.getOrPut(name) { Player(false, name) }
+                        LOGGER.info("Added $name")
                     } else {
                         players.remove(name)?.entity?.removeFromParent()
+                        LOGGER.info("Removed $name")
                     }
                 }
             }

@@ -83,11 +83,12 @@ object MCProtocol {
             if (server != null) {
                 val clients = server.clients
                 synchronized(clients) {
-                    // todo while iterating, the list of players may change
                     for (client2 in clients) {
                         val name = client2.name
                         val player2i = synchronized(data.players) { data.players[name] }
-                        if (player2i != null) server.broadcast(createPacket(player2i, client2))
+                        if (player2i != null) {
+                            server.broadcast(createPacket(player2i, client2))
+                        }
                     }
                     for (client2 in clients) {
                         client2.dos.flush()
@@ -158,11 +159,9 @@ object MCProtocol {
                     // send info about new player to everyone else
                     broadcast(PlayerStatePacket(client.name, true))
                     // send new player all info about everyone else
-                    synchronized(clients) {
-                        for (client2 in clients) {
-                            if (client2 !== client) {
-                                client.sendTCP(PlayerStatePacket(client2.name, true))
-                            }
+                    forAllClients { client2 ->
+                        if (client2 !== client) {
+                            client.sendTCP(PlayerStatePacket(client2.name, true))
                         }
                     }
                     client.flush()
@@ -177,7 +176,7 @@ object MCProtocol {
             server.register(tcpProtocol)
             server.register(udpProtocol)
             server.start(tcpPort, udpPort)
-            LOGGER.info("started server")
+            LOGGER.info("started server, assigning to player ${player.name}")
             player.networkData.server = server
             true
         } catch (e: BindException) {
