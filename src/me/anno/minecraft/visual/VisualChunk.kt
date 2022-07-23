@@ -1,5 +1,6 @@
 package me.anno.minecraft.visual
 
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.ProceduralMesh
 import me.anno.ecs.prefab.PrefabSaveable
 import me.anno.minecraft.block.BlockType
@@ -27,7 +28,7 @@ class VisualChunk() : ProceduralMesh() {
 
     var wasSeen = true
 
-    override fun generateMesh() {
+    override fun generateMesh(mesh: Mesh) {
         // todo handle transparent blocks slightly differently
         val chunk = chunk ?: return
         val t0 = System.nanoTime()
@@ -38,7 +39,7 @@ class VisualChunk() : ProceduralMesh() {
                 val y = chunk.y0 + dy
                 val z = chunk.z0 + dz
                 dim.getElementAt(x, y, z, true) != Air
-            }, mesh2)
+            }, mesh)
         val t1 = System.nanoTime()
         if (printTimes) LOGGER.info("mesh ${((t1 - t0) * 1e-6).f3()}ms/c")
     }
@@ -63,12 +64,12 @@ class VisualChunk() : ProceduralMesh() {
         private val LOGGER = LogManager.getLogger(VisualChunk::class)
         var printTimes = false
 
-        val palette = IntArray(BlockType.library.maxOf { it.id } + 1)
-
-        init {
+        val palette by lazy {
+            val palette = IntArray(BlockType.library.maxOf { it.id } + 1)
             for (block in BlockType.library) {
                 palette[block.id.toInt()] = block.color
             }
+            palette
         }
 
     }

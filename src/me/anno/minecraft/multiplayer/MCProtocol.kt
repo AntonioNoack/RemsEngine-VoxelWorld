@@ -2,154 +2,141 @@ package me.anno.minecraft.multiplayer
 
 import me.anno.Engine
 import me.anno.ecs.Entity
+import me.anno.ecs.components.mesh.MeshComponent
+import me.anno.engine.ui.render.RenderView
 import me.anno.minecraft.entity.Player
+import me.anno.minecraft.multiplayer.POSXPacket.Companion.createPacket
 import me.anno.network.NetworkProtocol
 import me.anno.network.Protocol
 import me.anno.network.Server
 import me.anno.network.TCPClient
-import me.anno.network.packets.POS1Packet
 import me.anno.network.packets.PingPacket
-import me.anno.utils.structures.maps.Maps.removeIf
+import me.anno.utils.OS.documents
 import org.apache.logging.log4j.LogManager
-import java.io.DataInputStream
 import java.io.IOException
 import java.net.BindException
+import java.net.InetAddress
 import java.net.Socket
 import kotlin.math.abs
-import kotlin.random.Random
 
 object MCProtocol {
 
-    private val protocol = Protocol("REMC", NetworkProtocol.TCP)
-
-    class POSXPacket : POS1Packet("POSX") {
-        override fun receiveData(server: Server?, client: TCPClient, dis: DataInputStream, size: Int) {
-            super.receiveData(server, client, dis, size)
-            if (client.name != name) {
-                val player = players.getOrPut(client.name) {
-                    val player = Player()
-                    // todo initial spawn location (?)
-                    synchronized(addedPlayers) {
-                        addedPlayers.add(player)
-                    }
-                    player
-                }
-                val entity = player.entity
-                if (entity != null) {
-                    val transform = entity.transform
-                    transform.localPosition.set(x, y, z)
-                    transform.localRotation
-                        .identity()
-                        .rotateY(ry.toDouble())
-                        .rotateX(rx.toDouble())
-                        .rotateZ(rz.toDouble())
-                    transform.invalidateLocal()
-                    transform.onChange()
-                }
-            }
-        }
-    }
+    private val tcpProtocol = Protocol("REMT", NetworkProtocol.TCP)
+    private val udpProtocol = Protocol("REMU", NetworkProtocol.UDP)
 
     init {
-        protocol.register(PingPacket())
-        protocol.register(POSXPacket())
+        tcpProtocol.register(PingPacket())
+        tcpProtocol.register(POSXPacket())
+        tcpProtocol.register(PlayerStatePacket())
+        udpProtocol.register(PingPacket())
+        udpProtocol.register(POSXPacket())
     }
 
-    private val port = 65024
-    private var server: Server? = null
-    private var client: TCPClient? = null
-    private var addedPlayers = ArrayList<Player>()
-    private val players = HashMap<String, Player>()
-    private var name = "Gustav${Random(System.nanoTime()).nextInt(1000)}"
-    private var player = Player()
+    private val tcpPort = 65024
+    private val udpPort = tcpPort + 1
 
-    var lastFailed = 0L
+    fun updatePlayers(player: Player, entities: Entity) {
 
-    fun updatePlayers(entities: Entity) {
         // Packet.debugPackets = true
         // doesn't work yet
         // todo make multiplayer work
-        // return
-        if (abs(Engine.gameTime - lastFailed) < 1e9) return
+
+        // timeout after failure
+        val data = player.networkData
+        if (abs(Engine.gameTime - data.lastFailed) < 1e9) return
+
+        data.players.getOrPut(player.name) { createPlayer(player.name, entities, player) }
+
         try {
-            if (server == null && (client == null || client!!.isClosed)) {
-                if (!tryStartServer()) {
-                    tryStartClient()
+
+            if (data.client?.isClosed != false) {
+                tryStartServer(player)
+                tryStartClient(player)
+            }
+
+            for ((name, player2) in data.players) {
+                val entity = player2.entity
+                if (entity == null || entity.parent != entities) {
+                    LOGGER.info("creating player $name")
+                    createPlayer(name, entities, player2)
                 }
             }
-            if (player.entity == null) {
-                createPlayer(name, entities, player)
+
+            val transform = player.transform
+            val renderView = RenderView.currentInstance
+            if (transform != null && renderView != null) {
+                val pos = renderView.position
+                transform.setLocal(renderView.editorCameraNode.transform.localTransform)
+                transform.localPosition = transform.localPosition.set(pos.x, pos.y, pos.z)
+                transform.smoothUpdate()
             }
-            synchronized(addedPlayers) {
-                for (player in addedPlayers) {
-                    createPlayer(player.name, entities, player)
-                }
-                addedPlayers.clear()
-            }
-            val client = client
-            val server = server
-            when {
-                client != null && client.socket.isBound && client.socket.isConnected -> {
-                    client.send(null, createPacket(player))
+
+            val client = data.client
+            if (client != null && client.socket.isBound && client.socket.isConnected) {
+                if (player.entity != null) {
+                    client.sendUDP(createPacket(player, client), udpProtocol, false)
                     client.dos.flush()
                 }
-                server != null -> {
-                    server.broadcast(createPacket(player))
-                    for (player2 in server.clients) {
-                        val name = player2.name
-                        val player2i = players.getOrPut(name) { createPlayer(name, entities) }
-                        server.broadcast(createPacket(player2i))
+            }
+
+            val server = data.server
+            if (server != null) {
+                val clients = server.clients
+                synchronized(clients) {
+                    // todo while iterating, the list of players may change
+                    for (client2 in clients) {
+                        val name = client2.name
+                        val player2i = synchronized(data.players) { data.players[name] }
+                        if (player2i != null) server.broadcast(createPacket(player2i, client2))
                     }
-                    players.removeIf { p ->
-                        if (server.clients.none { it.name == p.key }) {
-                            entities.remove(p.value.entity!!)
-                            true
-                        } else false
-                    }
-                    for (client2 in server.clients) {
+                    for (client2 in clients) {
                         client2.dos.flush()
                     }
                 }
             }
+
         } catch (e: IOException) {
-            lastFailed = Engine.gameTime
+            data.lastFailed = Engine.gameTime
             e.printStackTrace()
+            stop(data)
         }
     }
 
-    fun stop() {
-        server?.close()
-        client?.close()
-        server = null
-        client = null
-        LOGGER.info("closed")
+    fun stop(player: Player) {
+        stop(player.networkData)
     }
 
-    private fun createPlayer(name: String, entities: Entity, player: Player = Player()): Player {
-        val child = Entity()
-        child.name = name
+    fun stop(data: NetworkData) {
+        data.server?.close()
+        data.client?.close()
+        data.server = null
+        data.client = null
+        LOGGER.info("closed")
+        for (player in data.players.values) {
+            player.entity?.removeFromParent()
+        }
+        data.players.clear()
+    }
+
+    fun createPlayer(name: String, entities: Entity, player: Player = Player()): Player {
+        val entity = Entity()
+        entity.name = name
         player.name = name
-        child.add(player)
-        entities.add(child)
+        entity.add(player)
+        val mesh = MeshComponent()
+        mesh.mesh = documents.getChild("redMonkey.glb")
+        entity.add(mesh)
+        entities.add(entity)
         return player
     }
 
-    private fun createPacket(player: Player): POSXPacket {
-        val entity = player.entity!!
-        val pos = entity.transform.globalPosition
-        val packet = POSXPacket()
-        packet.x = pos.x
-        packet.y = pos.y
-        packet.z = pos.z
-        return packet
-    }
-
-    private fun tryStartClient() {
-        client = try {
+    private fun tryStartClient(player: Player) {
+        player.networkData.client = try {
             LOGGER.info("starting client")
-            val socket = Socket("localhost", port)
-            val client = TCPClient(socket, name)
-            client.startClientSideAsync(protocol)
+            val socket = TCPClient.createSocket(InetAddress.getLocalHost(), tcpPort, tcpProtocol)
+            val client = MCClient(player, socket, tcpProtocol, player.name)
+            client.udpPort = udpPort
+            client.startClientSideAsync()
             client
         } catch (e: Exception) {
             e.printStackTrace()
@@ -157,21 +144,49 @@ object MCProtocol {
         }
     }
 
-    private fun tryStartServer(): Boolean {
+    private fun tryStartServer(player: Player): Boolean {
         return try {
-            val server = Server()
-            server.register(protocol)
-            server.start(port, 0)
+            val server = object : Server() {
+
+                override fun createClient(clientSocket: Socket, protocol: Protocol, randomId: Int): TCPClient {
+                    return MCClient(player, clientSocket, protocol, randomId)
+                }
+
+                override fun onClientConnected(client: TCPClient) {
+                    super.onClientConnected(client)
+                    LOGGER.info("[Server] ${client.name} joined the game")
+                    // send info about new player to everyone else
+                    broadcast(PlayerStatePacket(client.name, true))
+                    // send new player all info about everyone else
+                    synchronized(clients) {
+                        for (client2 in clients) {
+                            if (client2 !== client) {
+                                client.sendTCP(PlayerStatePacket(client2.name, true))
+                            }
+                        }
+                    }
+                    client.flush()
+                }
+
+                override fun onClientDisconnected(client: TCPClient) {
+                    super.onClientDisconnected(client)
+                    LOGGER.info("[Server] ${client.name} left the game")
+                    broadcast(PlayerStatePacket(client.name, false))
+                }
+            }
+            server.register(tcpProtocol)
+            server.register(udpProtocol)
+            server.start(tcpPort, udpPort)
             LOGGER.info("started server")
-            this.server = server
+            player.networkData.server = server
             true
         } catch (e: BindException) {
             LOGGER.info("server port is already bound")
-            this.server = null
+            player.networkData.server = null
             false
         } catch (e: Exception) {
             e.printStackTrace()
-            this.server = null
+            player.networkData.server = null
             false
         }
     }

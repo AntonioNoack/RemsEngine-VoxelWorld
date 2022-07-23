@@ -3,6 +3,7 @@ package me.anno.minecraft.visual
 import me.anno.ecs.Component
 import me.anno.ecs.Entity
 import me.anno.ecs.annotations.DebugAction
+import me.anno.engine.ui.render.RenderState
 import me.anno.engine.ui.render.RenderView
 import me.anno.io.serialization.NotSerializedProperty
 import me.anno.maths.patterns.SpiralPattern
@@ -12,6 +13,7 @@ import me.anno.minecraft.block.BlockType.Companion.Sand
 import me.anno.minecraft.block.BlockType.Companion.Sandstone
 import me.anno.minecraft.block.BlockType.Companion.Stone
 import me.anno.minecraft.block.BlockType.Companion.Water
+import me.anno.minecraft.entity.Player
 import me.anno.minecraft.multiplayer.MCProtocol
 import me.anno.minecraft.world.Dimension
 import me.anno.minecraft.world.decorator.CactiDecorator
@@ -28,13 +30,8 @@ import org.joml.Vector3i
 import kotlin.math.floor
 
 // todo why is the generator generating seemingly random chunks in the wild?
+@Suppress("MemberVisibilityCanBePrivate")
 class VisualDimension : Component() {
-
-    enum class TerrainType {
-        FOREST2D,
-        FOREST3D,
-        SAND_DESERT
-    }
 
     var usePrettyLoadingPattern = false
         set(value) {
@@ -53,7 +50,7 @@ class VisualDimension : Component() {
             }
         }
 
-    var viewDistance = 6
+    var viewDistance = 2
         set(value) {
             if (field != value) {
                 field = value
@@ -68,6 +65,9 @@ class VisualDimension : Component() {
             TerrainType.SAND_DESERT -> sandDim
         }
 
+    // should depend on the generation rate, and be approx. the value for 3 frames
+    var chunksPerFrame = 5
+
     @NotSerializedProperty
     private val visualChunks = HashMap<Vector3i, VisualChunk>()
 
@@ -78,21 +78,18 @@ class VisualDimension : Component() {
     fun reset() {
         visualChunks.removeIf { (_, visualChunk) ->
             if (visualChunk.entity != null) {
-                visualChunk.mesh2.destroy()
+                visualChunk.getMesh().destroy()
                 entity!!.remove(visualChunk.entity!!)
                 true
             } else false
         }
     }
 
-    // should depend on the generation rate, and be approx. the value for 3 frames
-    var chunksPerFrame = 5
-
     private val anchor = Vector3i()
     private val tmp = Vector3i()
 
     private fun updateAnchor() {
-        val position = RenderView.currentInstance?.position ?: RenderView.camPosition
+        val position = RenderView.currentInstance?.position ?: RenderState.cameraPosition
         val px = floor(position.x / dimension.sizeX).toInt()
         val py = if (dimension.generator is PerlinWorldGenerator) 0 else floor(position.y / dimension.sizeY).toInt()
         val pz = floor(position.z / dimension.sizeZ).toInt()
@@ -135,7 +132,8 @@ class VisualDimension : Component() {
                 entity1.add(entity2)
                 entity1.invalidateAABBsCompletely()
             } else {
-                visualChunks.remove(v)
+                val chunk2 = visualChunks.remove(v)
+                if (chunk2 !== visuals) visualChunks[v] = visuals
             }
         }
         return true
@@ -149,6 +147,8 @@ class VisualDimension : Component() {
         }
     }
 
+    val player = Player()
+
     override fun onUpdate(): Int {
 
 
@@ -158,17 +158,18 @@ class VisualDimension : Component() {
         }
 
         updateAnchor()
+
         val entity = entity
         if (entity != null) {
-            MCProtocol.updatePlayers(entity)
+            MCProtocol.updatePlayers(player, entity)
         }
 
         // prefer chunks in front of the camera
         if (!usePrettyLoadingPattern) {
             generationOrder.sortBy {
                 // [0.001, 2.001]
-                val dot =
-                    RenderView.camDirection.dot(it.x.toDouble(), it.y.toDouble(), it.z.toDouble()) + it.length() * 1.001
+                val dot = RenderState.cameraDirection
+                    .dot(it.x.toDouble(), it.y.toDouble(), it.z.toDouble()) + it.length() * 1.001
                 it.lengthSquared() / dot
             }
         }
@@ -191,7 +192,7 @@ class VisualDimension : Component() {
                 val chunk = vc.chunk
                 if (chunk != null) {
                     dimension.unload(chunk)
-                    vc.mesh2.destroy()
+                    vc.getMesh().destroy()
                 }
                 true
             } else false
@@ -202,7 +203,7 @@ class VisualDimension : Component() {
 
     override fun onDestroy() {
         super.onDestroy()
-        MCProtocol.stop()
+        MCProtocol.stop(player)
     }
 
     override fun clone(): VisualDimension {
@@ -239,7 +240,7 @@ class VisualDimension : Component() {
         val sandDim = Dimension(
             PerlinWorldGenerator(
                 listOf(Stone, Sand, Sand),
-                Sand, -1, 0.015f, 0f, 30f, 5123L
+                Stone, 5, 0.015f, 0f, 30f, 5123L
             ),
             decorators
         )

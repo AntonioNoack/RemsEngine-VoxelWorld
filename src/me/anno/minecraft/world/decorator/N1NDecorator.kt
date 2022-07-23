@@ -24,11 +24,11 @@ abstract class N1NDecorator(val density: Float, val maxExtends: Vector3i, seed: 
                 // round based on chunk random
                 val ix = cx + chunk.chunkX
                 val iz = cz + chunk.chunkZ
-                val rounding = random.getValue(ix, iz)
+                val rounding = random[ix, iz]
                 val ipc = (instancesPerChunk + rounding).toInt()
                 for (i in 0 until ipc) {
-                    val bx = (random.getValue(ix, iz, i) * dim.sizeX).toInt() + cx * dim.sizeX
-                    val bz = (random.getValue(ix, iz, -1 - i) * dim.sizeZ).toInt() + cz * dim.sizeZ
+                    val bx = (random[ix, iz, i] * dim.sizeX).toInt() + cx * dim.sizeX
+                    val bz = (random[ix, iz, -1 - i] * dim.sizeZ).toInt() + cz * dim.sizeZ
                     decorate(chunk, bx, bz)
                 }
             }

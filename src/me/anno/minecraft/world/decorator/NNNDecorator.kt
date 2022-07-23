@@ -34,12 +34,12 @@ abstract class NNNDecorator(
                     val ix = cx + chunk.chunkX
                     val iy = cy + chunk.chunkY
                     val iz = cz + chunk.chunkZ
-                    val rounding = random.getValue(ix, iy, iz)
+                    val rounding = random[ix, iy, iz]
                     val ipc = (instancesPerChunk + rounding).toInt()
                     for (i in 0 until ipc) {
-                        val bx = (random.getValue(ix, iy, iz, i) * dim.sizeX).toInt() + cx * dim.sizeX
-                        val by = (random.getValue(ix, iy, iz, i + 2 * ipc) * dim.sizeY).toInt() + cy * dim.sizeY
-                        val bz = (random.getValue(ix, iy, iz, -1 - i) * dim.sizeZ).toInt() + cz * dim.sizeZ
+                        val bx = (random[ix, iy, iz, i] * dim.sizeX).toInt() + cx * dim.sizeX
+                        val by = (random[ix, iy, iz, i + 2 * ipc] * dim.sizeY).toInt() + cy * dim.sizeY
+                        val bz = (random[ix, iy, iz, -1 - i] * dim.sizeZ).toInt() + cz * dim.sizeZ
                         decorate(chunk, bx, by, bz)
                     }
                 }

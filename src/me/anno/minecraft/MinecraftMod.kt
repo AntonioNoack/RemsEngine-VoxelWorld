@@ -34,6 +34,12 @@ class MinecraftMod : Mod() {
 
         // todo multiplayer test
         // todo ui
+        // todo save world
+        //  - absolute
+        //  - delta
+        // todo commands & console
+        // todo set & mine blocks
+        // todo entities
 
         @JvmStatic
         fun main(args: Array<String>) {
