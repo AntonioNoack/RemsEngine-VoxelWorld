@@ -1,9 +1,10 @@
 package me.anno.minecraft.block
 
-import me.anno.config.DefaultStyle.black
+import me.anno.utils.Color.black
 
 open class BlockType(val color: Int, val id: Short) {
 
+    @Suppress("MemberVisibilityCanBePrivate")
     companion object {
 
         val Air = BlockType(0, 0)

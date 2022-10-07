@@ -8,7 +8,7 @@ import kotlin.concurrent.thread
 
 fun main() {
 
-    ECSRegistry.initNoGFX()
+    ECSRegistry.init()
 
     val t0 = Engine.nanoTime
     val duration = 10 * 1e9
