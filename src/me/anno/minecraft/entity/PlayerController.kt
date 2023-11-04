@@ -1,14 +1,14 @@
 package me.anno.minecraft.entity
 
-import me.anno.Engine
+import me.anno.Time
 import me.anno.ecs.Component
 import me.anno.ecs.annotations.Range
 import me.anno.ecs.components.camera.Camera
 import me.anno.ecs.interfaces.ControlReceiver
 import me.anno.gpu.GFX
 import me.anno.input.Input
+import me.anno.input.Key
 import me.anno.maths.Maths.clamp
-import me.anno.utils.pooling.JomlPools
 import org.joml.Vector3f
 import kotlin.math.sqrt
 
@@ -37,7 +37,7 @@ class PlayerController : Component(), ControlReceiver {
     @Range(0.0, 1.0)
     var friction = 0.9f
 
-    override fun onKeyDown(key: Int): Boolean {
+    override fun onKeyDown(key: Key): Boolean {
         println("key $key went down")
         return true
     }
@@ -50,7 +50,7 @@ class PlayerController : Component(), ControlReceiver {
             if (camera == null) camera = entity.getComponent(Camera::class)
         }
 
-        val dt = Engine.deltaTime
+        val dt = Time.deltaTime.toFloat()
         val dtx = clamp(10f * friction * dt)
 
         val inputCollector = inputCollector
@@ -92,8 +92,11 @@ class PlayerController : Component(), ControlReceiver {
 
         val camT = camera?.transform
         if (camT != null) {
-            val tmp = JomlPools.vec3d.borrow()
-            camT.setGlobalRotation(tmp.set(headRotation))
+            camT.globalRotation = camT.globalRotation
+                .identity()
+                .rotateY(headRotation.y.toDouble())
+                .rotateX(headRotation.x.toDouble())
+                .rotateZ(headRotation.z.toDouble())
         }
 
         return 1
@@ -112,8 +115,8 @@ class PlayerController : Component(), ControlReceiver {
         if (canJump()) jump()
     }
 
-    override fun onKeyTyped(key: Int): Boolean {
-        return if (key == ' '.code) {
+    override fun onKeyTyped(key: Key): Boolean {
+        return if (key == Key.KEY_SPACE) {
             tryToJump()
             true
         } else false
@@ -121,7 +124,7 @@ class PlayerController : Component(), ControlReceiver {
 
     override fun onMouseMoved(x: Float, y: Float, dx: Float, dy: Float): Boolean {
         // turn the camera
-        val window = GFX.someWindow
+        val window = GFX.someWindow!!
         val speed = 3f / window.height
         val headRotation = headRotation
         headRotation.x += dy * speed
@@ -131,7 +134,7 @@ class PlayerController : Component(), ControlReceiver {
 
     override fun clone(): PlayerController {
         val clone = PlayerController()
-        copy(clone)
+        copyInto(clone)
         return clone
     }
 

@@ -1,6 +1,6 @@
 package me.anno.minecraft.multiplayer
 
-import me.anno.Engine
+import me.anno.Time
 import me.anno.minecraft.entity.Player
 import me.anno.network.Server
 import me.anno.network.TCPClient
@@ -81,7 +81,7 @@ class POSXPacket : POS1Packet("POSX") {
             packet.rz = rot.z.toFloat()
             packet.rw = rot.w.toFloat()
             packet.entity = client?.randomId?.toLong() ?: 0L
-            packet.localTime = Engine.gameTime
+            packet.localTime = Time.gameTimeN
             // println("sent $pos for ${player.name}")
             return packet
         }

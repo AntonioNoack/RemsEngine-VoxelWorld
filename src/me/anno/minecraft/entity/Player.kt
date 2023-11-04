@@ -18,12 +18,12 @@ class Player(var isPrimary: Boolean, name: String) : Entity() {
 
     override fun clone(): Component {
         val clone = Player(isPrimary, name)
-        copy(clone)
+        copyInto(clone)
         return clone
     }
 
-    override fun copy(clone: PrefabSaveable) {
-        super.copy(clone)
+    override fun copyInto(clone: PrefabSaveable) {
+        super.copyInto(clone)
         clone as Player
         clone.isPrimary = isPrimary
     }

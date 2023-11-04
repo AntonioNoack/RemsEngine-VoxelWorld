@@ -39,19 +39,19 @@ class VisualChunk() : ProceduralMesh() {
                 val y = chunk.y0 + dy
                 val z = chunk.z0 + dz
                 dim.getElementAt(x, y, z, true) != Air
-            }, mesh)
+            }, null, mesh)
         val t1 = System.nanoTime()
         if (printTimes) LOGGER.info("mesh ${((t1 - t0) * 1e-6).f3()}ms/c")
     }
 
     override fun clone(): VisualChunk {
         val clone = VisualChunk()
-        copy(clone)
+        copyInto(clone)
         return clone
     }
 
-    override fun copy(clone: PrefabSaveable) {
-        super.copy(clone)
+    override fun copyInto(clone: PrefabSaveable) {
+        super.copyInto(clone)
         clone as VisualChunk
         clone.chunk = chunk
         clone.wasSeen = wasSeen

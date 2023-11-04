@@ -24,7 +24,6 @@ import me.anno.minecraft.world.generator.Perlin3dWorldGenerator
 import me.anno.minecraft.world.generator.PerlinWorldGenerator
 import me.anno.studio.StudioBase.Companion.addEvent
 import me.anno.utils.hpc.ProcessingGroup
-import me.anno.utils.pooling.JomlPools
 import me.anno.utils.structures.maps.Maps.removeIf
 import org.joml.Vector3i
 import kotlin.math.floor
@@ -114,17 +113,12 @@ class VisualDimension : Component() {
         val chunk = dimension.getChunk(v.x, v.y, v.z, -1) ?: return false
         visuals.chunk = chunk
         val entity2 = Entity("Chunk ${v.x},${v.y},${v.z}")
-        val transform = entity2.transform
-        val pos = JomlPools.vec3d.borrow()
-        transform.localPosition = pos.set(
-            v.x * dimension.sizeX.toDouble(),
-            v.y * dimension.sizeY.toDouble(),
-            v.z * dimension.sizeZ.toDouble()
-        )
-        transform.invalidateLocal()
-        transform.teleportUpdate()
+            .setPosition(
+                v.x * dimension.sizeX.toDouble(),
+                v.y * dimension.sizeY.toDouble(),
+                v.z * dimension.sizeZ.toDouble()
+            )
         // generate mesh async as well
-        visuals.ensureBuffer()
         addEvent {
             if (chunk.dim === dimension) {
                 entity2.add(visuals)
@@ -208,7 +202,7 @@ class VisualDimension : Component() {
 
     override fun clone(): VisualDimension {
         val clone = VisualDimension()
-        copy(clone)
+        copyInto(clone)
         return clone
     }
 

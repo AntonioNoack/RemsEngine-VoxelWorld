@@ -6,10 +6,4 @@ open class Entity : Component() {
 
     // todo animations, behaviour, ...
 
-    override fun clone(): Component {
-        val clone = Entity()
-        copy(clone)
-        return clone
-    }
-
 }

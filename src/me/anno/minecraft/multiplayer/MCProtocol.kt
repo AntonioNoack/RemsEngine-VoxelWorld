@@ -1,6 +1,7 @@
 package me.anno.minecraft.multiplayer
 
 import me.anno.Engine
+import me.anno.Time
 import me.anno.ecs.Entity
 import me.anno.ecs.components.mesh.MeshComponent
 import me.anno.engine.ui.render.RenderView
@@ -43,7 +44,7 @@ object MCProtocol {
 
         // timeout after failure
         val data = player.networkData
-        if (abs(Engine.gameTime - data.lastFailed) < 1e9) return
+        if (abs(Time.gameTimeN - data.lastFailed) < 1e9) return
 
         data.players.getOrPut(player.name) { createPlayer(player.name, entities, player) }
 
@@ -97,7 +98,7 @@ object MCProtocol {
             }
 
         } catch (e: IOException) {
-            data.lastFailed = Engine.gameTime
+            data.lastFailed = Time.gameTimeN
             e.printStackTrace()
             stop(data)
         }
@@ -120,13 +121,10 @@ object MCProtocol {
     }
 
     fun createPlayer(name: String, entities: Entity, player: Player = Player()): Player {
-        val entity = Entity()
-        entity.name = name
+        val entity = Entity(name)
         player.name = name
         entity.add(player)
-        val mesh = MeshComponent()
-        mesh.mesh = documents.getChild("redMonkey.glb")
-        entity.add(mesh)
+        entity.add(MeshComponent(documents.getChild("redMonkey.glb")))
         entities.add(entity)
         return player
     }
