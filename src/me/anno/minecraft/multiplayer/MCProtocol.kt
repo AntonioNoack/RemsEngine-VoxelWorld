@@ -66,7 +66,7 @@ object MCProtocol {
             val transform = player.transform
             val renderView = RenderView.currentInstance
             if (transform != null && renderView != null) {
-                val pos = renderView.position
+                val pos = renderView.orbitCenter
                 transform.setLocal(renderView.editorCameraNode.transform.localTransform)
                 transform.localPosition = transform.localPosition.set(pos.x, pos.y, pos.z)
                 transform.smoothUpdate()

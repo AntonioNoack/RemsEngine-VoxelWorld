@@ -24,7 +24,7 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         return chunk
     }
 
-    override fun getElement(container: Chunk, localX: Int, localY: Int, localZ: Int, yzxIndex: Int): BlockType {
+    override fun getElement(container: Chunk, localX: Int, localY: Int, localZ: Int, index: Int): BlockType {
         return container.getBlock(localX, localY, localZ)
     }
 
@@ -61,14 +61,14 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         localX: Int,
         localY: Int,
         localZ: Int,
-        yzxIndex: Int,
+        index: Int,
         element: BlockType
     ): Boolean {
         return container.setBlock(localX, localY, localZ, element)
     }
 
     fun unload(chunk: Chunk) {
-        val c2 = chunks.remove(Vector3i(chunk.chunkX, chunk.chunkY, chunk.chunkZ))
+        val c2 = remove(Vector3i(chunk.chunkX, chunk.chunkY, chunk.chunkZ))
         if (c2 != null) chunkPool.destroy(c2)
     }
 

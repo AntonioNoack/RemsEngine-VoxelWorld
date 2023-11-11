@@ -4,6 +4,8 @@ import me.anno.utils.Color.black
 
 open class BlockType(val color: Int, val id: Short) {
 
+    val isTransparent get() = this == Air
+
     @Suppress("MemberVisibilityCanBePrivate")
     companion object {
 

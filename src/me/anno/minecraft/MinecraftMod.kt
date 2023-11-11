@@ -1,12 +1,12 @@
 package me.anno.minecraft
 
-import me.anno.engine.RemsEngine
-import me.anno.extensions.ExtensionLoader
+import me.anno.Build
+import me.anno.ecs.Entity
+import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.extensions.mods.Mod
 import me.anno.io.ISaveable.Companion.registerCustomClass
 import me.anno.minecraft.entity.Player
 import me.anno.minecraft.entity.PlayerController
-import me.anno.minecraft.visual.VisualChunk
 import me.anno.minecraft.visual.VisualDimension
 
 class MinecraftMod : Mod() {
@@ -15,7 +15,6 @@ class MinecraftMod : Mod() {
         super.onPreInit()
         registerCustomClass(Player())
         registerCustomClass(PlayerController())
-        registerCustomClass(VisualChunk())
         registerCustomClass(VisualDimension())
     }
 
@@ -43,8 +42,10 @@ class MinecraftMod : Mod() {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            ExtensionLoader.loadMainInfo()
-            RemsEngine().run()
+            Build.isDebug = false
+            val scene = Entity("Scene")
+            scene.addChild(VisualDimension())
+            testSceneWithUI("Minecraft", scene)
         }
 
     }
