@@ -1,11 +1,11 @@
 package me.anno.minecraft.multiplayer
 
 import me.anno.Time
+import me.anno.engine.Events.addEvent
 import me.anno.minecraft.entity.Player
 import me.anno.network.Server
 import me.anno.network.TCPClient
 import me.anno.network.packets.POS1Packet
-import me.anno.studio.StudioBase.Companion.addEvent
 import me.anno.utils.pooling.JomlPools
 import org.apache.logging.log4j.LogManager
 import java.io.DataInputStream

@@ -2,12 +2,12 @@ package me.anno.minecraft.visual
 
 import me.anno.ecs.Transform
 import me.anno.ecs.annotations.DebugAction
-import me.anno.ecs.components.mesh.Material
-import me.anno.ecs.components.mesh.Mesh
+import me.anno.ecs.components.mesh.IMesh
 import me.anno.ecs.components.mesh.MeshSpawner
+import me.anno.ecs.components.mesh.material.Material
+import me.anno.engine.serialization.NotSerializedProperty
 import me.anno.engine.ui.render.RenderState
 import me.anno.engine.ui.render.RenderView
-import me.anno.io.serialization.NotSerializedProperty
 import me.anno.maths.patterns.SpiralPattern
 import me.anno.minecraft.entity.Player
 import me.anno.minecraft.multiplayer.MCProtocol
@@ -17,11 +17,11 @@ import me.anno.minecraft.world.SampleDimensions.sandDim
 import me.anno.minecraft.world.generator.Generator
 import me.anno.minecraft.world.generator.PerlinWorldGenerator
 import me.anno.utils.hpc.ProcessingGroup
+import me.anno.utils.structures.lists.Lists.createArrayList
 import me.anno.utils.structures.maps.Maps.removeIf
 import org.joml.Vector3i
 import kotlin.math.floor
 
-// todo why is the generator generating seemingly random chunks in the wild?
 @Suppress("MemberVisibilityCanBePrivate")
 class VisualDimension : MeshSpawner() {
 
@@ -133,7 +133,7 @@ class VisualDimension : MeshSpawner() {
             }
         }
 
-        visualChunks.removeIf { (idx, visualChunk) ->
+        visualChunks.removeIf { (_, visualChunk) ->
             if (!visualChunk.wasSeen && visualChunk.hasMesh) {
                 visualChunk.destroy()
                 // free memory
@@ -148,7 +148,7 @@ class VisualDimension : MeshSpawner() {
         return 1 // 1 = call this function every frame
     }
 
-    override fun forEachMesh(run: (Mesh, Material?, Transform) -> Unit) {
+    override fun forEachMesh(run: (IMesh, Material?, Transform) -> Unit) {
         var i = 0
         for ((v, visualChunk) in visualChunks) {
             if (visualChunk.hasMesh) {
@@ -163,8 +163,8 @@ class VisualDimension : MeshSpawner() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun destroy() {
+        super.destroy()
         MCProtocol.stop(player)
     }
 
@@ -182,11 +182,9 @@ class VisualDimension : MeshSpawner() {
         fun createViewOrder(generator: Generator, viewDistance: Int): MutableList<Vector3i> {
             return if (generator is PerlinWorldGenerator) {
                 SpiralPattern.roundSpiral2d(viewDistance, 0, false)
-                    .map { xz -> Array(4) { y -> Vector3i(xz.x, y, xz.z) }.toList() }
-                    .flatten()
+                    .flatMap { xz -> createArrayList(4) { y -> Vector3i(xz.x, y, xz.z) } }
             } else {
                 SpiralPattern.spiral3d(viewDistance, false)
-                    .toList()
             }.toMutableList()
         }
     }

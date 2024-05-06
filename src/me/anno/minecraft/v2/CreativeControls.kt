@@ -37,11 +37,11 @@ class CreativeControls(
         // when we're on the edge, and we remove a block (set a transparent one), we need to invalidate our neighbors, too
         if (block.isTransparent) {
             if (localCoords.x == 0) invalidateChunkAt(Vector3i(chunkId).sub(1, 0, 0))
+            else if (localCoords.x == csx - 1) invalidateChunkAt(Vector3i(chunkId).add(1, 0, 0))
             if (localCoords.y == 0) invalidateChunkAt(Vector3i(chunkId).sub(0, 1, 0))
+            else if (localCoords.y == csy - 1) invalidateChunkAt(Vector3i(chunkId).add(0, 1, 0))
             if (localCoords.z == 0) invalidateChunkAt(Vector3i(chunkId).sub(0, 0, 1))
-            if (localCoords.x == csx - 1) invalidateChunkAt(Vector3i(chunkId).add(1, 0, 0))
-            if (localCoords.y == csy - 1) invalidateChunkAt(Vector3i(chunkId).add(0, 1, 0))
-            if (localCoords.z == csz - 1) invalidateChunkAt(Vector3i(chunkId).add(0, 0, 1))
+            else if (localCoords.z == csz - 1) invalidateChunkAt(Vector3i(chunkId).add(0, 0, 1))
         }
         saveSystem.get(chunkId, true) { changesInChunk ->
             changesInChunk[localCoords] = block.id
@@ -57,9 +57,18 @@ class CreativeControls(
         )
     }
 
+    private val invalidChunks = HashSet<Vector3i>()
     fun invalidateChunkAt(coords: Vector3i) {
+        synchronized(invalidChunks) {
+            invalidChunks.add(coords)
+        }
         chunkLoader.worker += {
-            chunkLoader.generateChunk(coords)
+            val changed = synchronized(invalidChunks) {
+                invalidChunks.remove(coords)
+            }
+            if (changed) {
+                chunkLoader.generateChunk(coords)
+            }
         }
     }
 
@@ -74,23 +83,23 @@ class CreativeControls(
         // todo also implement cheaper raytracing (to show how) going block by block
         //  then we can throw away the meshes and save even more memory :3
         val hitSomething = Raycast.raycastClosestHit(scene, query)
+        val delta = 0.001
         if (hitSomething) {
             when (button) {
                 Key.BUTTON_LEFT -> {
                     // remove block
-                    val coords = getCoords(query, +1e-3)
+                    val coords = getCoords(query, +delta)
                     setBlock(coords, BlockType.Air)
                 }
                 Key.BUTTON_RIGHT -> {
                     // add block
-                    val coords = getCoords(query, -1e-3)
+                    val coords = getCoords(query, -delta)
                     setBlock(coords, inHandBlock)
                 }
                 Key.BUTTON_MIDDLE -> {
                     // get block
-                    val coords = getCoords(query, +1e-3)
+                    val coords = getCoords(query, +delta)
                     inHandBlock = world.getBlockAt(coords.x, coords.y, coords.z, -1)
-                        ?: inHandBlock
                 }
                 else -> {}
             }

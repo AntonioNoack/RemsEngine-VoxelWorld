@@ -1,6 +1,5 @@
 package me.anno.minecraft.world
 
-import me.anno.io.ISaveable
 import me.anno.io.Saveable
 import me.anno.io.base.BaseWriter
 import me.anno.minecraft.block.BlockType
@@ -131,29 +130,22 @@ class Chunk(val dim: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         writer.writeShortArray("blocks", blocks)
     }
 
-    override fun readObject(name: String, value: ISaveable?) {
-        if (name.startsWith("m") && value is Metadata) {
-            val id = name.substring(1).toIntOrNull()
-            if (id != null) {
-                metadata[id] = value
-            } else super.readObject(name, value)
-        } else super.readObject(name, value)
-    }
-
-    override fun readObjectArray(name: String, values: Array<ISaveable?>) {
+    override fun setProperty(name: String, value: Any?) {
         when (name) {
             "entities" -> {
+                val values = (value as? List<*>) ?: return
                 entities.clear()
                 entities.addAll(values.filterIsInstance<Entity>())
             }
-            else -> super.readObjectArray(name, values)
-        }
-    }
-
-    override fun readShortArray(name: String, values: ShortArray) {
-        when (name) {
-            "blocks" -> values.copyInto(blocks)
-            else -> super.readShortArray(name, values)
+            "blocks" -> (value as? ShortArray)?.copyInto(blocks)
+            else -> {
+                if (name.startsWith("m") && value is Metadata) {
+                    val id = name.substring(1).toIntOrNull()
+                    if (id != null) {
+                        metadata[id] = value
+                    }
+                } else super.setProperty(name, value)
+            }
         }
     }
 

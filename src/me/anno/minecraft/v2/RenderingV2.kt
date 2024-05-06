@@ -1,6 +1,7 @@
 package me.anno.minecraft.v2
 
 import me.anno.ecs.Entity
+import me.anno.engine.OfficialExtensions
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.minecraft.world.SampleDimensions
 
@@ -28,6 +29,7 @@ val csz = world.sizeZ
  * todo inventory system
  * */
 fun main() {
+    OfficialExtensions.initForTests()
     val scene = Entity("Scene")
     val chunkRenderer = ChunkRenderer(TextureMaterial)
     val chunkLoader = ChunkLoader(chunkRenderer)

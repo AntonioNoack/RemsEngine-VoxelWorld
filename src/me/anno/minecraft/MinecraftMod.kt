@@ -4,7 +4,7 @@ import me.anno.Build
 import me.anno.ecs.Entity
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.extensions.mods.Mod
-import me.anno.io.ISaveable.Companion.registerCustomClass
+import me.anno.io.Saveable.Companion.registerCustomClass
 import me.anno.minecraft.entity.Player
 import me.anno.minecraft.entity.PlayerController
 import me.anno.minecraft.visual.VisualDimension
@@ -46,6 +46,7 @@ class MinecraftMod : Mod() {
             val scene = Entity("Scene")
             scene.addChild(VisualDimension())
             testSceneWithUI("Minecraft", scene)
+            // todo game isn't shutting down properly... why???
         }
 
     }

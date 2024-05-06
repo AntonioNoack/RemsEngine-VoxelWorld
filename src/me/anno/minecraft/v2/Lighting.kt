@@ -3,7 +3,7 @@ package me.anno.minecraft.v2
 import me.anno.ecs.Component
 import me.anno.ecs.Entity
 import me.anno.ecs.components.light.DirectionalLight
-import me.anno.ecs.components.shaders.Skybox
+import me.anno.ecs.components.light.sky.Skybox
 import me.anno.engine.ui.render.RenderView
 
 fun createLighting(): Entity {

@@ -1,10 +1,10 @@
 package me.anno.minecraft.multiplayer
 
+import me.anno.engine.Events.addEvent
 import me.anno.minecraft.entity.Player
 import me.anno.network.Packet
 import me.anno.network.Server
 import me.anno.network.TCPClient
-import me.anno.studio.StudioBase.Companion.addEvent
 import org.apache.logging.log4j.LogManager
 import java.io.DataInputStream
 import java.io.DataOutputStream

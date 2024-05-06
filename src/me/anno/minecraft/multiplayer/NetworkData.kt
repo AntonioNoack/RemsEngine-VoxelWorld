@@ -11,6 +11,6 @@ class NetworkData {
 
     val players = HashMap<String, Player>()
 
-    var lastFailed = (-1e9).toLong()
+    var lastFailed = -1_000_000_000L
 
 }

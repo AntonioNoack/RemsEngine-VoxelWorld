@@ -2,9 +2,10 @@ package me.anno.minecraft.entity
 
 import me.anno.Time
 import me.anno.ecs.Component
+import me.anno.ecs.EntityQuery.getComponent
 import me.anno.ecs.annotations.Range
 import me.anno.ecs.components.camera.Camera
-import me.anno.ecs.interfaces.ControlReceiver
+import me.anno.ecs.interfaces.InputListener
 import me.anno.gpu.GFX
 import me.anno.input.Input
 import me.anno.input.Key
@@ -12,7 +13,7 @@ import me.anno.maths.Maths.clamp
 import org.joml.Vector3f
 import kotlin.math.sqrt
 
-class PlayerController : Component(), ControlReceiver {
+class PlayerController : Component(), InputListener {
 
     // todo create camera
     // todo create player?
@@ -124,7 +125,7 @@ class PlayerController : Component(), ControlReceiver {
 
     override fun onMouseMoved(x: Float, y: Float, dx: Float, dy: Float): Boolean {
         // turn the camera
-        val window = GFX.someWindow!!
+        val window = GFX.someWindow
         val speed = 3f / window.height
         val headRotation = headRotation
         headRotation.x += dy * speed

@@ -1,6 +1,5 @@
 package me.anno.minecraft.multiplayer
 
-import me.anno.Engine
 import me.anno.Time
 import me.anno.ecs.Entity
 import me.anno.ecs.components.mesh.MeshComponent
@@ -82,18 +81,15 @@ object MCProtocol {
 
             val server = data.server
             if (server != null) {
-                val clients = server.clients
-                synchronized(clients) {
-                    for (client2 in clients) {
-                        val name = client2.name
-                        val player2i = synchronized(data.players) { data.players[name] }
-                        if (player2i != null) {
-                            server.broadcast(createPacket(player2i, client2))
-                        }
+                server.forAllClientsSync { client2 ->
+                    val name = client2.name
+                    val player2i = synchronized(data.players) { data.players[name] }
+                    if (player2i != null) {
+                        server.broadcast(createPacket(player2i, client2))
                     }
-                    for (client2 in clients) {
-                        client2.dos.flush()
-                    }
+                }
+                server.forAllClientsSync { client2 ->
+                    client2.dos.flush()
                 }
             }
 

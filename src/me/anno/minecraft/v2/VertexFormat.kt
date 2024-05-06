@@ -1,6 +1,6 @@
 package me.anno.minecraft.v2
 
-import me.anno.ecs.components.mesh.MeshVertexData
+import me.anno.ecs.components.mesh.utils.MeshVertexData
 import me.anno.gpu.buffer.Attribute
 import me.anno.gpu.buffer.AttributeType
 import me.anno.gpu.shader.GLSLType
@@ -9,23 +9,19 @@ import me.anno.gpu.shader.builder.Variable
 import me.anno.gpu.shader.builder.VariableMode
 
 val blockAttributes = listOf(
-    Attribute("coords", 3),
-    Attribute("colors0", AttributeType.UINT8_NORM, 4)
-)
-
-val blockAttributes2 = listOf(
-    Attribute("coords", 3),
-    Attribute("blockIndex", AttributeType.SINT32, 1, true)
+    // more than that is unnecessary anyway
+    Attribute("coords", AttributeType.SINT16, 3, true),
+    Attribute("blockIndex", AttributeType.SINT16, 1, true)
 )
 
 val blockVertexData = MeshVertexData(
     listOf(
         ShaderStage(
             "coords", listOf(
-                Variable(GLSLType.V3F, "coords", VariableMode.ATTR),
+                Variable(GLSLType.V3I, "coords", VariableMode.ATTR),
                 Variable(GLSLType.V1I, "blockIndex", VariableMode.ATTR),
                 Variable(GLSLType.V3F, "localPosition", VariableMode.OUT),
-            ), "localPosition = coords;\n"
+            ), "localPosition = vec3(coords);\n"
         )
     ),
     listOf(

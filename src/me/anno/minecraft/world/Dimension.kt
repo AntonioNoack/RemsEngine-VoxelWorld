@@ -1,6 +1,6 @@
 package me.anno.minecraft.world
 
-import me.anno.ecs.components.chunks.cartesian.ChunkSystem
+import me.anno.maths.chunks.cartesian.ChunkSystem
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.world.decorator.Decorator

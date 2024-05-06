@@ -1,19 +1,17 @@
 package me.anno.minecraft.v2
 
 import me.anno.ecs.Transform
-import me.anno.ecs.components.mesh.Material
+import me.anno.ecs.components.mesh.IMesh
 import me.anno.ecs.components.mesh.Mesh
+import me.anno.ecs.components.mesh.material.Material
 import me.anno.ecs.components.mesh.unique.UniqueMeshRenderer
 import me.anno.gpu.buffer.DrawMode
 import me.anno.gpu.buffer.StaticBuffer
-import me.anno.maths.Maths
 import org.joml.Vector3i
+import kotlin.math.round
 
-class ChunkRenderer(val material: Material) : UniqueMeshRenderer<Vector3i>(
-    if (material is TextureMaterial) blockAttributes2
-    else blockAttributes, blockVertexData,
-    material, DrawMode.TRIANGLES
-) {
+class ChunkRenderer(val material: Material) :
+    UniqueMeshRenderer<Vector3i>(blockAttributes, blockVertexData, material, DrawMode.TRIANGLES) {
 
     override val hasVertexColors: Int get() = 1
 
@@ -21,7 +19,7 @@ class ChunkRenderer(val material: Material) : UniqueMeshRenderer<Vector3i>(
      * defines what the world looks like for Raycasting,
      * and for AABBs
      * */
-    override fun forEachMesh(run: (Mesh, Material?, Transform) -> Unit) {
+    override fun forEachMesh(run: (IMesh, Material?, Transform) -> Unit) {
         var i = 0
         for ((key, entry) in entryLookup) {
             val transform = getTransform(i++)
@@ -30,6 +28,7 @@ class ChunkRenderer(val material: Material) : UniqueMeshRenderer<Vector3i>(
                 (key.y * csy).toDouble(),
                 (key.z * csz).toDouble(),
             )
+            transform.teleportUpdate()
             run(entry.mesh!!, material, transform)
         }
     }
@@ -43,15 +42,11 @@ class ChunkRenderer(val material: Material) : UniqueMeshRenderer<Vector3i>(
         val dx = key.x * csx
         val dy = key.y * csy
         val dz = key.z * csz
-        val conversion = material !is TextureMaterial
         for (i in 0 until buffer.vertexCount) {
-            data.putFloat(dx + pos[i * 3])
-            data.putFloat(dy + pos[i * 3 + 1])
-            data.putFloat(dz + pos[i * 3 + 2])
-            data.putInt(
-                if (conversion) Maths.convertABGR2ARGB(col[i])
-                else col[i] - 1 // 0 is reserved to be air
-            )
+            data.putShort(round(dx + pos[i * 3]).toInt().toShort())
+            data.putShort(round(dy + pos[i * 3 + 1]).toInt().toShort())
+            data.putShort(round(dz + pos[i * 3 + 2]).toInt().toShort())
+            data.putShort((col[i] - 1).toShort()) // 0 is air
         }
         buffer.isUpToDate = false
         return buffer

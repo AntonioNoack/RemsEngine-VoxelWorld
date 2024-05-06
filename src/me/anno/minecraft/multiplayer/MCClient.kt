@@ -5,20 +5,18 @@ import me.anno.network.Protocol
 import me.anno.network.TCPClient
 import java.net.Socket
 
-class MCClient : TCPClient {
+class MCClient(
+    socket: Socket, protocol: Protocol, randomId: Int,
+    val primary: Player, val network: NetworkData
+) : TCPClient(socket, protocol, randomId) {
 
-    val primary: Player
-
-    val network: NetworkData
-
-    constructor(primary: Player, socket: Socket, protocol: Protocol, name: String) : super(socket, protocol, name) {
-        this.primary = primary
-        this.network = this.primary.networkData
+    constructor(primary: Player, socket: Socket, protocol: Protocol, name: String) :
+            this(socket, protocol, 0, primary, primary.networkData) {
+        this.name = name
+        this.uuid = name
     }
 
-    constructor(primary: Player, socket: Socket, protocol: Protocol, randomId: Int) : super(socket, protocol, randomId) {
-        this.primary = primary
-        this.network = this.primary.networkData
-    }
+    constructor(primary: Player, socket: Socket, protocol: Protocol, randomId: Int) :
+            this(socket, protocol, randomId, primary, primary.networkData)
 
 }
