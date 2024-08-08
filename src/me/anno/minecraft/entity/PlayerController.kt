@@ -6,6 +6,7 @@ import me.anno.ecs.EntityQuery.getComponent
 import me.anno.ecs.annotations.Range
 import me.anno.ecs.components.camera.Camera
 import me.anno.ecs.interfaces.InputListener
+import me.anno.ecs.systems.OnUpdate
 import me.anno.gpu.GFX
 import me.anno.input.Input
 import me.anno.input.Key
@@ -13,7 +14,7 @@ import me.anno.maths.Maths.clamp
 import org.joml.Vector3f
 import kotlin.math.sqrt
 
-class PlayerController : Component(), InputListener {
+class PlayerController : Component(), OnUpdate, InputListener {
 
     // todo create camera
     // todo create player?
@@ -43,7 +44,7 @@ class PlayerController : Component(), InputListener {
         return true
     }
 
-    override fun onUpdate(): Int {
+    override fun onUpdate() {
 
         val entity = entity
         if (entity != null) {
@@ -99,8 +100,6 @@ class PlayerController : Component(), InputListener {
                 .rotateX(headRotation.x.toDouble())
                 .rotateZ(headRotation.z.toDouble())
         }
-
-        return 1
     }
 
     fun canJump(): Boolean {

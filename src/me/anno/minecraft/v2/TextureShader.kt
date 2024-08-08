@@ -10,6 +10,7 @@ import me.anno.gpu.shader.builder.VariableMode
 
 object TextureShader : ECSMeshShader("textured") {
     override fun createFragmentStages(key: ShaderKey): List<ShaderStage> {
+        key.ditherMode
         return key.vertexData.onFragmentShader + listOf(
             ShaderStage(
                 "material",

@@ -13,7 +13,7 @@ import me.anno.utils.Sleep
 
 object TextureMaterial : Material() {
 
-    private val texture = Texture2DArray("Blocks", 16, 16, 512)
+    private val texture = Texture2DArray("Blocks", 1, 1, 1)
 
     init {
         shader = TextureShader

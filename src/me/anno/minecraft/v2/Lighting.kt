@@ -4,24 +4,29 @@ import me.anno.ecs.Component
 import me.anno.ecs.Entity
 import me.anno.ecs.components.light.DirectionalLight
 import me.anno.ecs.components.light.sky.Skybox
+import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.ui.render.RenderView
+import me.anno.maths.Maths.posMod
 
 fun createLighting(): Entity {
     val scene = Entity("Lighting")
     val sun = DirectionalLight()
     sun.shadowMapCascades = 3
+    sun.autoUpdate = 0
     val sunEntity = Entity("Sun")
         .setScale(250.0)
-    sunEntity.add(object : Component() {
+    sunEntity.add(object : Component(), OnUpdate {
         // move shadows with player
-        // todo only update every so often
-        override fun onUpdate(): Int {
+        var updateCtr = 0
+        override fun onUpdate() {
             val rv = RenderView.currentInstance
-            if (rv != null) {
+            if (rv != null && posMod(updateCtr++, 10) == 0) {
+                sun.needsUpdate1 = true
                 sunEntity.transform.localPosition = rv.orbitCenter
+                sunEntity.transform.teleportUpdate()
                 sunEntity.validateTransform()
+                sun.onUpdate()
             }
-            return 1
         }
     })
     sunEntity.add(sun)

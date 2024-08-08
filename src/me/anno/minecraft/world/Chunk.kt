@@ -1,7 +1,7 @@
 package me.anno.minecraft.world
 
-import me.anno.io.Saveable
 import me.anno.io.base.BaseWriter
+import me.anno.io.saveable.Saveable
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.block.Metadata

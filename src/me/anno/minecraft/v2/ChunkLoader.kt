@@ -2,6 +2,7 @@ package me.anno.minecraft.v2
 
 import me.anno.ecs.Component
 import me.anno.ecs.components.mesh.unique.MeshEntry
+import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.ui.render.RenderView
 import me.anno.gpu.GFX.addGPUTask
 import me.anno.maths.patterns.SpiralPattern.spiral3d
@@ -11,7 +12,7 @@ import me.anno.minecraft.visual.VisualDimension.Companion.chunkGenQueue
 import org.joml.AABBf
 import org.joml.Vector3i
 
-class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component() {
+class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
 
     val worker = chunkGenQueue
 
@@ -80,7 +81,7 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component() {
         for (idx in unloadingPattern) {
             val vec = Vector3i(idx).add(center)
             if (loadedChunks.remove(vec)) {
-                chunkRenderer.remove(vec)
+                chunkRenderer.remove(vec, true)
             }
         }
     }
@@ -95,13 +96,12 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component() {
         return delta
     }
 
-    override fun onUpdate(): Int {
+    override fun onUpdate() {
         // load next mesh
         if (worker.remaining <= worker.numThreads) {
             val chunkId = getPlayerChunkId()
             loadChunks(chunkId)
             unloadChunks(chunkId)
         }
-        return 1
     }
 }

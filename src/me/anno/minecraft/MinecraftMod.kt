@@ -4,7 +4,7 @@ import me.anno.Build
 import me.anno.ecs.Entity
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.extensions.mods.Mod
-import me.anno.io.Saveable.Companion.registerCustomClass
+import me.anno.io.saveable.Saveable.Companion.registerCustomClass
 import me.anno.minecraft.entity.Player
 import me.anno.minecraft.entity.PlayerController
 import me.anno.minecraft.visual.VisualDimension

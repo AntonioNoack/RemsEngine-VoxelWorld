@@ -22,10 +22,10 @@ class Player(var isPrimary: Boolean, name: String) : Entity() {
         return clone
     }
 
-    override fun copyInto(clone: PrefabSaveable) {
-        super.copyInto(clone)
-        clone as Player
-        clone.isPrimary = isPrimary
+    override fun copyInto(dst: PrefabSaveable) {
+        super.copyInto(dst)
+        dst as Player
+        dst.isPrimary = isPrimary
     }
 
 }

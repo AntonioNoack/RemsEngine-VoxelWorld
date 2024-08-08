@@ -5,6 +5,7 @@ import me.anno.ecs.annotations.DebugAction
 import me.anno.ecs.components.mesh.IMesh
 import me.anno.ecs.components.mesh.MeshSpawner
 import me.anno.ecs.components.mesh.material.Material
+import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.serialization.NotSerializedProperty
 import me.anno.engine.ui.render.RenderState
 import me.anno.engine.ui.render.RenderView
@@ -23,7 +24,7 @@ import org.joml.Vector3i
 import kotlin.math.floor
 
 @Suppress("MemberVisibilityCanBePrivate")
-class VisualDimension : MeshSpawner() {
+class VisualDimension : MeshSpawner(), OnUpdate {
 
     var usePrettyLoadingPattern = false
         set(value) {
@@ -93,7 +94,7 @@ class VisualDimension : MeshSpawner() {
 
     val player = Player()
 
-    override fun onUpdate(): Int {
+    override fun onUpdate() {
 
         // load & unload chunks
         for (c in visualChunks.values) {
@@ -144,8 +145,6 @@ class VisualDimension : MeshSpawner() {
                 true
             } else false
         }
-
-        return 1 // 1 = call this function every frame
     }
 
     override fun forEachMesh(run: (IMesh, Material?, Transform) -> Unit) {
@@ -178,7 +177,7 @@ class VisualDimension : MeshSpawner() {
 
     companion object {
 
-        val chunkGenQueue = ProcessingGroup("ChunkGen", 1f)
+        val chunkGenQueue = ProcessingGroup("ChunkGen", 2f)
         fun createViewOrder(generator: Generator, viewDistance: Int): MutableList<Vector3i> {
             return if (generator is PerlinWorldGenerator) {
                 SpiralPattern.roundSpiral2d(viewDistance, 0, false)
