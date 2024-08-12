@@ -46,7 +46,6 @@ class MinecraftMod : Mod() {
             val scene = Entity("Scene")
             scene.addChild(VisualDimension())
             testSceneWithUI("Minecraft", scene)
-            // todo game isn't shutting down properly... why???
         }
 
     }

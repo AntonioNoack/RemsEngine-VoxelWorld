@@ -7,7 +7,6 @@ import me.anno.minecraft.world.Chunk
 class FlatWorldGenerator(
     val layers: ArrayList<BlockType>
 ) : Generator() {
-
     override fun generate(chunk: Chunk) {
         val dim = chunk.dim
         val blocks = chunk.blocks
@@ -20,6 +19,6 @@ class FlatWorldGenerator(
                 blocks.fill(block.id, i0, i1)
             }
         }
+        loadSaveData(chunk)
     }
-
 }

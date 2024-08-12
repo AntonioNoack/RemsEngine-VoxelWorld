@@ -177,7 +177,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
 
     companion object {
 
-        val chunkGenQueue = ProcessingGroup("ChunkGen", 2f)
+        val chunkGenQueue = ProcessingGroup("ChunkGen", 1f)
         fun createViewOrder(generator: Generator, viewDistance: Int): MutableList<Vector3i> {
             return if (generator is PerlinWorldGenerator) {
                 SpiralPattern.roundSpiral2d(viewDistance, 0, false)

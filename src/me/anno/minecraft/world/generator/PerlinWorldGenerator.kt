@@ -27,7 +27,7 @@ class PerlinWorldGenerator(
 
     fun getHeightAt(x: Int, z: Int) = heightNoise[x * scale, z * scale].toInt()
 
-    override fun generate(chunk: Chunk) {
+    fun generateSurface(chunk: Chunk) {
         val dim = chunk.dim
         val x0 = chunk.x0
         val z0 = chunk.z0
@@ -46,6 +46,11 @@ class PerlinWorldGenerator(
                 }
             }
         }
+    }
+
+    override fun generate(chunk: Chunk) {
+        generateSurface(chunk)
+        loadSaveData(chunk)
     }
 
     companion object {

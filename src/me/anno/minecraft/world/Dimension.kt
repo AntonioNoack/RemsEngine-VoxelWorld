@@ -19,7 +19,8 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         chunk.clear()
         generator.generate(chunk)
         val t1 = System.nanoTime()
-        // 27ms -> 7ms by using faster noise
+        // 27ms -> 7ms by using faster noise on Ryzen 5 2600
+        // 3.0-3.5ms on Ryzen 9 7950x3D
         if (printTimes) LOGGER.info("gen ${((t1 - t0) * 1e-6).f3()}ms/c")
         return chunk
     }
@@ -58,11 +59,8 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
 
     override fun setElement(
         container: Chunk,
-        localX: Int,
-        localY: Int,
-        localZ: Int,
-        index: Int,
-        element: BlockType
+        localX: Int, localY: Int, localZ: Int,
+        index: Int, element: BlockType
     ): Boolean {
         return container.setBlock(localX, localY, localZ, element)
     }
@@ -78,5 +76,4 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         private val LOGGER = LogManager.getLogger(Dimension::class)
         var printTimes = false
     }
-
 }

@@ -7,8 +7,9 @@ import me.anno.engine.ui.render.RenderView
 import me.anno.gpu.GFX.addGPUTask
 import me.anno.maths.patterns.SpiralPattern.spiral3d
 import me.anno.mesh.vox.model.VoxelModel
-import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.visual.VisualDimension.Companion.chunkGenQueue
+import me.anno.minecraft.world.Dimension
+import me.anno.utils.Clock
 import org.joml.AABBf
 import org.joml.Vector3i
 
@@ -36,7 +37,11 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
         val y0 = chunkId.y * csy
         val z0 = chunkId.z * csz
 
-        val chunk = world.getChunk(chunkId.x, chunkId.y, chunkId.z, -1)!!
+        val clock = Clock("ChunkLoader")
+        // 9s vs 27s, so 3x faster to use a clone 🤯
+        // todo fix that... we cannot be THAT slow just to synchronize stuff...
+        val worldClone = Dimension(world.generator, world.decorators)
+        val chunk = worldClone.getChunk(chunkId.x, chunkId.y, chunkId.z, -1)!!
         val model = object : VoxelModel(csx, csy, csz) {
             override fun getBlock(x: Int, y: Int, z: Int): Int {
                 return blockLookup.lookup(chunk.getBlock(x, y, z))
@@ -45,10 +50,15 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
         model.center0()
 
         val mesh = model.createMesh(null, null, { x, y, z ->
-            world.getBlockAt(x0 + x, y0 + y, z0 + z, -1) != BlockType.Air
+            !worldClone.getBlockAt(x + x0, y + y0, z + z0, -1).isTransparent
         })
 
+        clock.stop("CreateMesh")
+        worldClone.destroy()
+        clock.stop("clone.destroy()")
         val data = chunkRenderer.getData(chunkId, mesh)
+        clock.stop("getData")
+
         if (data != null) {
             val bounds = AABBf(mesh.getBounds())
             bounds.translate(x0.toFloat(), y0.toFloat(), z0.toFloat())
@@ -67,12 +77,14 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
         maxZ += dz
     }
 
+    val workerLimit = worker.numThreads * 2 + 1
     fun loadChunks(center: Vector3i) {
+        if (worker.size >= workerLimit) return
         for (idx in loadingPattern) {
             val vec = Vector3i(idx).add(center)
             if (loadedChunks.add(vec)) {
                 worker += { generateChunk(vec) }
-                break
+                if (worker.size >= workerLimit) return
             }
         }
     }
