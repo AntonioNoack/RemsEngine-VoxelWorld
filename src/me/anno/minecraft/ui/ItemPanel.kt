@@ -29,7 +29,7 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
                 val color = -1 // TestWorld.colors[id]!!.withAlpha(255)
                 val mesh = flatCube.front.clone() as Mesh
                 val materialI = Material.diffuse(color)
-                Entity(MeshComponent(mesh, materialI))
+                MeshComponent(mesh, materialI)
             }
         }
     }

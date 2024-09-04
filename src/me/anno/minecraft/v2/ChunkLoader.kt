@@ -10,7 +10,7 @@ import me.anno.mesh.vox.model.VoxelModel
 import me.anno.minecraft.visual.VisualDimension.Companion.chunkGenQueue
 import me.anno.minecraft.world.Dimension
 import me.anno.utils.Clock
-import org.joml.AABBf
+import org.joml.AABBd
 import org.joml.Vector3i
 
 class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
@@ -55,20 +55,18 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
 
         clock.stop("CreateMesh")
         worldClone.destroy()
-        clock.stop("clone.destroy()")
-        val data = chunkRenderer.getData(chunkId, mesh)
-        clock.stop("getData")
 
+        val data = chunkRenderer.getData(chunkId, mesh)
         if (data != null) {
-            val bounds = AABBf(mesh.getBounds())
-            bounds.translate(x0.toFloat(), y0.toFloat(), z0.toFloat())
+            val bounds = AABBd(mesh.getBounds())
+            bounds.translate(x0.toDouble(), y0.toDouble(), z0.toDouble())
             addGPUTask("ChunkUpload", 1) { // change back to GPU thread
                 chunkRenderer.set(chunkId, MeshEntry(mesh, bounds, data))
             }
         }
     }
 
-    fun AABBf.translate(dx: Float, dy: Float, dz: Float) {
+    fun AABBd.translate(dx: Double, dy: Double, dz: Double) {
         minX += dx
         minY += dy
         minZ += dz
