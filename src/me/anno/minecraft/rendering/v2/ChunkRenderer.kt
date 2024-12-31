@@ -1,4 +1,4 @@
-package me.anno.minecraft.v2
+package me.anno.minecraft.rendering.v2
 
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.Mesh
@@ -7,14 +7,26 @@ import me.anno.ecs.components.mesh.unique.UniqueMeshRenderer
 import me.anno.gpu.buffer.DrawMode
 import me.anno.gpu.buffer.StaticBuffer
 import me.anno.io.files.FileReference
+import me.anno.minecraft.rendering.v2.VertexFormat.blockAttributes
+import me.anno.minecraft.rendering.v2.VertexFormat.blockVertexData
+import me.anno.utils.types.Floats.roundToIntOr
+import org.joml.AABBd
+import org.joml.Matrix4x3d
 import org.joml.Vector3i
-import kotlin.math.round
+import java.nio.ByteBuffer
 
 class ChunkRenderer(val material: Material) :
     UniqueMeshRenderer<Mesh, Vector3i>(blockAttributes, blockVertexData, DrawMode.TRIANGLES) {
 
     override val hasVertexColors: Int get() = 1
     override val materials: List<FileReference> = listOf(material.ref)
+
+    override fun fillSpace(globalTransform: Matrix4x3d, aabb: AABBd): Boolean {
+        aabb.all()
+        localAABB.all()
+        globalAABB.all()
+        return true
+    }
 
     /**
      * defines what the world looks like for Raycasting,
@@ -40,12 +52,19 @@ class ChunkRenderer(val material: Material) :
         val dy = key.y * csy
         val dz = key.z * csz
         for (i in 0 until buffer.vertexCount) {
-            data.putShort(round(dx + pos[i * 3]).toInt().toShort())
-            data.putShort(round(dy + pos[i * 3 + 1]).toInt().toShort())
-            data.putShort(round(dz + pos[i * 3 + 2]).toInt().toShort())
-            data.putShort((col[i] - 1).toShort()) // 0 is air
+            val blockIndex = col[i] - 1 // 0 is air
+            putVertex(data, dx + pos[i * 3], dy + pos[i * 3 + 1], dz + pos[i * 3 + 2], blockIndex)
         }
         buffer.isUpToDate = false
         return buffer
+    }
+
+    companion object {
+        fun putVertex(data: ByteBuffer, x: Float, y: Float, z: Float, blockIndex: Int) {
+            data.putShort(x.roundToIntOr().toShort())
+            data.putShort(y.roundToIntOr().toShort())
+            data.putShort(z.roundToIntOr().toShort())
+            data.putShort(blockIndex.toShort())
+        }
     }
 }

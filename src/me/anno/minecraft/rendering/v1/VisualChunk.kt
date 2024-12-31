@@ -1,8 +1,7 @@
-package me.anno.minecraft.visual
+package me.anno.minecraft.rendering.v1
 
 import me.anno.ecs.components.mesh.Mesh
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.world.Chunk
 import me.anno.utils.types.Floats.f3
 import org.apache.logging.log4j.LogManager
@@ -23,8 +22,18 @@ class VisualChunk {
         // todo handle transparent blocks slightly differently
         val chunk = chunk ?: return
         val t0 = System.nanoTime()
+        val dimension = chunk.dimension
         ChunkVoxelModel(chunk)
-            .createMesh(palette, null, null, mesh)
+            .createMesh(palette, { x, y, z ->
+                !chunk.getBlock(x, y, z).isTransparent
+            }, { x, y, z ->
+                !dimension.getChunkAt(x + chunk.x0, y + chunk.y0, z + chunk.z0, true)!!
+                    .getBlock(
+                        x and dimension.maskX,
+                        y and dimension.maskY,
+                        z and dimension.maskZ
+                    ).isTransparent
+            }, mesh)
         val t1 = System.nanoTime()
         if (printTimes) LOGGER.info("mesh ${((t1 - t0) * 1e-6).f3()}ms/c")
         hasMesh = true

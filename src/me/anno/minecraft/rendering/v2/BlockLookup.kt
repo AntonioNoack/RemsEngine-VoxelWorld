@@ -1,4 +1,4 @@
-package me.anno.minecraft.v2
+package me.anno.minecraft.rendering.v2
 
 import me.anno.minecraft.block.BlockType
 

@@ -15,7 +15,7 @@ class POSXPacket : POS1Packet("POSX") {
 
     override val constantSize = false
     override val size: Int
-        get() = super.size + 2 + name.length // only correct for ascii names
+        get() = super.size + 2 + name.encodeToByteArray().size
 
     var name = ""
 

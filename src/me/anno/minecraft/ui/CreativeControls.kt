@@ -1,4 +1,4 @@
-package me.anno.minecraft.v2
+package me.anno.minecraft.ui
 
 import me.anno.ecs.Entity
 import me.anno.engine.raycast.RayQuery
@@ -8,12 +8,12 @@ import me.anno.engine.ui.render.RenderView
 import me.anno.input.Key
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.ui.Inventory
-import me.anno.minecraft.ui.ItemPanel
+import me.anno.minecraft.rendering.v2.*
 import me.anno.ui.base.SpacerPanel
 import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.base.groups.PanelListX
 import me.anno.utils.assertions.assertTrue
+import org.joml.Vector3d
 import org.joml.Vector3i
 import kotlin.math.floor
 
@@ -65,6 +65,7 @@ class CreativeControls(
         world.setElementAt(coords.x, coords.y, coords.z, true, block)
         val chunkId = coordsToChunkId(coords)
         // todo chunk invalidation is extremely slow
+        // todo when setting blocks, we can temporarily place a block until the mesh has been recalculated
         invalidateChunk(chunkId)
         val localCoords = Vector3i(
             posMod(coords.x, csx),
@@ -99,7 +100,7 @@ class CreativeControls(
         val needsWorker = synchronized(invalidChunks) {
             invalidChunks.add(coords)
         }
-        if(needsWorker) {
+        if (needsWorker) {
             chunkLoader.worker += {
                 val changed = synchronized(invalidChunks) {
                     invalidChunks.remove(coords)
@@ -115,7 +116,7 @@ class CreativeControls(
         // expensive way, using raycasting:
         val query = RayQuery(
             renderView.cameraPosition,
-            renderView.getMouseRayDirection(),
+            renderView.getMouseRayDirection(x, y, Vector3d()),
             1e3
         )
         // todo also implement cheaper raytracing (to show how) going block by block

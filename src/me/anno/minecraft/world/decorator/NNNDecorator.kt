@@ -20,7 +20,7 @@ abstract class NNNDecorator(
 
     override fun decorate(chunk: Chunk) {
 
-        val dim = chunk.dim
+        val dim = chunk.dimension
         val instancesPerChunk = density * dim.totalSize
         val dcx = ceilDiv(maxExtends.x, dim.sizeX)
         val dcy = ceilDiv(maxExtends.y, dim.sizeY)
@@ -45,7 +45,5 @@ abstract class NNNDecorator(
                 }
             }
         }
-
     }
-
 }

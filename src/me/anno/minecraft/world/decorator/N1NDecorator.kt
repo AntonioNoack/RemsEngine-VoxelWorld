@@ -13,7 +13,7 @@ abstract class N1NDecorator(val density: Float, val maxExtends: Vector3i, seed: 
 
     override fun decorate(chunk: Chunk) {
 
-        val dim = chunk.dim
+        val dim = chunk.dimension
         val instancesPerChunk = density * dim.sizeX * dim.sizeZ
         val dcx = ceilDiv(maxExtends.x, dim.sizeX)
         val dcz = ceilDiv(maxExtends.z, dim.sizeZ)

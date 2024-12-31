@@ -1,13 +1,13 @@
-package me.anno.minecraft.v2
+package me.anno.minecraft.rendering.v2
 
 import me.anno.ecs.Component
 import me.anno.ecs.components.mesh.unique.MeshEntry
 import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.ui.render.RenderView
-import me.anno.gpu.GFX.addGPUTask
+import me.anno.gpu.GPUTasks.addGPUTask
 import me.anno.maths.patterns.SpiralPattern.spiral3d
 import me.anno.mesh.vox.model.VoxelModel
-import me.anno.minecraft.visual.VisualDimension.Companion.chunkGenQueue
+import me.anno.minecraft.rendering.v1.VisualDimension.Companion.chunkGenQueue
 import me.anno.minecraft.world.Dimension
 import me.anno.utils.Clock
 import org.joml.AABBd

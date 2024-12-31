@@ -1,6 +1,6 @@
 package me.anno.minecraft.world.generator
 
-import me.anno.minecraft.v2.saveSystem
+import me.anno.minecraft.rendering.v2.saveSystem
 import me.anno.minecraft.world.Chunk
 import org.joml.Vector3i
 

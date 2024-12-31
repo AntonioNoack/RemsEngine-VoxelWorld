@@ -3,7 +3,7 @@ package me.anno.minecraft.world.generator
 import me.anno.maths.Maths.mix
 import me.anno.maths.noise.PerlinNoise
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.v2.world
+import me.anno.minecraft.rendering.v2.world
 import me.anno.minecraft.world.Chunk
 import me.anno.utils.hpc.threadLocal
 import org.joml.Vector4f
@@ -51,7 +51,7 @@ class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() 
     }
 
     fun sampleDensities(chunk: Chunk): FloatArray {
-        val dim = chunk.dim
+        val dim = chunk.dimension
         val sx = dim.sizeX
         val sy = dim.sizeY
         val sz = dim.sizeZ
@@ -116,7 +116,7 @@ class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() 
     }
 
     fun fillStone(chunk: Chunk) {
-        val dim = chunk.dim
+        val dim = chunk.dimension
         val block = BlockType.Stone
         val sx = dim.sizeX
         val sy = dim.sizeY
@@ -138,7 +138,7 @@ class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() 
     }
 
     fun decorateSurface(chunk: Chunk) {
-        val dim = chunk.dim
+        val dim = chunk.dimension
         val x0 = chunk.x0
         val y0 = chunk.y0
         val z0 = chunk.z0
@@ -187,7 +187,7 @@ class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() 
     }
 
     fun getHeightAt(chunk: Chunk, xi: Int, yi: Int, zi: Int, dy: Int, maxHeight: Int): Int {
-        val dim = chunk.dim
+        val dim = chunk.dimension
         var index = chunk.getIndex(xi and dim.maskX, yi and dim.maskY, zi and dim.maskZ)
         // this block is guaranteed to be solid
         for (height in 1 until maxHeight) {

@@ -1,4 +1,4 @@
-package me.anno.minecraft.visual
+package me.anno.minecraft.rendering.v1
 
 import me.anno.ecs.Transform
 import me.anno.ecs.annotations.DebugAction
@@ -23,7 +23,6 @@ import me.anno.utils.structures.maps.Maps.removeIf
 import org.joml.Vector3i
 import kotlin.math.floor
 
-@Suppress("MemberVisibilityCanBePrivate")
 class VisualDimension : MeshSpawner(), OnUpdate {
 
     var usePrettyLoadingPattern = false
@@ -147,7 +146,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
         }
     }
 
-    override fun forEachMesh(run: (IMesh, Material?, Transform) -> Unit) {
+    override fun forEachMesh(run: (IMesh, Material?, Transform) -> Boolean) {
         var i = 0
         for ((v, visualChunk) in visualChunks) {
             if (visualChunk.hasMesh) {
@@ -165,12 +164,6 @@ class VisualDimension : MeshSpawner(), OnUpdate {
     override fun destroy() {
         super.destroy()
         MCProtocol.stop(player)
-    }
-
-    override fun clone(): VisualDimension {
-        val clone = VisualDimension()
-        copyInto(clone)
-        return clone
     }
 
     override val className: String = "VisualDimension"

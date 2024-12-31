@@ -1,22 +1,21 @@
 package me.anno.minecraft.ui
 
 import me.anno.config.DefaultConfig.style
-import me.anno.ecs.Entity
-import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.MeshComponent
-import me.anno.ecs.components.mesh.material.Material
 import me.anno.gpu.GFX
 import me.anno.input.Key
 import me.anno.io.files.InvalidRef
 import me.anno.mesh.Shapes.flatCube
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.v2.CreativeControls.Companion.inHandSlot
-import me.anno.minecraft.v2.CreativeControls.Companion.inventory
+import me.anno.minecraft.ui.CreativeControls.Companion.inHandSlot
+import me.anno.minecraft.ui.CreativeControls.Companion.inventory
+import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.ui.base.buttons.TextButton.Companion.drawButtonBorder
 import me.anno.ui.utils.ThumbnailPanel
 import me.anno.utils.Color.black
 import me.anno.utils.Color.mixARGB
 import me.anno.utils.Color.white
+import me.anno.utils.assertions.assertTrue
 import me.anno.utils.structures.maps.LazyMap
 import kotlin.math.min
 
@@ -26,10 +25,13 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
         val previewBlocks = LazyMap { type: BlockType ->
             if (type == BlockType.Air) null
             else {
-                val color = -1 // TestWorld.colors[id]!!.withAlpha(255)
-                val mesh = flatCube.front.clone() as Mesh
-                val materialI = Material.diffuse(color)
-                MeshComponent(mesh, materialI)
+                assertTrue(TextureMaterial.hasTexture)
+                // todo this isn't really working (always using blockIndex==0???), and we need to
+                //  wait for the texture to be loaded to get good results
+                val baseMesh = flatCube.front
+                val uiMesh = UIBlockMesh(16)
+                baseMesh.copyInto(uiMesh)
+                MeshComponent(uiMesh, TextureMaterial)
             }
         }
     }
@@ -46,7 +48,11 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
 
     override fun onUpdate() {
         super.onUpdate()
-        source = previewBlocks[slot.type]?.ref ?: InvalidRef
+        val prevSource = source
+        source = if (TextureMaterial.hasTexture) {
+            previewBlocks[slot.type]?.ref ?: InvalidRef
+        } else InvalidRef
+        if (source != prevSource) invalidateDrawing()
         backgroundColor = if (inHandSlot == index) bg1 else bg0
     }
 

@@ -13,7 +13,7 @@ abstract class SurfaceDecorator(
     override fun decorate(chunk: Chunk, lx: Int, lz: Int) {
         // find the surface y
         // it might be +1/-1 from us...
-        val dim = chunk.dim
+        val dim = chunk.dimension
         val y0 = chunk.y0
         val gx = chunk.x0 + lx
         val gz = chunk.z0 + lz

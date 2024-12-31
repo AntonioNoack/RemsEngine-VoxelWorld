@@ -1,4 +1,4 @@
-package me.anno.minecraft.v2
+package me.anno.minecraft.rendering
 
 import me.anno.ecs.Component
 import me.anno.ecs.Entity

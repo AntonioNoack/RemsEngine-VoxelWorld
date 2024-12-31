@@ -1,4 +1,4 @@
-package me.anno.minecraft.v3
+package me.anno.minecraft.rendering.v3
 
 import me.anno.engine.ui.render.ECSMeshShader.Companion.discardByCullingPlane
 import me.anno.engine.ui.render.ECSMeshShader.Companion.finalMotionCalculation

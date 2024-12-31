@@ -1,9 +1,12 @@
-package me.anno.minecraft.v2
+package me.anno.minecraft.rendering.v2
 
 import me.anno.ecs.Entity
 import me.anno.engine.OfficialExtensions
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
+import me.anno.minecraft.rendering.createLighting
+import me.anno.minecraft.ui.CreativeControls
 import me.anno.minecraft.world.SampleDimensions
+import me.anno.minecraft.world.SaveLoadSystem
 
 val saveSystem = SaveLoadSystem("Minecraft")
 val world = SampleDimensions.perlin3dDim.apply {

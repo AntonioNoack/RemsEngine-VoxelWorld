@@ -4,11 +4,9 @@ import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.world.Chunk
 
-class FlatWorldGenerator(
-    val layers: ArrayList<BlockType>
-) : Generator() {
+class FlatWorldGenerator(val layers: ArrayList<BlockType>) : Generator() {
     override fun generate(chunk: Chunk) {
-        val dim = chunk.dim
+        val dim = chunk.dimension
         val blocks = chunk.blocks
         for (y in 0 until dim.sizeY) {
             val block = layers.getOrNull(y + chunk.y0) ?: break

@@ -52,11 +52,6 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
     fun getChunkAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int) =
         getChunk(globalX shr bitsX, globalY shr bitsY, globalZ shr bitsZ, stage)
 
-    fun getChunkAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk): Chunk? {
-        return if (globalX in chunk.x0 until chunk.x1 && globalY in chunk.y0 until chunk.y1 && globalZ in chunk.z0 until chunk.z1) chunk
-        else getChunkAt(globalX, globalY, globalZ, chunk.decorator)
-    }
-
     override fun setElement(
         container: Chunk,
         localX: Int, localY: Int, localZ: Int,

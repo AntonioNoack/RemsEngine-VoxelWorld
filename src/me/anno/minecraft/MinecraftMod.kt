@@ -7,7 +7,7 @@ import me.anno.extensions.mods.Mod
 import me.anno.io.saveable.Saveable.Companion.registerCustomClass
 import me.anno.minecraft.entity.Player
 import me.anno.minecraft.entity.PlayerController
-import me.anno.minecraft.visual.VisualDimension
+import me.anno.minecraft.rendering.v1.VisualDimension
 
 class MinecraftMod : Mod() {
 
@@ -33,6 +33,8 @@ class MinecraftMod : Mod() {
 
         // todo multiplayer test
         // todo ui
+        //  - creative
+        //  - survival
         // todo save world
         //  - absolute
         //  - delta

@@ -1,4 +1,4 @@
-package me.anno.minecraft.visual
+package me.anno.minecraft.rendering.v1
 
 enum class TerrainType(val id: Int) {
     FOREST2D(0),
