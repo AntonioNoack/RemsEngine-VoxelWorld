@@ -27,12 +27,7 @@ class VisualChunk {
             .createMesh(palette, { x, y, z ->
                 !chunk.getBlock(x, y, z).isTransparent
             }, { x, y, z ->
-                !dimension.getChunkAt(x + chunk.x0, y + chunk.y0, z + chunk.z0, true)!!
-                    .getBlock(
-                        x and dimension.maskX,
-                        y and dimension.maskY,
-                        z and dimension.maskZ
-                    ).isTransparent
+                !dimension.getBlockAt(x + chunk.x0, y + chunk.y0, z + chunk.z0, -1).isTransparent
             }, mesh)
         val t1 = System.nanoTime()
         if (printTimes) LOGGER.info("mesh ${((t1 - t0) * 1e-6).f3()}ms/c")

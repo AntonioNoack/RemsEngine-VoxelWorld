@@ -1,24 +1,25 @@
 package me.anno.minecraft.ui
 
-import me.anno.ecs.Entity
+import me.anno.engine.raycast.BlockTracing
 import me.anno.engine.raycast.RayQuery
-import me.anno.engine.raycast.Raycast
 import me.anno.engine.ui.control.DraggingControls
 import me.anno.engine.ui.render.RenderView
 import me.anno.input.Key
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.rendering.v2.*
+import me.anno.minecraft.world.Dimension
 import me.anno.ui.base.SpacerPanel
 import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.base.groups.PanelListX
 import me.anno.utils.assertions.assertTrue
+import org.joml.AABBi
 import org.joml.Vector3d
 import org.joml.Vector3i
 import kotlin.math.floor
 
 class CreativeControls(
-    val scene: Entity,
+    val dimension: Dimension,
     val chunkLoader: ChunkLoader,
     renderer: RenderView
 ) : DraggingControls(renderer) {
@@ -112,6 +113,7 @@ class CreativeControls(
     }
 
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
+
         // find, which block was clicked
         // expensive way, using raycasting:
         val query = RayQuery(
@@ -119,9 +121,20 @@ class CreativeControls(
             renderView.getMouseRayDirection(x, y, Vector3d()),
             1e3
         )
-        // todo also implement cheaper raytracing (to show how) going block by block
-        //  then we can throw away the meshes and save even more memory :3
-        val hitSomething = Raycast.raycastClosestHit(scene, query)
+
+        val queryBounds = AABBi()
+        // todo these bounds aren't working correctly... why???
+        // queryBounds.union(query.start.x.toInt(), query.start.y.toInt(), query.start.z.toInt())
+        // queryBounds.addMargin(ceil(query.result.distance + 1.0).toInt())
+        queryBounds.all()
+
+        // todo we no longer need the meshes... where can we throw them away?
+        val hitSomething =
+            BlockTracing.blockTrace(query, (query.result.distance * 3).toInt(), queryBounds) { xi, yi, zi ->
+                if (dimension.getBlockAt(xi, yi, zi, -1).isTransparent) BlockTracing.AIR_BLOCK
+                else BlockTracing.SOLID_BLOCK
+            }
+
         val delta = 0.001
         if (hitSomething) {
             when (button) {

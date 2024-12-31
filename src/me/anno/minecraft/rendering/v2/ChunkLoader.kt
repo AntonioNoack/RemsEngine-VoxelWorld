@@ -37,7 +37,7 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
         val y0 = chunkId.y * csy
         val z0 = chunkId.z * csz
 
-        val clock = Clock("ChunkLoader")
+        // val clock = Clock("ChunkLoader")
         // 9s vs 27s, so 3x faster to use a clone 🤯
         // todo fix that... we cannot be THAT slow just to synchronize stuff...
         val worldClone = Dimension(world.generator, world.decorators)
@@ -53,7 +53,7 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
             !worldClone.getBlockAt(x + x0, y + y0, z + z0, -1).isTransparent
         })
 
-        clock.stop("CreateMesh")
+        // clock.stop("CreateMesh")
         worldClone.destroy()
 
         val data = chunkRenderer.getData(chunkId, mesh)

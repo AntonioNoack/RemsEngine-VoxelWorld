@@ -40,6 +40,6 @@ fun main() {
     scene.add(chunkLoader)
     scene.add(createLighting())
     testSceneWithUI("Minecraft", scene) {
-        it.editControls = CreativeControls(scene, chunkLoader, it.renderView)
+        it.editControls = CreativeControls(world, chunkLoader, it.renderView)
     }
 }
