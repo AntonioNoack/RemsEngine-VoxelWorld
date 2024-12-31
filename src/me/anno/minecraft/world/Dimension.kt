@@ -9,6 +9,7 @@ import me.anno.utils.pooling.ObjectPool
 import me.anno.utils.types.Floats.f3
 import org.apache.logging.log4j.LogManager
 import org.joml.Vector3i
+import kotlin.math.min
 
 class Dimension(val generator: Generator, val decorators: List<Decorator>) : ChunkSystem<Chunk, BlockType>(5, 5, 5) {
 
@@ -29,27 +30,29 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         return container.getBlock(localX, localY, localZ)
     }
 
+    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int): BlockType {
+        return getBlockAt(globalX, globalY, globalZ, Int.MAX_VALUE)
+    }
+
     fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): BlockType {
         return getChunkAt(globalX, globalY, globalZ, stage)
             ?.getBlock(globalX and maskX, globalY and maskY, globalZ and maskZ) ?: Air
     }
 
     fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk): BlockType {
-        return getChunkAt(globalX, globalY, globalZ, chunk.decorator)
-            ?.getBlock(globalX and maskX, globalY and maskY, globalZ and maskZ) ?: Air
+        return getBlockAt(globalX, globalY, globalZ, chunk.decorator)
     }
 
     fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stage: Int): Chunk? {
-        val stage1 = minOf(if (stage < 0) Int.MAX_VALUE else stage, decorators.size)
         val chunk = getChunk(chunkX, chunkY, chunkZ, true) ?: return null
-        for (stage2 in chunk.decorator until stage1) {
+        for (stage2 in chunk.decorator until min(stage, decorators.size)) {
             decorators[stage2].decorate(chunk)
             chunk.decorator = stage2 + 1
         }
         return chunk
     }
 
-    fun getChunkAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int) =
+    fun getChunkAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): Chunk? =
         getChunk(globalX shr bitsX, globalY shr bitsY, globalZ shr bitsZ, stage)
 
     override fun setElement(

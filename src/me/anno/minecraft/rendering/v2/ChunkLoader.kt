@@ -1,19 +1,34 @@
 package me.anno.minecraft.rendering.v2
 
 import me.anno.ecs.Component
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.unique.MeshEntry
 import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.ui.render.RenderView
 import me.anno.gpu.GPUTasks.addGPUTask
 import me.anno.maths.patterns.SpiralPattern.spiral3d
-import me.anno.mesh.vox.model.VoxelModel
+import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.rendering.v1.VisualDimension.Companion.chunkGenQueue
+import me.anno.minecraft.world.Chunk
 import me.anno.minecraft.world.Dimension
-import me.anno.utils.Clock
 import org.joml.AABBd
 import org.joml.Vector3i
 
-class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
+class ChunkLoader(
+    val solidRenderer: ChunkRenderer,
+    val fluidRenderer: ChunkRenderer,
+) : Component(), OnUpdate {
+
+    companion object {
+        fun mapPalette(mapping: (BlockType) -> Int): IntArray {
+            val size = BlockType.byId.keys.max().toInt() + 1
+            val palette = IntArray(size)
+            for ((id, block) in BlockType.byId) {
+                palette[id.toInt().and(0xffff)] = mapping(block)
+            }
+            return palette
+        }
+    }
 
     val worker = chunkGenQueue
 
@@ -25,43 +40,54 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
 
     val loadedChunks = HashSet<Vector3i>()
 
-    val blockLookup: BlockLookup = if (chunkRenderer.material is TextureMaterial) {
-        BlockLookup { it.texId + 1 }
+    val palette = if (solidRenderer.material is TextureMaterial) {
+        mapPalette { it.texId + 1 }
     } else {
-        BlockLookup { it.color }
+        mapPalette { it.color }
     }
 
     fun generateChunk(chunkId: Vector3i) {
-
-        val x0 = chunkId.x * csx
-        val y0 = chunkId.y * csy
-        val z0 = chunkId.z * csz
-
         // val clock = Clock("ChunkLoader")
         // 9s vs 27s, so 3x faster to use a clone 🤯
         // todo fix that... we cannot be THAT slow just to synchronize stuff...
-        val worldClone = Dimension(world.generator, world.decorators)
-        val chunk = worldClone.getChunk(chunkId.x, chunkId.y, chunkId.z, -1)!!
-        val model = object : VoxelModel(csx, csy, csz) {
-            override fun getBlock(x: Int, y: Int, z: Int): Int {
-                return blockLookup.lookup(chunk.getBlock(x, y, z))
-            }
-        }
-        model.center0()
-
-        val mesh = model.createMesh(null, null, { x, y, z ->
-            !worldClone.getBlockAt(x + x0, y + y0, z + z0, -1).isTransparent
-        })
+        val dimension = Dimension(dimension.generator, dimension.decorators)
+        val chunk = dimension.getChunk(chunkId.x, chunkId.y, chunkId.z, Int.MAX_VALUE)!!
+        val solidMesh = createMesh(chunk) { a, b -> a.isSolid && !b.isSolid }
+        val fluidMesh = createMesh(chunk) { a, b -> a.isFluid && b == BlockType.Air }
 
         // clock.stop("CreateMesh")
-        worldClone.destroy()
+        dimension.destroy()
 
-        val data = chunkRenderer.getData(chunkId, mesh)
+        meshUpload(solidRenderer, chunkId, solidMesh)
+        meshUpload(fluidRenderer, chunkId, fluidMesh)
+    }
+
+    private fun createMesh(chunk: Chunk, blockFilter: (BlockType, BlockType) -> Boolean): Mesh {
+        val model = ChunkLoaderModel(chunk)
+        model.center0()
+        return model.createMesh(palette, { x, y, z ->
+            dimension.getBlockAt(
+                x + chunk.x0,
+                y + chunk.y0,
+                z + chunk.z0
+            ).id.toInt().and(0xffff)
+        }, { inside, outside ->
+            val inside1 = BlockType.byId[inside.toShort()]!!
+            val outside1 = BlockType.byId[outside.toShort()]!!
+            blockFilter(inside1, outside1)
+        })
+    }
+
+    private fun meshUpload(renderer: ChunkRenderer, chunkId: Vector3i, mesh: Mesh) {
+        val data = renderer.getData(chunkId, mesh)
         if (data != null) {
             val bounds = AABBd(mesh.getBounds())
+            val x0 = chunkId.x * csx
+            val y0 = chunkId.y * csy
+            val z0 = chunkId.z * csz
             bounds.translate(x0.toDouble(), y0.toDouble(), z0.toDouble())
             addGPUTask("ChunkUpload", 1) { // change back to GPU thread
-                chunkRenderer.set(chunkId, MeshEntry(mesh, bounds, data))
+                renderer.set(chunkId, MeshEntry(mesh, bounds, data))
             }
         }
     }
@@ -91,7 +117,8 @@ class ChunkLoader(val chunkRenderer: ChunkRenderer) : Component(), OnUpdate {
         for (idx in unloadingPattern) {
             val vec = Vector3i(idx).add(center)
             if (loadedChunks.remove(vec)) {
-                chunkRenderer.remove(vec, true)
+                solidRenderer.remove(vec, true)
+                fluidRenderer.remove(vec, true)
             }
         }
     }

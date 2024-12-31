@@ -26,7 +26,11 @@ object SampleDimensions {
     )
 
     val perlin3dDim = Dimension(
-        Perlin3dWorldGenerator(listOf(BlockType.Stone, BlockType.Dirt, BlockType.Dirt, BlockType.Dirt, BlockType.Grass), 1234L),
+        Perlin3dWorldGenerator(
+            listOf(BlockType.Stone, BlockType.Dirt, BlockType.Dirt, BlockType.Dirt, BlockType.Grass),
+            listOf(BlockType.Stone, BlockType.Sandstone, BlockType.Sand, BlockType.Sand),
+            1234L
+        ),
         decorators
     )
 

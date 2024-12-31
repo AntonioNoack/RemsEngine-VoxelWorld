@@ -7,15 +7,14 @@ import me.anno.input.Key
 import me.anno.io.files.InvalidRef
 import me.anno.mesh.Shapes.flatCube
 import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.minecraft.ui.CreativeControls.Companion.inHandSlot
 import me.anno.minecraft.ui.CreativeControls.Companion.inventory
-import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.ui.base.buttons.TextButton.Companion.drawButtonBorder
 import me.anno.ui.utils.ThumbnailPanel
 import me.anno.utils.Color.black
 import me.anno.utils.Color.mixARGB
 import me.anno.utils.Color.white
-import me.anno.utils.assertions.assertTrue
 import me.anno.utils.structures.maps.LazyMap
 import kotlin.math.min
 
@@ -25,13 +24,15 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
         val previewBlocks = LazyMap { type: BlockType ->
             if (type == BlockType.Air) null
             else {
-                assertTrue(TextureMaterial.hasTexture)
                 // todo this isn't really working (always using blockIndex==0???), and we need to
                 //  wait for the texture to be loaded to get good results
                 val baseMesh = flatCube.front
                 val uiMesh = UIBlockMesh(16)
                 baseMesh.copyInto(uiMesh)
-                MeshComponent(uiMesh, TextureMaterial)
+                val material =
+                    if (type.isSolid) TextureMaterial.solid
+                    else TextureMaterial.fluid
+                MeshComponent(uiMesh, material)
             }
         }
     }
@@ -49,9 +50,7 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
     override fun onUpdate() {
         super.onUpdate()
         val prevSource = source
-        source = if (TextureMaterial.hasTexture) {
-            previewBlocks[slot.type]?.ref ?: InvalidRef
-        } else InvalidRef
+        source = previewBlocks[slot.type]?.ref ?: InvalidRef
         if (source != prevSource) invalidateDrawing()
         backgroundColor = if (inHandSlot == index) bg1 else bg0
     }

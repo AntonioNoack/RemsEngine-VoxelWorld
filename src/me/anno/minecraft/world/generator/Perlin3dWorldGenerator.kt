@@ -3,7 +3,7 @@ package me.anno.minecraft.world.generator
 import me.anno.maths.Maths.mix
 import me.anno.maths.noise.PerlinNoise
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.rendering.v2.world
+import me.anno.minecraft.rendering.v2.dimension
 import me.anno.minecraft.world.Chunk
 import me.anno.utils.hpc.threadLocal
 import org.joml.Vector4f
@@ -12,15 +12,20 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() {
+class Perlin3dWorldGenerator(
+    grassBlocks: List<BlockType>,
+    sandBlocks: List<BlockType>,
+    seed: Long
+) : Generator() {
 
     companion object {
         val densities = threadLocal {
-            FloatArray(world.sizeX * world.sizeY * world.sizeZ)
+            FloatArray(dimension.sizeX * dimension.sizeY * dimension.sizeZ)
         }
     }
 
-    val blocks = blocks.map { it.id }.toShortArray()
+    val grassBlocks = grassBlocks.map { it.id }.toShortArray()
+    val sandBlocks = sandBlocks.map { it.id }.toShortArray()
 
     val threshold = 0.5f
 
@@ -37,9 +42,9 @@ class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() 
         return getDensityAt(xi, yi, zi) > threshold
     }
 
-    fun isAir(chunk: Chunk, xi: Int, yi: Int, zi: Int, index: Int): Boolean {
+    fun isAirLike(chunk: Chunk, xi: Int, yi: Int, zi: Int, index: Int): Boolean {
         return if (yi < chunk.y1) {
-            chunk.isAir(index)
+            isAirLike(chunk.blocks[index])
         } else {
             !isSolid(xi, yi, zi)
         }
@@ -137,16 +142,23 @@ class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() 
         }
     }
 
+    fun isAirLike(chunk: Chunk, lx: Int, ly: Int, lz: Int): Boolean {
+        return isAirLike(chunk.getBlockId(lx, ly, lz))
+    }
+
+    fun isAirLike(id: Short): Boolean {
+        return id == 0.toShort() || id == BlockType.Water.id
+    }
+
     fun decorateSurface(chunk: Chunk) {
         val dim = chunk.dimension
         val x0 = chunk.x0
         val y0 = chunk.y0
         val z0 = chunk.z0
-        val blocks = blocks
+        val water = BlockType.Water.id
         val sx = dim.sizeX
         val sy = dim.sizeY
         val sz = dim.sizeZ
-        val bsm1 = blocks.size - 1
         val dy = chunk.getIndex(0, 1, 0) - chunk.getIndex(0, 0, 0)
         for (lx in 0 until sx) {
             val gx = lx + x0
@@ -155,17 +167,25 @@ class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() 
                 var ly = sy - 1
                 var gy = ly + y0
                 while (ly >= 0) {
-                    if (!chunk.isAir(lx, ly, lz)) {
+                    if (!isAirLike(chunk, lx, ly, lz)) {
+                        val sandLevel = 2 + lx.xor(lz).and(2).shr(1)
+                        val blocks = if (gy >= sandLevel) grassBlocks else sandBlocks
+                        val bsm1 = blocks.size - 1
                         var blockIndex = bsm1 - getHeightAt(chunk, gx, gy, gz, dy, bsm1)
                         chunk.setBlockQuickly(lx, ly, lz, blocks[max(blockIndex, 0)])
                         ly--
                         gy--
-                        while (ly >= 0 && !chunk.isAir(lx, ly, lz)) {
+                        while (ly >= 0 && !isAirLike(chunk, lx, ly, lz)) {
                             blockIndex--
                             chunk.setBlockQuickly(lx, ly, lz, blocks[max(blockIndex, 0)])
                             ly--
                             gy--
                         }
+                        if (ly >= 0 && gy <= 0) {
+                            chunk.setBlockQuickly(lx, ly, lz, water)
+                        }
+                    } else if (gy <= 0) {
+                        chunk.setBlockQuickly(lx, ly, lz, water)
                     }
                     ly--
                     gy--
@@ -192,7 +212,7 @@ class Perlin3dWorldGenerator(blocks: List<BlockType>, seed: Long) : Generator() 
         // this block is guaranteed to be solid
         for (height in 1 until maxHeight) {
             index += dy
-            if (isAir(chunk, xi, yi + height, zi, index)) {
+            if (isAirLike(chunk, xi, yi + height, zi, index)) {
                 return height - 1
             }
         }

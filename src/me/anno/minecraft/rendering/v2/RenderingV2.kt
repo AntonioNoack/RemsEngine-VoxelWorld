@@ -9,13 +9,13 @@ import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem
 
 val saveSystem = SaveLoadSystem("Minecraft")
-val world = SampleDimensions.perlin3dDim.apply {
+val dimension = SampleDimensions.perlin3dDim.apply {
     timeoutMillis = 250
 }
 
-val csx = world.sizeX
-val csy = world.sizeY
-val csz = world.sizeZ
+val csx = dimension.sizeX
+val csy = dimension.sizeY
+val csz = dimension.sizeZ
 
 /**
  * load/unload a big voxel world without much stutter;
@@ -34,12 +34,14 @@ val csz = world.sizeZ
 fun main() {
     OfficialExtensions.initForTests()
     val scene = Entity("Scene")
-    val chunkRenderer = ChunkRenderer(TextureMaterial)
-    val chunkLoader = ChunkLoader(chunkRenderer)
-    scene.add(chunkRenderer)
+    val solidRenderer = ChunkRenderer(TextureMaterial.solid)
+    val fluidRenderer = ChunkRenderer(TextureMaterial.fluid)
+    val chunkLoader = ChunkLoader(solidRenderer, fluidRenderer)
+    scene.add(solidRenderer)
+    scene.add(fluidRenderer)
     scene.add(chunkLoader)
     scene.add(createLighting())
     testSceneWithUI("Minecraft", scene) {
-        it.editControls = CreativeControls(world, chunkLoader, it.renderView)
+        it.editControls = CreativeControls(dimension, chunkLoader, it.renderView)
     }
 }

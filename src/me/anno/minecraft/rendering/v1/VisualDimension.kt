@@ -9,6 +9,7 @@ import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.serialization.NotSerializedProperty
 import me.anno.engine.ui.render.RenderState
 import me.anno.engine.ui.render.RenderView
+import me.anno.gpu.pipeline.PipelineStage
 import me.anno.maths.patterns.SpiralPattern
 import me.anno.minecraft.entity.Player
 import me.anno.minecraft.multiplayer.MCProtocol
@@ -126,8 +127,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
                 val safeV = Vector3i(tmpV)
                 visualChunks[safeV] = visualChunk
                 chunkGenQueue += {
-                    val chunk = dimension.getChunk(safeV.x, safeV.y, safeV.z, -1)
-                    visualChunk.chunk = chunk
+                    visualChunk.chunk = dimension.getChunk(safeV.x, safeV.y, safeV.z, Int.MAX_VALUE)
                     visualChunk.generateMesh()
                 }
             }
@@ -156,7 +156,8 @@ class VisualDimension : MeshSpawner(), OnUpdate {
                     v.y * dimension.sizeY.toDouble(),
                     v.z * dimension.sizeZ.toDouble()
                 )
-                run(visualChunk.mesh, Material.defaultMaterial, transform)
+                run(visualChunk.solidMesh, solidMaterial, transform)
+                run(visualChunk.fluidMesh, fluidMaterial, transform)
             }
         }
     }
@@ -169,6 +170,9 @@ class VisualDimension : MeshSpawner(), OnUpdate {
     override val className: String = "VisualDimension"
 
     companion object {
+
+        val solidMaterial = Material.defaultMaterial
+        val fluidMaterial = Material().apply { pipelineStage = PipelineStage.TRANSPARENT }
 
         val chunkGenQueue = ProcessingGroup("ChunkGen", 1f)
         fun createViewOrder(generator: Generator, viewDistance: Int): MutableList<Vector3i> {

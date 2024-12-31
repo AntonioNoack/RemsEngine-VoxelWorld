@@ -45,7 +45,7 @@ class CreativeControls(
             slot.type = type
         }
         val inventoryBar = PanelListX(style)
-        inventoryBar.add(ItemPanel(offHand.slots[0], -1))
+        inventoryBar.add(ItemPanel(offHand.slots[0], Int.MAX_VALUE))
         inventoryBar.add(SpacerPanel(10, 0, style))
         for ((i, slot) in inventory.slots.withIndex()) {
             inventoryBar.add(ItemPanel(slot, i))
@@ -63,7 +63,7 @@ class CreativeControls(
     }
 
     fun setBlock(coords: Vector3i, block: BlockType) {
-        world.setElementAt(coords.x, coords.y, coords.z, true, block)
+        dimension.setElementAt(coords.x, coords.y, coords.z, true, block)
         val chunkId = coordsToChunkId(coords)
         // todo chunk invalidation is extremely slow
         // todo when setting blocks, we can temporarily place a block until the mesh has been recalculated
@@ -74,7 +74,7 @@ class CreativeControls(
             posMod(coords.z, csz),
         )
         // when we're on the edge, and we remove a block (set a transparent one), we need to invalidate our neighbors, too
-        if (block.isTransparent) {
+        if (!block.isSolid) {
             if (localCoords.x == 0) invalidateChunk(Vector3i(chunkId).sub(1, 0, 0))
             else if (localCoords.x == csx - 1) invalidateChunk(Vector3i(chunkId).add(1, 0, 0))
             if (localCoords.y == 0) invalidateChunk(Vector3i(chunkId).sub(0, 1, 0))
@@ -90,9 +90,9 @@ class CreativeControls(
 
     fun coordsToChunkId(coords: Vector3i): Vector3i {
         return Vector3i(
-            coords.x shr world.bitsX,
-            coords.y shr world.bitsY,
-            coords.z shr world.bitsZ
+            coords.x shr dimension.bitsX,
+            coords.y shr dimension.bitsY,
+            coords.z shr dimension.bitsZ
         )
     }
 
@@ -131,8 +131,8 @@ class CreativeControls(
         // todo we no longer need the meshes... where can we throw them away?
         val hitSomething =
             BlockTracing.blockTrace(query, (query.result.distance * 3).toInt(), queryBounds) { xi, yi, zi ->
-                if (dimension.getBlockAt(xi, yi, zi, -1).isTransparent) BlockTracing.AIR_BLOCK
-                else BlockTracing.SOLID_BLOCK
+                if (dimension.getBlockAt(xi, yi, zi, Int.MAX_VALUE).isSolid) BlockTracing.SOLID_BLOCK
+                else BlockTracing.AIR_BLOCK
             }
 
         val delta = 0.001
@@ -151,7 +151,7 @@ class CreativeControls(
                 Key.BUTTON_MIDDLE -> {
                     // get block
                     val coords = getCoords(query, +delta)
-                    inHandBlock = world.getBlockAt(coords.x, coords.y, coords.z, -1)
+                    inHandBlock = dimension.getBlockAt(coords.x, coords.y, coords.z)
                 }
                 else -> {}
             }
