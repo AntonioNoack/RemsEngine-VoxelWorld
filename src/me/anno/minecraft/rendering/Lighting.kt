@@ -14,7 +14,7 @@ fun createLighting(): Entity {
     sun.shadowMapCascades = 3
     sun.autoUpdate = 0
     val sunEntity = Entity("Sun")
-        .setScale(250.0)
+        .setScale(250f)
     sunEntity.add(object : Component(), OnUpdate {
         // move shadows with player
         var updateCtr = 0

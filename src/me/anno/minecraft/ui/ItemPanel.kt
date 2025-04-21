@@ -8,8 +8,8 @@ import me.anno.io.files.InvalidRef
 import me.anno.mesh.Shapes.flatCube
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.rendering.v2.TextureMaterial
-import me.anno.minecraft.ui.CreativeControls.Companion.inHandSlot
-import me.anno.minecraft.ui.CreativeControls.Companion.inventory
+import me.anno.minecraft.ui.MinecraftControls.Companion.inHandSlot
+import me.anno.minecraft.ui.MinecraftControls.Companion.inventory
 import me.anno.ui.base.buttons.TextButton.Companion.drawButtonBorder
 import me.anno.ui.utils.ThumbnailPanel
 import me.anno.utils.Color.black
@@ -49,10 +49,8 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
 
     override fun onUpdate() {
         super.onUpdate()
-        val prevSource = source
         source = previewBlocks[slot.type]?.ref ?: InvalidRef
-        if (source != prevSource) invalidateDrawing()
-        backgroundColor = if (inHandSlot == index) bg1 else bg0
+        background.color = if (inHandSlot == index) bg1 else bg0
     }
 
     override fun calculateSize(w: Int, h: Int) {
@@ -77,8 +75,8 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
         }
     }
 
-    override fun onDraw(x0: Int, y0: Int, x1: Int, y1: Int) {
-        super.onDraw(x0, y0, x1, y1)
+    override fun draw(x0: Int, y0: Int, x1: Int, y1: Int) {
+        super.draw(x0, y0, x1, y1)
         drawButtonBorder(
             leftColor, topColor, rightColor, bottomColor,
             true, borderSize, isPressed

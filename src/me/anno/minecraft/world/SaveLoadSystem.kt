@@ -2,6 +2,8 @@ package me.anno.minecraft.world
 
 import me.anno.graph.hdb.ByteSlice
 import me.anno.graph.hdb.HierarchicalDatabase
+import me.anno.io.Streams.readBE16
+import me.anno.io.Streams.writeBE16
 import me.anno.utils.OS
 import org.joml.Vector3i
 import java.io.ByteArrayOutputStream
@@ -21,16 +23,17 @@ class SaveLoadSystem(name: String) {
         return listOf("${chunkId.x},${chunkId.y},${chunkId.z}")
     }
 
-    fun get(chunkId: Vector3i, async: Boolean, callback: (HashMap<Vector3i, Short>) -> Unit) {
-        db.get(getPath(chunkId), hash, async) { slice ->
+    fun get(chunkId: Vector3i, callback: (HashMap<Vector3i, Short>) -> Unit) {
+        db.get(getPath(chunkId), hash) { slice, err ->
             if (slice != null) {
                 slice.stream().use { stream ->
-                    val answer = HashMap<Vector3i, Short>()
+                    val size = slice.size / 5
+                    val answer = HashMap<Vector3i, Short>(size)
                     while (true) {
                         val x = stream.read()
                         val y = stream.read()
                         val z = stream.read()
-                        val b = stream.read().shl(8) + stream.read()
+                        val b = stream.readBE16()
                         if (z < 0) break
                         answer[Vector3i(x, y, z)] = b.toShort()
                     }
@@ -46,8 +49,7 @@ class SaveLoadSystem(name: String) {
             stream.write(k.x)
             stream.write(k.y)
             stream.write(k.z)
-            stream.write(v.toInt().shr(8))
-            stream.write(v.toInt())
+            stream.writeBE16(v.toInt())
         }
         val bytes = stream.toByteArray()
         db.put(getPath(chunkId), hash, ByteSlice(bytes))

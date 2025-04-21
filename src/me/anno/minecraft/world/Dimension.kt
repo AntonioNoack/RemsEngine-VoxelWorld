@@ -3,15 +3,19 @@ package me.anno.minecraft.world
 import me.anno.maths.chunks.cartesian.ChunkSystem
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.BlockType.Companion.Air
+import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.world.decorator.Decorator
 import me.anno.minecraft.world.generator.Generator
 import me.anno.utils.pooling.ObjectPool
 import me.anno.utils.types.Floats.f3
 import org.apache.logging.log4j.LogManager
+import org.joml.Vector3f
 import org.joml.Vector3i
 import kotlin.math.min
 
 class Dimension(val generator: Generator, val decorators: List<Decorator>) : ChunkSystem<Chunk, BlockType>(5, 5, 5) {
+
+    val gravity = Vector3f(0f, -9.81f, 0f)
 
     override fun createChunk(chunkX: Int, chunkY: Int, chunkZ: Int, size: Int): Chunk {
         val t0 = System.nanoTime()
@@ -41,6 +45,15 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
 
     fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk): BlockType {
         return getBlockAt(globalX, globalY, globalZ, chunk.decorator)
+    }
+
+    fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata? {
+        return getMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)
+    }
+
+    fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): Metadata? {
+        return getChunkAt(globalX, globalY, globalZ, stage)
+            ?.getMetadata(globalX and maskX, globalY and maskY, globalZ and maskZ)
     }
 
     fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stage: Int): Chunk? {

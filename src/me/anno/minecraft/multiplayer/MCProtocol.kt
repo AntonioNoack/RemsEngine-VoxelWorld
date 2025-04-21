@@ -13,6 +13,7 @@ import me.anno.network.TCPClient
 import me.anno.network.packets.PingPacket
 import me.anno.utils.OS.documents
 import org.apache.logging.log4j.LogManager
+import org.joml.Matrix4x3
 import java.io.IOException
 import java.net.BindException
 import java.net.InetAddress
@@ -66,9 +67,8 @@ object MCProtocol {
             val renderView = RenderView.currentInstance
             if (transform != null && renderView != null) {
                 val pos = renderView.orbitCenter
-                transform.setLocal(renderView.editorCameraNode.transform.localTransform)
+                transform.setLocal(renderView.editorCameraNode.transform.getLocalTransform(Matrix4x3()))
                 transform.localPosition = transform.localPosition.set(pos.x, pos.y, pos.z)
-                transform.smoothUpdate()
             }
 
             val client = data.client

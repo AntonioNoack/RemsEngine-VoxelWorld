@@ -3,13 +3,18 @@ package me.anno.minecraft.rendering.v2
 import me.anno.ecs.Entity
 import me.anno.engine.OfficialExtensions
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
+import me.anno.minecraft.entity.MovingEntity
+import me.anno.minecraft.entity.Player
 import me.anno.minecraft.rendering.createLighting
+import me.anno.minecraft.ui.AdventureControls
+import me.anno.minecraft.ui.ControlMode
 import me.anno.minecraft.ui.CreativeControls
+import me.anno.minecraft.ui.SurvivalControls
 import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem
 
 val saveSystem = SaveLoadSystem("Minecraft")
-val dimension = SampleDimensions.perlin3dDim.apply {
+val dimension = SampleDimensions.perlin2dDim.apply {
     timeoutMillis = 250
 }
 
@@ -37,11 +42,35 @@ fun main() {
     val solidRenderer = ChunkRenderer(TextureMaterial.solid)
     val fluidRenderer = ChunkRenderer(TextureMaterial.fluid)
     val chunkLoader = ChunkLoader(solidRenderer, fluidRenderer)
+
+    val player = Player(isPrimary = true, "Friedolin")
+    val entities = Entity("Entities", scene)
+    spawnPlayer(entities, player)
+
     scene.add(solidRenderer)
     scene.add(fluidRenderer)
     scene.add(chunkLoader)
     scene.add(createLighting())
     testSceneWithUI("Minecraft", scene) {
-        it.editControls = CreativeControls(dimension, chunkLoader, it.renderView)
+        val creativeControls = CreativeControls(player, dimension, chunkLoader, it.renderView)
+        val survivalControls = SurvivalControls(player, dimension, chunkLoader, it.renderView)
+        val adventureControls = AdventureControls(player, dimension, chunkLoader, it.renderView)
+        val allControls = mapOf(
+            ControlMode.CREATIVE to creativeControls,
+            ControlMode.SURVIVAL to survivalControls,
+            ControlMode.ADVENTURE to adventureControls
+        )
+        for (control in allControls.values) {
+            control.controlModes = allControls
+        }
+        it.editControls = creativeControls
     }
 }
+
+fun spawnPlayer(scene: Entity, entity: me.anno.minecraft.entity.Entity) {
+    val childEntity = Entity(scene).add(entity)
+    if (entity is MovingEntity) {
+        childEntity.setPosition(entity.physics.position)
+    }
+}
+

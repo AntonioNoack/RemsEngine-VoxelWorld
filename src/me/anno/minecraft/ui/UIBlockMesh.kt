@@ -34,7 +34,7 @@ class UIBlockMesh(val blockIndex: Int) : Mesh() {
         triBuffer = replaceBuffer(buffer, indices, triBuffer)
         triBuffer?.drawMode = drawMode
 
-        val bytes = buffer.nioBuffer!!
+        val bytes = buffer.getOrCreateNioBuffer()
         for (i in 0 until vertexCount) {
             // upload all data of one vertex
             val i3 = i * 3

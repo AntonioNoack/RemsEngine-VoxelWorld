@@ -11,6 +11,7 @@ import me.anno.minecraft.rendering.v2.VertexFormat.blockAttributes
 import me.anno.minecraft.rendering.v2.VertexFormat.blockVertexData
 import me.anno.utils.types.Floats.roundToIntOr
 import org.joml.AABBd
+import org.joml.Matrix4x3
 import org.joml.Matrix4x3d
 import org.joml.Vector3i
 import java.nio.ByteBuffer
@@ -21,7 +22,7 @@ class ChunkRenderer(val material: Material) :
     override val hasVertexColors: Int get() = 1
     override val materials: List<FileReference> = listOf(material.ref)
 
-    override fun fillSpace(globalTransform: Matrix4x3d, aabb: AABBd): Boolean {
+    override fun fillSpace(globalTransform: Matrix4x3, aabb: AABBd): Boolean {
         aabb.all()
         localAABB.all()
         globalAABB.all()
@@ -47,7 +48,7 @@ class ChunkRenderer(val material: Material) :
         val pos = mesh.positions!!
         val col = mesh.color0!!
         val buffer = StaticBuffer("chunk$key", attributes, pos.size / 3)
-        val data = buffer.nioBuffer!!
+        val data = buffer.getOrCreateNioBuffer()
         val dx = key.x * csx
         val dy = key.y * csy
         val dz = key.z * csz

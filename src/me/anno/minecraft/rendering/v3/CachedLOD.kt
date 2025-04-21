@@ -49,7 +49,7 @@ class CachedLOD(
     val material = Material()
     val mesh = MeshComponent(flatCube.back, material)
     val unitSize = CHUNK_SIZE * step
-    val meshScale = maxChunkDistance * unitSize * 2.0
+    val meshScale = maxChunkDistance * unitSize * 2f
 
     // val edgeSize = maxChunkDistance * 2 - 1
     // val chunks = BooleanArrayList(edgeSize * edgeSize)

@@ -1,14 +1,16 @@
 package me.anno.minecraft.block
 
+import me.anno.io.files.InvalidRef
 import me.anno.language.translation.NameDesc
+import me.anno.minecraft.item.ItemType
 import me.anno.utils.Color.a
 import me.anno.utils.Color.black
 import me.anno.utils.Color.withAlpha
 
 open class BlockType(
-    val color: Int, val id: Short, val texId: Int,
-    val nameDesc: NameDesc
-) {
+    val color: Int, val id: Short, texId: Int,
+    nameDesc: NameDesc
+) : ItemType(InvalidRef, texId, nameDesc) {
 
     val isSolid get() = color.a() == 255
     val isFluid get() = color.a() in 1 until 255
@@ -18,7 +20,7 @@ open class BlockType(
 
         val trans = black.withAlpha(0x7f)
 
-        val Air = BlockType(0, 0, -1, NameDesc("Air"))
+        val Air = AirBlock
         val Stone = BlockType(black or 0x778899, 1, 48, NameDesc("Stone"))
         val Grass = BlockType(black or 0x55aa33, 2, 226, NameDesc("Grass"))
         val Dirt = BlockType(black or 0x997755, 3, 112, NameDesc("Dirt"))
@@ -42,7 +44,6 @@ open class BlockType(
             library.add(blockType)
             byId[blockType.id] = blockType
         }
-
     }
 
     override fun toString(): String {

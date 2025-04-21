@@ -10,7 +10,7 @@ abstract class Generator {
 
     fun loadSaveData(chunk: Chunk) {
         val chunkId = Vector3i(chunk.chunkX, chunk.chunkY, chunk.chunkZ)
-        saveSystem.get(chunkId, true) { changesInChunk ->
+        saveSystem.get(chunkId) { changesInChunk ->
             for ((blockPos, type) in changesInChunk) {
                 chunk.setBlock(blockPos.x, blockPos.y, blockPos.z, type)
             }

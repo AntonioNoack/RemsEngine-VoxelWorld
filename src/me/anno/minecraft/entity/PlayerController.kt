@@ -96,9 +96,9 @@ class PlayerController : Component(), OnUpdate, InputListener {
         if (camT != null) {
             camT.globalRotation = camT.globalRotation
                 .identity()
-                .rotateY(headRotation.y.toDouble())
-                .rotateX(headRotation.x.toDouble())
-                .rotateZ(headRotation.z.toDouble())
+                .rotateY(headRotation.y)
+                .rotateX(headRotation.x)
+                .rotateZ(headRotation.z)
         }
     }
 

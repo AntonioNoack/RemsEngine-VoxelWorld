@@ -1,5 +1,23 @@
 package me.anno.minecraft.ui
 
 import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.Metadata
+import me.anno.minecraft.item.ItemType
 
-class ItemSlot(var type: BlockType, var count: Int)
+class ItemSlot(
+    type: ItemType, var count: Int,
+    var metadata: Metadata?
+) {
+
+    constructor() : this(BlockType.Air, 0, null)
+
+    var type = type
+        private set
+
+    fun set(type: ItemType, count: Int, metadata: Metadata?) {
+        this.type = type
+        this.count = count
+        this.metadata = metadata
+    }
+
+}

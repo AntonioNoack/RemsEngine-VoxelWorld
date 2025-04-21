@@ -79,6 +79,10 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         return BlockType.byId[blocks[dimension.getIndex(localX, localY, localZ)]] ?: Air
     }
 
+    fun getMetadata(localX: Int, localY: Int, localZ: Int): Metadata? {
+        return metadata[dimension.getIndex(localX, localY, localZ)]
+    }
+
     fun setBlock(x: Int, y: Int, z: Int, block: Short): Boolean {
         val key = dimension.getIndex(x, y, z)
         var changed = metadata.remove(key) == null

@@ -43,10 +43,10 @@ class POSXPacket : POS1Packet("POSX") {
             val px = px
             val py = py
             val pz = pz
-            val rx = rx.toDouble()
-            val ry = ry.toDouble()
-            val rz = rz.toDouble()
-            val rw = rw.toDouble()
+            val rx = rx
+            val ry = ry
+            val rz = rz
+            val rw = rw
             // make sure of sync execution
             addEvent {
                 val transform = entity.transform
@@ -54,7 +54,6 @@ class POSXPacket : POS1Packet("POSX") {
                     transform.localPosition.set(px, py, pz)
                 transform.localRotation =
                     transform.localRotation.set(rx, ry, rz, rw)
-                transform.smoothUpdate()
                 transform.entity?.invalidateAABBsCompletely()
             }
         }
@@ -75,11 +74,11 @@ class POSXPacket : POS1Packet("POSX") {
             packet.py = pos.y
             packet.pz = pos.z
             val rot = entity.transform.globalTransform
-                .getUnnormalizedRotation(JomlPools.quat4d.borrow())
-            packet.rx = rot.x.toFloat()
-            packet.ry = rot.y.toFloat()
-            packet.rz = rot.z.toFloat()
-            packet.rw = rot.w.toFloat()
+                .getUnnormalizedRotation(JomlPools.quat4f.borrow())
+            packet.rx = rot.x
+            packet.ry = rot.y
+            packet.rz = rot.z
+            packet.rw = rot.w
             packet.entity = client?.randomId?.toLong() ?: 0L
             packet.localTime = Time.gameTimeN
             // println("sent $pos for ${player.name}")
