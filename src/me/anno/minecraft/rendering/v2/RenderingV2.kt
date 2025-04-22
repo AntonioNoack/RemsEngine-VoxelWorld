@@ -45,7 +45,7 @@ fun main() {
     val chunkLoader = ChunkLoader(solidRenderer, fluidRenderer)
 
     val player = Player(isPrimary = true, "Friedolin")
-    player.physics.position.y = 70.0
+    player.physics.position.y = 75.0
     val entities = Entity("Entities", scene)
     spawnPlayer(entities, player)
 

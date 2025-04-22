@@ -12,7 +12,6 @@ import me.anno.minecraft.rendering.v2.VertexFormat.blockVertexData
 import me.anno.utils.types.Floats.roundToIntOr
 import org.joml.AABBd
 import org.joml.Matrix4x3
-import org.joml.Matrix4x3d
 import org.joml.Vector3i
 import java.nio.ByteBuffer
 

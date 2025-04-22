@@ -24,7 +24,6 @@ import me.anno.ui.base.groups.PanelListX
 import me.anno.utils.assertions.assertTrue
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
-import me.anno.utils.types.Floats.toRadians
 import org.joml.AABBi
 import org.joml.Vector3d
 import org.joml.Vector3i
@@ -109,16 +108,16 @@ abstract class MinecraftControls(
 
     fun updateMoveIntend() {
         player.moveIntend.set(
-            checkKeys(Key.KEY_W, Key.KEY_ARROW_UP) - checkKeys(Key.KEY_S, Key.KEY_ARROW_DOWN),
             checkKeys(Key.KEY_D, Key.KEY_ARROW_RIGHT) - checkKeys(Key.KEY_A, Key.KEY_ARROW_LEFT),
-            Input.isControlDown.toFloat() - Input.isKeyDown(Key.KEY_SPACE).toFloat()
-        ).rotateY(player.bodyRotationY)
+            Input.isKeyDown(Key.KEY_SPACE).toFloat() - Input.isControlDown.toFloat(),
+            checkKeys(Key.KEY_S, Key.KEY_ARROW_DOWN) - checkKeys(Key.KEY_W, Key.KEY_ARROW_UP)
+        ).rotateY(player.bodyRotationY).mul(1f, 30f, 1f)
         // shift: sprint
         // control: duck
     }
 
     fun checkKeys(key1: Key, key2: Key): Float {
-        return if (Input.isKeyDown(key1) || Input.isKeyDown(key2)) 1f else 0f
+        return (Input.isKeyDown(key1) || Input.isKeyDown(key2)).toFloat()
     }
 
     lateinit var controlModes: Map<ControlMode, MinecraftControls>

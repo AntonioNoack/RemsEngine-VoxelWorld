@@ -1,6 +1,7 @@
 package me.anno.minecraft.entity
 
 import me.anno.maths.Maths.clamp
+import me.anno.maths.Maths.dtTo10
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.CustomBlockBounds
 import me.anno.minecraft.world.Dimension
@@ -11,10 +12,7 @@ import org.joml.Vector3d
 import org.joml.Vector3f
 import kotlin.math.*
 
-class AABBPhysics(
-    var position: Vector3d,
-    var size: Vector3f,
-) {
+class AABBPhysics(val position: Vector3d, val size: Vector3f) {
 
     companion object {
         private val minVelocity = Vector3f(-0.9999f)
@@ -47,45 +45,68 @@ class AABBPhysics(
         val px = position.x
         val py = position.y
         val pz = position.z
-        val qx = px + velocity.x
-        val qy = py + velocity.y
-        val qz = pz + velocity.z
 
-        val bounds = AABBd(
-            min(px, qx), min(py, qy), min(pz, qz),
-            max(px, qx), max(py, qy), max(pz, qz)
-        )
+        val selfSize = size
+        val selfDx = 0.5 * selfSize.x
+        val selfDy = 0.5 * selfSize.y
+        val selfDz = 0.5 * selfSize.z
 
-        // calculate, which blocks need to be checked
-        val x0 = floor(bounds.minX).toInt()
-        val x1 = ceil(bounds.maxX).toInt()
-        // extend bounds a little for fences
-        val y0 = floor(bounds.minY - fenceDy).toInt()
-        val y1 = ceil(bounds.maxY).toInt()
-        val z0 = floor(bounds.minZ).toInt()
-        val z1 = ceil(bounds.maxZ).toInt()
-
+        val entityBounds = AABBd()
         val blockBounds = AABBd()
         val blockCenter = Vector3d()
-        val oldPosition = Vector3d(position)
-        position.set(qx, qy, qz)
-        for (z in z0 until z1) {
-            for (y in y0 until y1) {
-                for (x in x0 until x1) {
-                    val block = dimension.getBlockAt(x, y, z)
-                    getBlockBounds(x, y, z, block, blockBounds)
-                    if (blockBounds.testAABB(bounds)) {
-                        blockBounds.getCenter(blockCenter)
-                        // overlap -> we need to check, and potentially stop the block from falling
-                        for (dim in 0 until 3) {
-                            val p0 = oldPosition[dim]
-                            val p1 = position[dim]
-                            val vSign = sign(velocity[dim])
-                            if (vSign.toDouble() == sign(blockCenter[dim] - p1)) {
+        val oldPosition = Vector3d()
+
+        for (dim in 0 until 3) {
+
+            oldPosition.set(position)
+            position[dim] += velocity[dim]
+
+            val qx = position.x
+            val qy = position.y
+            val qz = position.z
+            entityBounds.setMin(
+                min(px, qx) - selfDx,
+                min(py, qy) - selfDy,
+                min(pz, qz) - selfDz
+            ).setMax(
+                max(px, qx) + selfDx,
+                max(py, qy) + selfDy,
+                max(pz, qz) + selfDz
+            )
+
+            val epsilon = -0.01
+            entityBounds.addMargin(
+                if (dim == 0) 0.0 else epsilon,
+                if (dim == 1) 0.0 else epsilon,
+                if (dim == 2) 0.0 else epsilon,
+            )
+
+            // calculate, which blocks need to be checked
+            val x0 = floor(entityBounds.minX).toInt()
+            val x1 = ceil(entityBounds.maxX).toInt()
+            // extend bounds a little for fences
+            val y0 = floor(entityBounds.minY - fenceDy).toInt()
+            val y1 = ceil(entityBounds.maxY).toInt()
+            val z0 = floor(entityBounds.minZ).toInt()
+            val z1 = ceil(entityBounds.maxZ).toInt()
+
+            val oldPosI = oldPosition[dim]
+            val newPosI = position[dim]
+            val vSign = sign(velocity[dim])
+            if (vSign != 0f) search@ for (z in z0 until z1) {
+                for (y in y0 until y1) {
+                    for (x in x0 until x1) {
+                        val block = dimension.getBlockAt(x, y, z)
+                        getBlockBounds(x, y, z, block, blockBounds)
+                        if (blockBounds.testAABB(entityBounds)) {
+                            blockBounds.getCenter(blockCenter)
+                            // overlap -> we need to check, and potentially stop the block from falling
+                            if (vSign.toDouble() == sign(blockCenter[dim] - newPosI)) {
                                 // we need to clamp :)
-                                val p2 = blockBounds.getMinOrMax(dim, vSign > 0f, size[dim] * 0.5)
-                                position[dim] = clamp(p1, min(p0, p2), max(p0, p2))
+                                val clampPosI = blockBounds.getMinOrMax(dim, vSign > 0f, selfSize[dim] * 0.5)
+                                position[dim] = clamp(newPosI, min(oldPosI, clampPosI), max(oldPosI, clampPosI))
                                 velocity[dim] = 0f
+                                break@search
                             }
                         }
                     }
@@ -95,7 +116,7 @@ class AABBPhysics(
     }
 
     fun applyFriction(dt: Float) {
-        velocity.mul(exp(-friction * dt))
+        velocity.mul(dtTo10(dt * friction))
     }
 
     private fun AABBd.getMinOrMax(dim: Int, isMin: Boolean, halfExtends: Double): Double {
