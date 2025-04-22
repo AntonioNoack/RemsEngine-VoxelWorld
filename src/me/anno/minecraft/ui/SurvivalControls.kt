@@ -3,6 +3,7 @@ package me.anno.minecraft.ui
 import me.anno.engine.ui.render.RenderView
 import me.anno.input.Key
 import me.anno.io.utils.StringMap
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.Player
@@ -27,7 +28,7 @@ open class SurvivalControls(
         val oldCount = inHand.count
         val newCount = oldCount - 1
         if (newCount <= 0) {
-            inHand.set(BlockType.Air, 0, null)
+            inHand.set(BlockRegistry.Air, 0, null)
         } else {
             inHand.count = newCount
         }
@@ -44,7 +45,7 @@ open class SurvivalControls(
         val oldHealth = inHand.metadata?.get(METADATA_DURABILITY, item.maxHealth) ?: item.maxHealth
         val newHealth = oldHealth - 1
         if (newHealth <= 0) {
-            inHand.set(BlockType.Air, 0, null)
+            inHand.set(BlockRegistry.Air, 0, null)
         } else {
             val newMetadata = inHand.metadata ?: StringMap()
             newMetadata[METADATA_DURABILITY] = newHealth
@@ -63,9 +64,9 @@ open class SurvivalControls(
                 // remove block
                 val coords = getCoords(query, +clickDistanceDelta)
                 val dropped = getBlock(coords)
-                if (dropped != BlockType.Air && !dropped.isFluid) {
+                if (dropped != BlockRegistry.Air && !dropped.isFluid) {
                     val droppedMetadata = getBlockMetadata(coords)
-                    setBlock(coords, BlockType.Air)
+                    setBlock(coords, BlockRegistry.Air)
                     spawnItem(dropped, droppedMetadata, coords)
                     removeItemDurability()
                 }
@@ -80,7 +81,7 @@ open class SurvivalControls(
                     } else {
                         // set block
                         val coords = getCoords(query, -clickDistanceDelta)
-                        if (allowsBlockPlacing && item is BlockType && item != BlockType.Air) {
+                        if (allowsBlockPlacing && item is BlockType && item != BlockRegistry.Air) {
                             setBlock(coords, item)
                             removeItemAfterPlacing()
                         } else if (item is RightClickItem) {

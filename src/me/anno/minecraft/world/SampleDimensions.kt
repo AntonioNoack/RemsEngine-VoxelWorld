@@ -1,6 +1,11 @@
 package me.anno.minecraft.world
 
-import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.BlockRegistry.Dirt
+import me.anno.minecraft.block.BlockRegistry.Grass
+import me.anno.minecraft.block.BlockRegistry.Sand
+import me.anno.minecraft.block.BlockRegistry.Sandstone
+import me.anno.minecraft.block.BlockRegistry.Stone
+import me.anno.minecraft.block.BlockRegistry.Water
 import me.anno.minecraft.world.decorator.CactiDecorator
 import me.anno.minecraft.world.decorator.PyramidDecorator
 import me.anno.minecraft.world.decorator.TreeDecorator
@@ -11,24 +16,24 @@ object SampleDimensions {
 
     val decorators = listOf(
         TreeDecorator(0.03f, 5123L),
-        PyramidDecorator(BlockType.Sandstone, 10, BlockType.Sand, 0.00001f, 49651L),
-        PyramidDecorator(BlockType.Sandstone, 20, BlockType.Sand, 0.00001f / 3f, 19651L),
-        PyramidDecorator(BlockType.Sandstone, 27, BlockType.Sand, 0.00001f / 9f, 29651L),
+        PyramidDecorator(Sandstone, 10, Sand, 0.00001f, 49651L),
+        PyramidDecorator(Sandstone, 20, Sand, 0.00001f / 3f, 19651L),
+        PyramidDecorator(Sandstone, 27, Sand, 0.00001f / 9f, 29651L),
         CactiDecorator(0.001f, 97845L)
     )
 
     val perlin2dDim = Dimension(
         PerlinWorldGenerator(
-            listOf(BlockType.Stone, BlockType.Dirt, BlockType.Dirt, BlockType.Dirt, BlockType.Grass),
-            BlockType.Water, 30, 0.02f, 0f, 100f, 1234L
+            listOf(Stone, Dirt, Dirt, Dirt, Grass),
+            Water, 30, 0.02f, 0f, 100f, 1234L
         ),
         decorators
     )
 
     val perlin3dDim = Dimension(
         Perlin3dWorldGenerator(
-            listOf(BlockType.Stone, BlockType.Dirt, BlockType.Dirt, BlockType.Dirt, BlockType.Grass),
-            listOf(BlockType.Stone, BlockType.Sandstone, BlockType.Sand, BlockType.Sand),
+            listOf(Stone, Dirt, Dirt, Dirt, Grass),
+            listOf(Stone, Sandstone, Sand, Sand),
             1234L
         ),
         decorators
@@ -36,8 +41,8 @@ object SampleDimensions {
 
     val sandDim = Dimension(
         PerlinWorldGenerator(
-            listOf(BlockType.Stone, BlockType.Sand, BlockType.Sand),
-            BlockType.Stone, 5, 0.015f, 0f, 30f, 5123L
+            listOf(Stone, Sand, Sand),
+            Stone, 5, 0.015f, 0f, 30f, 5123L
         ),
         decorators
     )

@@ -7,6 +7,7 @@ import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.ui.render.RenderView
 import me.anno.gpu.GPUTasks.addGPUTask
 import me.anno.maths.patterns.SpiralPattern.spiral3d
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.rendering.v1.VisualDimension.Companion.chunkGenQueue
 import me.anno.minecraft.world.Chunk
@@ -21,12 +22,10 @@ class ChunkLoader(
 
     companion object {
         fun mapPalette(mapping: (BlockType) -> Int): IntArray {
-            val size = BlockType.byId.keys.max().toInt() + 1
-            val palette = IntArray(size)
-            for ((id, block) in BlockType.byId) {
-                palette[id.toInt().and(0xffff)] = mapping(block)
+            val byId = BlockRegistry.byId
+            return IntArray(byId.size) { id ->
+                mapping(byId[id])
             }
-            return palette
         }
     }
 
@@ -53,7 +52,7 @@ class ChunkLoader(
         val dimension = Dimension(dimension.generator, dimension.decorators)
         val chunk = dimension.getChunk(chunkId.x, chunkId.y, chunkId.z, Int.MAX_VALUE)!!
         val solidMesh = createMesh(chunk) { a, b -> a.isSolid && !b.isSolid }
-        val fluidMesh = createMesh(chunk) { a, b -> a.isFluid && b == BlockType.Air }
+        val fluidMesh = createMesh(chunk) { a, b -> a.isFluid && b == BlockRegistry.Air }
 
         // clock.stop("CreateMesh")
         dimension.destroy()
@@ -72,8 +71,8 @@ class ChunkLoader(
                 z + chunk.z0
             ).id.toInt().and(0xffff)
         }, { inside, outside ->
-            val inside1 = BlockType.byId[inside.toShort()]!!
-            val outside1 = BlockType.byId[outside.toShort()]!!
+            val inside1 = BlockRegistry.byId[inside]
+            val outside1 = BlockRegistry.byId[outside]
             blockFilter(inside1, outside1)
         })
     }
@@ -90,15 +89,6 @@ class ChunkLoader(
                 renderer.set(chunkId, MeshEntry(mesh, bounds, data))
             }
         }
-    }
-
-    fun AABBd.translate(dx: Double, dy: Double, dz: Double) {
-        minX += dx
-        minY += dy
-        minZ += dz
-        maxX += dx
-        maxY += dy
-        maxZ += dz
     }
 
     val workerLimit = worker.numThreads * 2 + 1

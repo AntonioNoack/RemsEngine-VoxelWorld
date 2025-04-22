@@ -6,6 +6,7 @@ import me.anno.gpu.GFX
 import me.anno.input.Key
 import me.anno.io.files.InvalidRef
 import me.anno.mesh.Shapes.flatCube
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.minecraft.ui.MinecraftControls.Companion.inHandSlot
@@ -22,7 +23,7 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
 
     companion object {
         val previewBlocks = LazyMap { type: BlockType ->
-            if (type == BlockType.Air) null
+            if (type == BlockRegistry.Air) null
             else {
                 // todo this isn't really working (always using blockIndex==0???), and we need to
                 //  wait for the texture to be loaded to get good results

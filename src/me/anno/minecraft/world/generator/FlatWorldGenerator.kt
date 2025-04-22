@@ -1,7 +1,7 @@
 package me.anno.minecraft.world.generator
 
+import me.anno.minecraft.block.BlockRegistry.Air
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.world.Chunk
 
 class FlatWorldGenerator(val layers: ArrayList<BlockType>) : Generator() {

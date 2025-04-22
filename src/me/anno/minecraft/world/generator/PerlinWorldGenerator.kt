@@ -2,10 +2,10 @@ package me.anno.minecraft.world.generator
 
 import me.anno.image.ImageWriter
 import me.anno.maths.noise.PerlinNoise
+import me.anno.minecraft.block.BlockRegistry.Air
+import me.anno.minecraft.block.BlockRegistry.Stone
+import me.anno.minecraft.block.BlockRegistry.Water
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.BlockType.Companion.Air
-import me.anno.minecraft.block.BlockType.Companion.Stone
-import me.anno.minecraft.block.BlockType.Companion.Water
 import me.anno.minecraft.world.Chunk
 import me.anno.minecraft.world.Dimension
 import kotlin.math.log2

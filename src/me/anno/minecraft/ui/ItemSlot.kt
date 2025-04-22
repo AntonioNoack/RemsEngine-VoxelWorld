@@ -1,6 +1,6 @@
 package me.anno.minecraft.ui
 
-import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.item.ItemType
 
@@ -9,7 +9,7 @@ class ItemSlot(
     var metadata: Metadata?
 ) {
 
-    constructor() : this(BlockType.Air, 0, null)
+    constructor() : this(BlockRegistry.Air, 0, null)
 
     var type = type
         private set

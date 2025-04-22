@@ -1,7 +1,7 @@
 package me.anno.minecraft.world.decorator
 
+import me.anno.minecraft.block.BlockRegistry.Air
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.world.Chunk
 import org.joml.Vector3i
 

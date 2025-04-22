@@ -2,8 +2,8 @@ package me.anno.minecraft.world
 
 import me.anno.io.base.BaseWriter
 import me.anno.io.saveable.Saveable
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.Entity
 
@@ -76,7 +76,7 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     }
 
     fun getBlock(localX: Int, localY: Int, localZ: Int): BlockType {
-        return BlockType.byId[blocks[dimension.getIndex(localX, localY, localZ)]] ?: Air
+        return BlockRegistry.byId(blocks[dimension.getIndex(localX, localY, localZ)]) ?: BlockRegistry.Air
     }
 
     fun getMetadata(localX: Int, localY: Int, localZ: Int): Metadata? {

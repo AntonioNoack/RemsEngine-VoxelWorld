@@ -2,7 +2,7 @@ package me.anno.minecraft.rendering.v1
 
 import me.anno.ecs.components.mesh.Mesh
 import me.anno.mesh.vox.meshing.GetBlockId
-import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.rendering.v2.ChunkLoader.Companion.mapPalette
 import me.anno.minecraft.world.Chunk
 import me.anno.utils.types.Floats.f3
@@ -32,16 +32,16 @@ class VisualChunk {
 
         ChunkVoxelModel(chunk)
             .createMesh(palette, outsideBlocks, { insideId, outsideId ->
-                val inside = BlockType.byId[insideId.toShort()]!!
-                val outside = BlockType.byId[outsideId.toShort()]!!
+                val inside = BlockRegistry.byId[insideId]
+                val outside = BlockRegistry.byId[outsideId]
                 inside.isSolid && !outside.isSolid
             }, solidMesh)
 
         ChunkVoxelModel(chunk)
             .createMesh(palette, outsideBlocks, { insideId, outsideId ->
-                val inside = BlockType.byId[insideId.toShort()]!!
-                val outside = BlockType.byId[outsideId.toShort()]!!
-                inside.isFluid && outside == BlockType.Air
+                val inside = BlockRegistry.byId[insideId]
+                val outside = BlockRegistry.byId[outsideId]
+                inside.isFluid && outside == BlockRegistry.Air
             }, fluidMesh)
 
         val t1 = System.nanoTime()

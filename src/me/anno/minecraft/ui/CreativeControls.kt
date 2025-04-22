@@ -2,6 +2,7 @@ package me.anno.minecraft.ui
 
 import me.anno.engine.ui.render.RenderView
 import me.anno.input.Key
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.entity.Player
 import me.anno.minecraft.item.RightClickBlock
@@ -35,8 +36,8 @@ open class CreativeControls(player: Player, dimension: Dimension, chunkLoader: C
                 query ?: return
                 val coords = getCoords(query, +clickDistanceDelta)
                 val block = getBlock(coords)
-                if (block != BlockType.Air) {
-                    setBlock(coords, BlockType.Air)
+                if (block != BlockRegistry.Air) {
+                    setBlock(coords, BlockRegistry.Air)
                 }
             }
             Key.BUTTON_RIGHT -> {
@@ -49,7 +50,7 @@ open class CreativeControls(player: Player, dimension: Dimension, chunkLoader: C
                         activeBlock.onRightClick(this, activeCoords)
                     } else {
                         val placeCoords = getCoords(query, -clickDistanceDelta)
-                        if (item is BlockType && item != BlockType.Air) {
+                        if (item is BlockType && item != BlockRegistry.Air) {
                             setBlock(placeCoords, item)
                         } else if (item is RightClickItem) {
                             item.onRightClick(this, placeCoords)

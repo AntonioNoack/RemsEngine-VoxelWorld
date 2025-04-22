@@ -1,8 +1,8 @@
 package me.anno.minecraft.world
 
 import me.anno.maths.chunks.cartesian.ChunkSystem
+import me.anno.minecraft.block.BlockRegistry.Air
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.BlockType.Companion.Air
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.world.decorator.Decorator
 import me.anno.minecraft.world.generator.Generator

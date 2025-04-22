@@ -12,6 +12,7 @@ import me.anno.maths.Maths.PIf
 import me.anno.maths.Maths.TAUf
 import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.posMod
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.Player
@@ -56,8 +57,8 @@ abstract class MinecraftControls(
 
     init {
         for ((i, type) in listOf(
-            BlockType.Dirt, BlockType.Grass, BlockType.Water, BlockType.Lava,
-            BlockType.Sand, BlockType.Sandstone
+            BlockRegistry.Dirt, BlockRegistry.Grass, BlockRegistry.Water, BlockRegistry.Lava,
+            BlockRegistry.Sand, BlockRegistry.Sandstone
         ).withIndex()) {
             val slot = inventory.slots.getOrNull(i) ?: break
             slot.set(type, 1, null)

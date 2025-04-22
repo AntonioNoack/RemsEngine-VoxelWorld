@@ -16,9 +16,9 @@ import me.anno.gpu.shader.Shader
 import me.anno.gpu.shader.ShaderLib
 import me.anno.gpu.shader.builder.Variable
 import me.anno.gpu.shader.builder.VariableMode
-import me.anno.minecraft.block.BlockType.Companion.Dirt
-import me.anno.minecraft.block.BlockType.Companion.Grass
-import me.anno.minecraft.block.BlockType.Companion.Stone
+import me.anno.minecraft.block.BlockRegistry.Dirt
+import me.anno.minecraft.block.BlockRegistry.Grass
+import me.anno.minecraft.block.BlockRegistry.Stone
 import me.anno.minecraft.world.Dimension
 import me.anno.utils.structures.lists.Lists.createList
 import kotlin.math.max

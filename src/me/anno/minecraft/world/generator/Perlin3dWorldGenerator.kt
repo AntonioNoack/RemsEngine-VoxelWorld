@@ -2,6 +2,7 @@ package me.anno.minecraft.world.generator
 
 import me.anno.maths.Maths.mix
 import me.anno.maths.noise.PerlinNoise
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.rendering.v2.dimension
 import me.anno.minecraft.world.Chunk
@@ -122,7 +123,7 @@ class Perlin3dWorldGenerator(
 
     fun fillStone(chunk: Chunk) {
         val dim = chunk.dimension
-        val block = BlockType.Stone
+        val block = BlockRegistry.Stone
         val sx = dim.sizeX
         val sy = dim.sizeY
         val sz = dim.sizeZ
@@ -147,7 +148,7 @@ class Perlin3dWorldGenerator(
     }
 
     fun isAirLike(id: Short): Boolean {
-        return id == 0.toShort() || id == BlockType.Water.id
+        return id == 0.toShort() || id == BlockRegistry.Water.id
     }
 
     fun decorateSurface(chunk: Chunk) {
@@ -155,7 +156,7 @@ class Perlin3dWorldGenerator(
         val x0 = chunk.x0
         val y0 = chunk.y0
         val z0 = chunk.z0
-        val water = BlockType.Water.id
+        val water = BlockRegistry.Water.id
         val sx = dim.sizeX
         val sy = dim.sizeY
         val sz = dim.sizeZ
