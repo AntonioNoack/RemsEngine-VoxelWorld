@@ -9,7 +9,7 @@ import me.anno.minecraft.item.RightClickItem
 import me.anno.minecraft.rendering.v2.ChunkLoader
 import me.anno.minecraft.world.Dimension
 
-class CreativeControls(player: Player, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView) :
+open class CreativeControls(player: Player, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView) :
     MinecraftControls(player, dimension, chunkLoader, renderer) {
 
     // todo flying controls

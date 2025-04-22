@@ -23,10 +23,13 @@ import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.base.groups.PanelListX
 import me.anno.utils.assertions.assertTrue
 import me.anno.utils.types.Booleans.toFloat
+import me.anno.utils.types.Floats.toDegrees
+import me.anno.utils.types.Floats.toRadians
 import org.joml.AABBi
 import org.joml.Vector3d
 import org.joml.Vector3i
 import kotlin.math.floor
+import kotlin.math.max
 
 abstract class MinecraftControls(
     val player: Player,
@@ -50,6 +53,8 @@ abstract class MinecraftControls(
         var lookedAtInventory: Inventory? = null
     }
 
+    val modeButton = TextButton(NameDesc("Next Mode"), style)
+
     init {
         for ((i, type) in listOf(
             BlockType.Dirt, BlockType.Grass, BlockType.Water, BlockType.Lava,
@@ -68,7 +73,6 @@ abstract class MinecraftControls(
         inventoryBar.alignmentY = AxisAlignment.MAX
         add(inventoryBar)
 
-        val modeButton = TextButton(NameDesc("Next Mode"), style)
         modeButton.addLeftClickListener { nextMode() }
         modeButton.alignmentX = AxisAlignment.MAX
         modeButton.alignmentY = AxisAlignment.MIN
@@ -88,11 +92,12 @@ abstract class MinecraftControls(
     }
 
     fun rotatePlayer(dx: Float, dy: Float) {
-        player.headRotationX = clamp(player.headRotationX + dy, -PIf, PIf)
-        player.bodyRotationY = (player.bodyRotationY + dx) % TAUf
+        val speed = 1f / max(width, height)
+        player.headRotationX = clamp(player.headRotationX + dy * speed, -PIf, PIf)
+        player.bodyRotationY = (player.bodyRotationY + dx * speed) % TAUf
         rotationTargetDegrees.set(
-            player.bodyRotationY.toDouble(),
-            player.headRotationX.toDouble(),
+            player.headRotationX.toDouble().toDegrees(),
+            player.bodyRotationY.toDouble().toDegrees(),
             0.0 // todo set this to wobble after explosions
         )
     }
@@ -119,11 +124,11 @@ abstract class MinecraftControls(
     lateinit var controlModes: Map<ControlMode, MinecraftControls>
 
     fun nextMode() {
-        val thisEnum = controlModes.entries
-            .first { it.value == this }.key
+        val thisEnum = controlModes.entries.first { it.value == this }.key
         val nextEnum = ControlMode.entries[posMod(thisEnum.ordinal + 1, ControlMode.entries.size)]
-        val nextControls = controlModes[nextEnum]!!
+        val nextControls = controlModes[nextEnum] ?: this
         (uiParent as SceneView).editControls = nextControls
+        modeButton.text = nextEnum.name
     }
 
     override fun onKeyTyped(x: Float, y: Float, key: Key) {

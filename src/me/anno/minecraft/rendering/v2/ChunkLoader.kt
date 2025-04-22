@@ -33,7 +33,7 @@ class ChunkLoader(
     val worker = chunkGenQueue
 
     // load world in spiral pattern
-    val loadingRadius = 10
+    val loadingRadius = 3
     val spiralPattern = spiral3d(loadingRadius + 5, false)
     val loadingPattern = spiralPattern.filter { it.length() < loadingRadius - 0.5f }
     val unloadingPattern = spiralPattern.filter { it.length() > loadingRadius + 1.5f }

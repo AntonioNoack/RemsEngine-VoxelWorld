@@ -16,10 +16,14 @@ abstract class MovingEntity(size: Vector3f) : Entity(), OnUpdate {
     }
 
     open fun stepPhysics(dt: Float) {
+        physics.velocity.y = 0f
+        physics.acceleration.y = 0f
+        val y = physics.position.y
         collectForces()
         physics.step(dimension, dt)
         physics.applyFriction(dt)
         physicsToEngine()
+        physics.position.y = y
     }
 
     fun physicsToEngine() {
@@ -28,7 +32,7 @@ abstract class MovingEntity(size: Vector3f) : Entity(), OnUpdate {
     }
 
     open fun collectForces() {
-        val acceleration =physics.acceleration
+        val acceleration = physics.acceleration
         acceleration.set(dimension.gravity)
         acceleration.add(moveIntend)
     }

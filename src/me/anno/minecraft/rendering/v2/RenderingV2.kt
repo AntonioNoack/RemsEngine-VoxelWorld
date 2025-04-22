@@ -9,6 +9,7 @@ import me.anno.minecraft.rendering.createLighting
 import me.anno.minecraft.ui.AdventureControls
 import me.anno.minecraft.ui.ControlMode
 import me.anno.minecraft.ui.CreativeControls
+import me.anno.minecraft.ui.SpectatorControls
 import me.anno.minecraft.ui.SurvivalControls
 import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem
@@ -44,6 +45,7 @@ fun main() {
     val chunkLoader = ChunkLoader(solidRenderer, fluidRenderer)
 
     val player = Player(isPrimary = true, "Friedolin")
+    player.physics.position.y = 70.0
     val entities = Entity("Entities", scene)
     spawnPlayer(entities, player)
 
@@ -53,12 +55,14 @@ fun main() {
     scene.add(createLighting())
     testSceneWithUI("Minecraft", scene) {
         val creativeControls = CreativeControls(player, dimension, chunkLoader, it.renderView)
+        val spectatorControls = SpectatorControls(player, dimension, chunkLoader, it.renderView)
         val survivalControls = SurvivalControls(player, dimension, chunkLoader, it.renderView)
         val adventureControls = AdventureControls(player, dimension, chunkLoader, it.renderView)
         val allControls = mapOf(
             ControlMode.CREATIVE to creativeControls,
             ControlMode.SURVIVAL to survivalControls,
-            ControlMode.ADVENTURE to adventureControls
+            ControlMode.ADVENTURE to adventureControls,
+            ControlMode.SPECTATOR to spectatorControls
         )
         for (control in allControls.values) {
             control.controlModes = allControls
