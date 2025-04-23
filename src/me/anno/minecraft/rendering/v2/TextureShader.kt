@@ -16,7 +16,7 @@ object TextureShader : ECSMeshShader("textured") {
                 "material",
                 createFragmentVariables(key)
                     .filter { it.name != "uv" } + listOf(
-                    Variable(GLSLType.V1I, "blockIndex"),
+                    Variable(GLSLType.V1I, "texId"),
                     Variable(GLSLType.V3F, "localPosition"),
                     Variable(GLSLType.V2F, "uv", VariableMode.OUT),
                     Variable(GLSLType.S2DA, "diffuseMapArray")
@@ -32,7 +32,7 @@ object TextureShader : ECSMeshShader("textured") {
                         "   normal.x < -0.5 ? vec2(lp.z,-lp.y) :\n" +
                         "   normal.z > +0.5 ? vec2(lp.x,-lp.y) :\n" +
                         "                     -lp.xy;\n" +
-                        "vec4 color = texture(diffuseMapArray, vec3(uv,float(blockIndex)));\n" +
+                        "vec4 color = texture(diffuseMapArray, vec3(uv,float(texId)));\n" +
                         "if(color.a < ${1f / 255f}) discard;\n" +
                         "finalColor = color.rgb;\n" +
                         "finalAlpha = color.a;\n" +

@@ -28,7 +28,7 @@ object BlockRegistry {
         Cactus
     )
 
-    val slabBlocks = listOf(
+    val masonryBlocks = listOf(
         Stone, Log, Sandstone,
     )
 
@@ -59,10 +59,11 @@ object BlockRegistry {
             register(block)
         }
 
-        for (block in slabBlocks) {
+        for (block in masonryBlocks) {
             register(SlabBlock(block, BlockSide.PY))
             register(SlabBlock(block, BlockSide.NY))
             register(DoubleSlabBlock(block))
+            register(FenceBlock(block))
         }
     }
 }

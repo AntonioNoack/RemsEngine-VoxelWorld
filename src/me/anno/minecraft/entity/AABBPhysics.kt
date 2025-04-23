@@ -1,10 +1,13 @@
 package me.anno.minecraft.entity
 
+import me.anno.engine.debug.DebugAABB
+import me.anno.engine.debug.DebugShapes
 import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.dtTo10
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.CustomBlockBounds
 import me.anno.minecraft.world.Dimension
+import me.anno.utils.Color.black
 import me.anno.utils.assertions.assertTrue
 import org.joml.AABBd
 import org.joml.AABBf
@@ -34,6 +37,8 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
     val acceleration = Vector3f()
     var friction = 5f
 
+    var stepHeight = 0.5f
+
     fun step(dimension: Dimension, dt: Float) {
 
         assertTrue(dt >= 0f)
@@ -59,6 +64,10 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
         for (dim in 0 until 3) {
 
             oldPosition.set(position)
+
+            // todo implement step-height somehow...
+            // oldPosition.y += stepHeight
+
             position[dim] += velocity[dim]
 
             val qx = position.x
@@ -73,6 +82,17 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
                 max(py, qy) + selfDy,
                 max(pz, qz) + selfDz
             )
+
+            if (dim == 1) {
+                DebugShapes.debugAABBs.add(
+                    DebugAABB(
+                        AABBd(
+                            px - selfDz, py - selfDy, pz - selfDz,
+                            px + selfDx, py + selfDy, pz + selfDz
+                        ), -1, 0f
+                    )
+                )
+            }
 
             val epsilon = -0.01
             entityBounds.addMargin(
@@ -90,28 +110,39 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
             val z0 = floor(entityBounds.minZ).toInt()
             val z1 = ceil(entityBounds.maxZ).toInt()
 
-            val oldPosI = oldPosition[dim]
-            val newPosI = position[dim]
-            val vSign = sign(velocity[dim])
-            if (vSign != 0f) search@ for (z in z0 until z1) {
-                for (y in y0 until y1) {
-                    for (x in x0 until x1) {
-                        val block = dimension.getBlockAt(x, y, z)
-                        getBlockBounds(x, y, z, block, blockBounds)
-                        if (blockBounds.testAABB(entityBounds)) {
-                            blockBounds.getCenter(blockCenter)
-                            // overlap -> we need to check, and potentially stop the block from falling
-                            if (vSign.toDouble() == sign(blockCenter[dim] - newPosI)) {
-                                // we need to clamp :)
-                                val clampPosI = blockBounds.getMinOrMax(dim, vSign > 0f, selfSize[dim] * 0.5)
-                                position[dim] = clamp(newPosI, min(oldPosI, clampPosI), max(oldPosI, clampPosI))
-                                velocity[dim] = 0f
-                                break@search
+            fun check(dy: Float) {
+                val oldPosI = oldPosition[dim]
+                val newPosI = position[dim] + dy
+                val vSign = sign(newPosI - oldPosI)
+                if (vSign != 0.0) search@ for (z in z0 until z1) {
+                    for (y in y0 until y1) {
+                        for (x in x0 until x1) {
+                            val block = dimension.getBlockAt(x, y, z)
+                            getBlockBounds(x, y, z, block, blockBounds)
+
+                            if (dim == 1) {
+                                DebugShapes.debugAABBs.add(DebugAABB(AABBd(blockBounds), 0x777777 or black, 0f))
+                            }
+
+                            if (blockBounds.testAABB(entityBounds)) {
+                                blockBounds.getCenter(blockCenter)
+                                // overlap -> we need to check, and potentially stop the block from falling
+                                if (vSign == sign(blockCenter[dim] - newPosI)) {
+                                    // we need to clamp :)
+                                    val clampPosI = blockBounds.getMinOrMax(dim, vSign > 0.0, selfSize[dim] * 0.5)
+                                    position[dim] = clamp(newPosI, min(oldPosI, clampPosI), max(oldPosI, clampPosI))
+                                    velocity[dim] = 0f
+                                    break@search
+                                }
                             }
                         }
                     }
                 }
             }
+
+            check(0f)
+            if (dim == 1) check(stepHeight)
+
         }
     }
 

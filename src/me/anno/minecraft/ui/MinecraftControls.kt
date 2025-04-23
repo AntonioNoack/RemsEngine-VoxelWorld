@@ -57,6 +57,8 @@ abstract class MinecraftControls(
 
     init {
         for ((i, type) in listOf(
+            BlockRegistry.byUUID["remcraft.sandstone.slab[2]"]!!,
+            BlockRegistry.byUUID["remcraft.sandstone.fence"]!!,
             BlockRegistry.Dirt, BlockRegistry.Grass, BlockRegistry.Water, BlockRegistry.Lava,
             BlockRegistry.Sand, BlockRegistry.Sandstone
         ).withIndex()) {

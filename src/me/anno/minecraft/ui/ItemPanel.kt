@@ -1,13 +1,13 @@
 package me.anno.minecraft.ui
 
 import me.anno.config.DefaultConfig.style
-import me.anno.ecs.components.mesh.MeshComponent
 import me.anno.gpu.GFX
 import me.anno.input.Key
 import me.anno.io.files.InvalidRef
-import me.anno.mesh.Shapes.flatCube
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.DetailedBlockVisuals
+import me.anno.minecraft.block.builder.BlockBuilder
 import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.minecraft.ui.MinecraftControls.Companion.inHandSlot
 import me.anno.minecraft.ui.MinecraftControls.Companion.inventory
@@ -23,17 +23,18 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
 
     companion object {
         val previewBlocks = LazyMap { type: BlockType ->
-            if (type == BlockRegistry.Air) null
-            else {
-                // todo this isn't really working (always using blockIndex==0???), and we need to
-                //  wait for the texture to be loaded to get good results
-                val baseMesh = flatCube.front
-                val uiMesh = UIBlockMesh(16)
-                baseMesh.copyInto(uiMesh)
-                val material =
-                    if (type.isSolid) TextureMaterial.solid
-                    else TextureMaterial.fluid
-                MeshComponent(uiMesh, material)
+            when (type) {
+                BlockRegistry.Air -> null
+                is DetailedBlockVisuals -> type.getModel()
+                else -> {
+                    // todo this isn't really working (always using texId==0???), and we need to
+                    //  wait for the texture to be loaded to get good results
+                    val builder = BlockBuilder()
+                    builder.addCube(0, 0, 0, 16, 16, 16, type.texId)
+                    val mesh = builder.build()
+                    if (type.isFluid) mesh.materials = listOf(TextureMaterial.fluid.ref)
+                    mesh
+                }
             }
         }
     }

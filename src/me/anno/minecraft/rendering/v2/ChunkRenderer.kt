@@ -21,8 +21,8 @@ class ChunkRenderer(val material: Material) :
     override val hasVertexColors: Int get() = 1
     override val materials: List<FileReference> = listOf(material.ref)
 
-    override fun fillSpace(globalTransform: Matrix4x3, aabb: AABBd): Boolean {
-        aabb.all()
+    override fun fillSpace(globalTransform: Matrix4x3, dstUnion: AABBd): Boolean {
+        dstUnion.all()
         localAABB.all()
         globalAABB.all()
         return true
@@ -52,19 +52,19 @@ class ChunkRenderer(val material: Material) :
         val dy = key.y * csy
         val dz = key.z * csz
         for (i in 0 until buffer.vertexCount) {
-            val blockIndex = col[i] - 1 // 0 is air
-            putVertex(data, dx + pos[i * 3], dy + pos[i * 3 + 1], dz + pos[i * 3 + 2], blockIndex)
+            val texId = col[i] - 1 // 0 is air
+            putVertex(data, dx + pos[i * 3], dy + pos[i * 3 + 1], dz + pos[i * 3 + 2], texId)
         }
         buffer.isUpToDate = false
         return buffer
     }
 
     companion object {
-        fun putVertex(data: ByteBuffer, x: Float, y: Float, z: Float, blockIndex: Int) {
+        private fun putVertex(data: ByteBuffer, x: Float, y: Float, z: Float, texId: Int) {
             data.putShort(x.roundToIntOr().toShort())
             data.putShort(y.roundToIntOr().toShort())
             data.putShort(z.roundToIntOr().toShort())
-            data.putShort(blockIndex.toShort())
+            data.putShort(texId.toShort())
         }
     }
 }

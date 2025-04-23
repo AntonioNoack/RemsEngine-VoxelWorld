@@ -3,14 +3,11 @@ package me.anno.minecraft.rendering.v2
 import me.anno.ecs.Entity
 import me.anno.engine.OfficialExtensions
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.entity.MovingEntity
 import me.anno.minecraft.entity.Player
 import me.anno.minecraft.rendering.createLighting
-import me.anno.minecraft.ui.AdventureControls
-import me.anno.minecraft.ui.ControlMode
-import me.anno.minecraft.ui.CreativeControls
-import me.anno.minecraft.ui.SpectatorControls
-import me.anno.minecraft.ui.SurvivalControls
+import me.anno.minecraft.ui.*
 import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem
 
@@ -42,15 +39,29 @@ fun main() {
     val scene = Entity("Scene")
     val solidRenderer = ChunkRenderer(TextureMaterial.solid)
     val fluidRenderer = ChunkRenderer(TextureMaterial.fluid)
-    val chunkLoader = ChunkLoader(solidRenderer, fluidRenderer)
+    val detailRenderer = DetailChunkRenderer(TextureMaterial.solid)
+    val chunkLoader = ChunkLoader(solidRenderer, fluidRenderer, detailRenderer)
 
     val player = Player(isPrimary = true, "Friedolin")
-    player.physics.position.y = 75.0
+    player.physics.position.y = 77.0
+
+    // place a few special blocks for testing
+    // todo why are all these blocks invisible???
+    for (dz in -3..3) {
+        for (dx in -3..3) {
+            dimension.setElementAt(dx, 75, dz, true, BlockRegistry.Sandstone)
+        }
+    }
+    dimension.setElementAt(1, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.slab[2]"]!!)
+    dimension.setElementAt(2, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.slab[3]"]!!)
+    dimension.setElementAt(3, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.fence"]!!)
+
     val entities = Entity("Entities", scene)
     spawnPlayer(entities, player)
 
     scene.add(solidRenderer)
     scene.add(fluidRenderer)
+    scene.add(detailRenderer)
     scene.add(chunkLoader)
     scene.add(createLighting())
     testSceneWithUI("Minecraft", scene) {

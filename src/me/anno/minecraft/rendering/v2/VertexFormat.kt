@@ -13,7 +13,13 @@ object VertexFormat {
     val blockAttributes = listOf(
         // more than that is unnecessary anyway
         Attribute("coords", AttributeType.SINT16, 3, true),
-        Attribute("blockIndex", AttributeType.SINT16, 1, true)
+        Attribute("texId", AttributeType.SINT16, 1, true)
+    )
+
+    val blockAttributes2 = listOf(
+        // more than that is unnecessary anyway
+        Attribute("coords", AttributeType.SINT32, 3, true),
+        Attribute("texId", AttributeType.SINT32, 1, true)
     )
 
     val blockVertexData = MeshVertexData(
@@ -21,7 +27,7 @@ object VertexFormat {
             ShaderStage(
                 "coords", listOf(
                     Variable(GLSLType.V3I, "coords", VariableMode.ATTR),
-                    Variable(GLSLType.V1I, "blockIndex", VariableMode.ATTR),
+                    Variable(GLSLType.V1I, "texId", VariableMode.ATTR),
                     Variable(GLSLType.V3F, "localPosition", VariableMode.OUT),
                 ), "localPosition = vec3(coords);\n"
             )
@@ -45,6 +51,22 @@ object VertexFormat {
                 ), "normal = normalize(cross(dFdx(finalPosition), dFdy(finalPosition)));\n"
             )
         ),
+    )
+
+    val detailsBlockVertexData = MeshVertexData(
+        listOf(
+            ShaderStage(
+                "coords", listOf(
+                    Variable(GLSLType.V3I, "coords", VariableMode.ATTR),
+                    Variable(GLSLType.V1I, "texId", VariableMode.ATTR),
+                    Variable(GLSLType.V3F, "localPosition", VariableMode.OUT),
+                ), "localPosition = vec3(coords) * ${1.0 / 16.0};\n"
+            )
+        ),
+        blockVertexData.loadNorTan,
+        MeshVertexData.DEFAULT.loadColors,
+        MeshVertexData.DEFAULT.loadMotionVec,
+        blockVertexData.onFragmentShader
     )
 
 }
