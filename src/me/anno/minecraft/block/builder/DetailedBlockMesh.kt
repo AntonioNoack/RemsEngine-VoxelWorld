@@ -14,6 +14,7 @@ import me.anno.gpu.shader.Shader
 import me.anno.io.files.FileReference
 import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.minecraft.rendering.v2.VertexFormat.detailsBlockVertexData
+import me.anno.utils.algorithms.ForLoop.forLoopSafely
 import org.joml.AABBf
 
 abstract class DetailedBlockMesh<DataArray> : PrefabSaveable(), IMesh {
@@ -34,7 +35,24 @@ abstract class DetailedBlockMesh<DataArray> : PrefabSaveable(), IMesh {
 
     override var materials: List<FileReference> = materialsI
 
-    abstract fun calculateBounds()
+    abstract fun union(data: DataArray, i: Int, dst: AABBf)
+    abstract fun getDataSize(data: DataArray): Int
+
+    fun calculateBounds() {
+        val data = data ?: return
+        val bounds = calcBounds
+        bounds.clear()
+        forLoopSafely(getDataSize(data), 4) { i ->
+            union(data, i, bounds)
+        }
+        validBounds = true
+    }
+
+    override val numPrimitives: Long
+        get() {
+            val data = data ?: return 0
+            return (getDataSize(data) shr 2).toLong()
+        }
 
     override fun getBounds(): AABBf {
         if (!validBounds) calculateBounds()
