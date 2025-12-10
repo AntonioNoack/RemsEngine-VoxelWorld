@@ -21,7 +21,8 @@ open class SurvivalControls(
     val allowsBlockPlacing: Boolean = true
 ) : MinecraftControls(player, dimension, chunkLoader, renderer) {
 
-    // todo disable fly controls, and instead implement simple physics
+    override val canFly: Boolean
+        get() = false
 
     fun removeItemAfterPlacing() {
         val inHand = inHand

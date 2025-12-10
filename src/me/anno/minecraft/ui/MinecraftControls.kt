@@ -1,5 +1,6 @@
 package me.anno.minecraft.ui
 
+import me.anno.Time
 import me.anno.engine.raycast.BlockTracing
 import me.anno.engine.raycast.RayQuery
 import me.anno.engine.ui.control.ControlScheme
@@ -8,6 +9,7 @@ import me.anno.engine.ui.render.SceneView
 import me.anno.input.Input
 import me.anno.input.Key
 import me.anno.language.translation.NameDesc
+import me.anno.maths.Maths.MILLIS_TO_NANOS
 import me.anno.maths.Maths.PIf
 import me.anno.maths.Maths.TAUf
 import me.anno.maths.Maths.clamp
@@ -26,8 +28,8 @@ import me.anno.utils.assertions.assertTrue
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
 import org.joml.AABBi
-import org.joml.Vector3d
 import org.joml.Vector3i
+import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 
@@ -109,12 +111,37 @@ abstract class MinecraftControls(
         renderView.updateEditorCameraTransform()
     }
 
+    abstract val canFly: Boolean
+
+    var isFlying = false
+    var isRunning = false
+
     fun updateMoveIntend() {
+        val dt = Time.deltaTime.toFloat()
+        val dy = when {
+            canFly && isFlying -> (Input.isKeyDown(Key.KEY_SPACE).toFloat() - Input.isControlDown.toFloat()) * 100f
+            player.physics.isOnGround -> Input.wasKeyPressed(Key.KEY_SPACE).toFloat() * 7f / dt
+            else -> 0f
+        }
+        player.gravityFactor = if (isFlying) 0f else 1f
+        if (Input.isShiftDown) isRunning = true
+        val moveSpeed = when {
+            isFlying -> 100f
+            !player.physics.isOnGround -> 1f
+            isRunning -> 20f
+            else -> 10f
+        }
         player.moveIntend.set(
-            checkKeys(Key.KEY_D, Key.KEY_ARROW_RIGHT) - checkKeys(Key.KEY_A, Key.KEY_ARROW_LEFT),
-            Input.isKeyDown(Key.KEY_SPACE).toFloat() - Input.isControlDown.toFloat(),
+            checkKeys(Key.KEY_D, Key.KEY_ARROW_RIGHT) - checkKeys(Key.KEY_A, Key.KEY_ARROW_LEFT), dy,
             checkKeys(Key.KEY_S, Key.KEY_ARROW_DOWN) - checkKeys(Key.KEY_W, Key.KEY_ARROW_UP)
-        ).rotateY(player.bodyRotationY).mul(1f, 30f, 1f)
+        ).rotateY(player.bodyRotationY).mul(moveSpeed, 1f, moveSpeed)
+        player.spectatorMode = this is SpectatorControls
+
+        // if player is flying, add artificial friction
+        if (isFlying) {
+            player.moveIntend.fma(-0.1f / dt, player.physics.actualVelocity)
+        }
+
         // shift: sprint
         // control: duck
     }
@@ -133,10 +160,36 @@ abstract class MinecraftControls(
         modeButton.text = nextEnum.name
     }
 
+    var lastSpaceTime = 0L
+    var lastWTime = 0L
+
     override fun onKeyTyped(x: Float, y: Float, key: Key) {
         when (key) {
             Key.KEY_F4 -> nextMode()
+            Key.KEY_SPACE -> {
+                // double space to fly
+                val time = Time.nanoTime
+                if (abs(time - lastSpaceTime) < 300 * MILLIS_TO_NANOS) {
+                    isFlying = canFly && !isFlying
+                }
+                lastSpaceTime = time
+            }
+            Key.KEY_W -> {
+                // double-w to running
+                val time = Time.nanoTime
+                if (abs(time - lastWTime) < 300 * MILLIS_TO_NANOS) {
+                    isRunning = true
+                }
+                lastWTime = time
+            }
             else -> super.onKeyTyped(x, y, key)
+        }
+    }
+
+    override fun onKeyUp(x: Float, y: Float, key: Key) {
+        when (key) {
+            Key.KEY_LEFT_SHIFT, Key.KEY_RIGHT_SHIFT -> isRunning = false
+            else -> super.onKeyDown(x, y, key)
         }
     }
 

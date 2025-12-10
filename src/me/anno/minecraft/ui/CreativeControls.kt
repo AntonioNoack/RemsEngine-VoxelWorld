@@ -13,8 +13,8 @@ import me.anno.minecraft.world.Dimension
 open class CreativeControls(player: Player, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView) :
     MinecraftControls(player, dimension, chunkLoader, renderer) {
 
-    // todo flying controls
-    //  orbit controls?
+    override val canFly: Boolean
+        get() = true
 
     override fun onUpdate() {
         super.onUpdate()

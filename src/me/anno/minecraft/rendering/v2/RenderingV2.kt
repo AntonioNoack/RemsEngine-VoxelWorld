@@ -36,6 +36,9 @@ val csz = dimension.sizeZ
  * todo inventory system
  * */
 fun main() {
+
+    // todo physics is extremely fast - gravity too high???
+
     OfficialExtensions.initForTests()
     val scene = Entity("Scene")
 

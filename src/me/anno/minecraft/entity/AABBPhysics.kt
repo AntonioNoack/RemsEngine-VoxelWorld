@@ -4,11 +4,12 @@ import me.anno.engine.debug.DebugAABB
 import me.anno.engine.debug.DebugShapes
 import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.dtTo10
+import me.anno.maths.Maths.sq
+import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.CustomBlockBounds
 import me.anno.minecraft.world.Dimension
 import me.anno.utils.Color.black
-import me.anno.utils.assertions.assertTrue
 import org.joml.AABBd
 import org.joml.AABBf
 import org.joml.Vector3d
@@ -18,8 +19,9 @@ import kotlin.math.*
 class AABBPhysics(val position: Vector3d, val size: Vector3f) {
 
     companion object {
-        private val minVelocity = Vector3f(-0.9999f)
-        private val maxVelocity = Vector3f(+0.9999f)
+
+        private val maxStep = 0.99f
+
         private val defaultBlockSize = AABBf(0f, 0f, 0f, 1f, 1f, 1f)
 
         fun getBlockBounds(x: Int, y: Int, z: Int, block: BlockType, dst: AABBd): AABBd {
@@ -31,21 +33,41 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
         }
 
         val fenceDy = 0.5
+        val airFriction = 0.2f
     }
 
-    val velocity = Vector3f()
+    val actualVelocity = Vector3f()
+    val targetVelocity = Vector3f()
     val acceleration = Vector3f()
-    var friction = 5f
 
+    val prevPosition = Vector3d()
+
+    val isOnGround: Boolean
+        get() = actualVelocity.y == 0f
+
+    var friction = airFriction
     var stepHeight = 0.5f
+
+    fun updateVelocity(dt: Float) {
+        targetVelocity.fma(dt, acceleration)
+        prevPosition.set(position)
+    }
+
+    fun updateActualVelocity(dt: Float) {
+        check(dt != 0f)
+        position.sub(prevPosition, actualVelocity).mul(1f / dt)
+        targetVelocity.set(actualVelocity)
+    }
+
+    fun stepSpectator(dt: Float) {
+        updateVelocity(dt)
+        position.fma(dt, targetVelocity)
+        actualVelocity.set(targetVelocity)
+    }
 
     fun step(dimension: Dimension, dt: Float) {
 
-        assertTrue(dt >= 0f)
-
-        acceleration.mulAdd(dt, velocity, velocity)
-        velocity.max(minVelocity)
-        velocity.min(maxVelocity)
+        updateVelocity(dt)
 
         val px = position.x
         val py = position.y
@@ -61,6 +83,9 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
         val blockCenter = Vector3d()
         val oldPosition = Vector3d()
 
+        var bestFloorBlock: BlockType = BlockRegistry.Air
+        var bestFloorScore = Double.POSITIVE_INFINITY
+
         for (dim in 0 until 3) {
 
             oldPosition.set(position)
@@ -68,7 +93,7 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
             // todo implement step-height somehow...
             // oldPosition.y += stepHeight
 
-            position[dim] += velocity[dim]
+            position[dim] += clamp(targetVelocity[dim] * dt, -maxStep, maxStep)
 
             val qx = position.x
             val qy = position.y
@@ -120,7 +145,17 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
                             val block = dimension.getBlockAt(x, y, z)
                             getBlockBounds(x, y, z, block, blockBounds)
 
+                            // todo is this correct, or do we need to add 0.5?
+                            if (block != BlockRegistry.Air) {
+                                val floorScore = sq(qx - x, qz - z) + (y - qy)
+                                if (floorScore < bestFloorScore) {
+                                    bestFloorBlock = block
+                                    bestFloorScore = floorScore
+                                }
+                            }
+
                             if (dim == 1) {
+                                // debug-show what we're colliding with
                                 DebugShapes.debugAABBs.add(DebugAABB(AABBd(blockBounds), 0x777777 or black, 0f))
                             }
 
@@ -131,7 +166,6 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
                                     // we need to clamp :)
                                     val clampPosI = blockBounds.getMinOrMax(dim, vSign > 0.0, selfSize[dim] * 0.5)
                                     position[dim] = clamp(newPosI, min(oldPosI, clampPosI), max(oldPosI, clampPosI))
-                                    velocity[dim] = 0f
                                     break@search
                                 }
                             }
@@ -144,10 +178,18 @@ class AABBPhysics(val position: Vector3d, val size: Vector3f) {
             if (dim == 1) check(stepHeight)
 
         }
+
+        if (dt != 0f) {
+            updateActualVelocity(dt)
+        }
+
+        friction =
+            if (isOnGround) bestFloorBlock.friction
+            else airFriction
     }
 
     fun applyFriction(dt: Float) {
-        velocity.mul(dtTo10(dt * friction))
+        targetVelocity.mul(dtTo10(dt * friction))
     }
 
     private fun AABBd.getMinOrMax(dim: Int, isMin: Boolean, halfExtends: Double): Double {

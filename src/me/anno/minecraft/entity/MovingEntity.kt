@@ -10,6 +10,7 @@ abstract class MovingEntity(size: Vector3f) : Entity(), OnUpdate {
 
     val physics = AABBPhysics(Vector3d(), size)
     val moveIntend = Vector3f()
+    var gravityFactor = 1f
 
     override fun onUpdate() {
         stepPhysics(Time.deltaTime.toFloat())
@@ -17,8 +18,12 @@ abstract class MovingEntity(size: Vector3f) : Entity(), OnUpdate {
 
     open fun stepPhysics(dt: Float) {
         collectForces()
-        physics.step(dimension, dt)
-        physics.applyFriction(dt)
+        if (this is Player && spectatorMode) {
+            physics.stepSpectator(dt)
+        } else {
+            physics.step(dimension, dt)
+            physics.applyFriction(dt)
+        }
         physicsToEngine()
     }
 
@@ -29,7 +34,7 @@ abstract class MovingEntity(size: Vector3f) : Entity(), OnUpdate {
 
     open fun collectForces() {
         val acceleration = physics.acceleration
-        acceleration.set(dimension.gravity)
+        dimension.gravity.mul(gravityFactor, acceleration)
         acceleration.add(moveIntend)
     }
 

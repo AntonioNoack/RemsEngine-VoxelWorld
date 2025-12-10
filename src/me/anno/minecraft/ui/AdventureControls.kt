@@ -6,4 +6,9 @@ import me.anno.minecraft.rendering.v2.ChunkLoader
 import me.anno.minecraft.world.Dimension
 
 class AdventureControls(player: Player, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView) :
-    SurvivalControls(player, dimension, chunkLoader, renderer, false)
+    SurvivalControls(player, dimension, chunkLoader, renderer, false) {
+
+    override val canFly: Boolean
+        get() = false
+
+}
