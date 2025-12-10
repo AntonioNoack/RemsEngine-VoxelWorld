@@ -1,5 +1,6 @@
 package me.anno.minecraft.rendering.v2
 
+import me.anno.cache.FileCacheList
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.MeshAttributes.color0
@@ -19,7 +20,7 @@ class ChunkRenderer(val material: Material) :
     UniqueMeshRendererImpl<Vector3i, Mesh>(blockAttributes16Bit, blockVertexData, false, DrawMode.TRIANGLES) {
 
     override val hasVertexColors: Int get() = 1
-    override val materials: List<FileReference> = listOf(material.ref)
+    override val materials: List<FileReference> = FileCacheList.of(material)
 
     override fun fillSpace(globalTransform: Matrix4x3, dstUnion: AABBd) {
         dstUnion.all()
@@ -28,8 +29,7 @@ class ChunkRenderer(val material: Material) :
     }
 
     /**
-     * defines what the world looks like for Raycasting,
-     * and for AABBs
+     * defines what the world looks like for Raycasting, and for AABBs
      * */
     override fun getTransformAndMaterial(key: Vector3i, transform: Transform): Material {
         transform.setLocalPosition(

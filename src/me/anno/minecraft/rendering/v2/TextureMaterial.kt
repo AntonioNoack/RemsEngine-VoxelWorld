@@ -16,9 +16,12 @@ class TextureMaterial : Material() {
 
     override fun bind(shader: GPUShader) {
         super.bind(shader)
-        val tex = if (texture.isCreated()) texture else TextureLib.whiteTex3d
+        val tex = if (texture.isCreated()) texture else TextureLib.whiteTex2da
         tex.bind(shader, "diffuseMapArray", Filtering.NEAREST, Clamping.REPEAT)
     }
+
+    override fun equals(other: Any?) = other === this
+    override fun hashCode(): Int = 0
 
     companion object {
         val solid = TextureMaterial()

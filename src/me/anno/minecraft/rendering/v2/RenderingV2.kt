@@ -2,6 +2,7 @@ package me.anno.minecraft.rendering.v2
 
 import me.anno.ecs.Entity
 import me.anno.engine.OfficialExtensions
+import me.anno.engine.ui.render.RenderMode
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.entity.MovingEntity
@@ -37,6 +38,7 @@ val csz = dimension.sizeZ
 fun main() {
     OfficialExtensions.initForTests()
     val scene = Entity("Scene")
+
     val solidRenderer = ChunkRenderer(TextureMaterial.solid)
     val fluidRenderer = ChunkRenderer(TextureMaterial.fluid)
     val detailRenderer = DetailChunkRenderer(TextureMaterial.solid)

@@ -1,7 +1,9 @@
 package me.anno.minecraft.rendering.v2
 
+import me.anno.cache.FileCacheList
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.material.Material
+import me.anno.ecs.components.mesh.material.MaterialCache
 import me.anno.ecs.components.mesh.unique.UniqueMeshRendererImpl
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.gpu.buffer.DrawMode
@@ -23,7 +25,7 @@ class DetailChunkRenderer(val material: Material) :
     ) {
 
     override val hasVertexColors: Int get() = 1
-    override val materials: List<FileReference> = listOf(material.ref)
+    override val materials: List<FileReference> = FileCacheList.of(material)
 
     override fun fillSpace(globalTransform: Matrix4x3, dstUnion: AABBd) {
         dstUnion.all()
@@ -32,8 +34,7 @@ class DetailChunkRenderer(val material: Material) :
     }
 
     /**
-     * defines what the world looks like for Raycasting,
-     * and for AABBs
+     * defines what the world looks like for Raycasting, and for AABBs
      * */
     override fun getTransformAndMaterial(key: Vector3i, transform: Transform): Material = material
 
