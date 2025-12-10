@@ -2,29 +2,33 @@ package me.anno.minecraft.rendering.v2
 
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.material.Material
-import me.anno.ecs.components.mesh.unique.UniqueMeshRenderer
+import me.anno.ecs.components.mesh.unique.UniqueMeshRendererImpl
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.gpu.buffer.DrawMode
 import me.anno.gpu.buffer.StaticBuffer
 import me.anno.io.files.FileReference
 import me.anno.minecraft.block.builder.DetailedBlockMesh32
-import me.anno.minecraft.rendering.v2.VertexFormat.blockAttributes2
+import me.anno.minecraft.rendering.v2.VertexFormat.blockAttributes32Bit
 import me.anno.minecraft.rendering.v2.VertexFormat.detailsBlockVertexData
 import org.joml.AABBd
 import org.joml.Matrix4x3
 import org.joml.Vector3i
 
 class DetailChunkRenderer(val material: Material) :
-    UniqueMeshRenderer<DetailedBlockMesh32, Vector3i>(blockAttributes2, detailsBlockVertexData, DrawMode.TRIANGLES) {
+    UniqueMeshRendererImpl<Vector3i, DetailedBlockMesh32>(
+        blockAttributes32Bit,
+        detailsBlockVertexData,
+        false,
+        DrawMode.TRIANGLES
+    ) {
 
     override val hasVertexColors: Int get() = 1
     override val materials: List<FileReference> = listOf(material.ref)
 
-    override fun fillSpace(globalTransform: Matrix4x3, dstUnion: AABBd): Boolean {
+    override fun fillSpace(globalTransform: Matrix4x3, dstUnion: AABBd) {
         dstUnion.all()
         localAABB.all()
         globalAABB.all()
-        return true
     }
 
     /**
@@ -33,10 +37,11 @@ class DetailChunkRenderer(val material: Material) :
      * */
     override fun getTransformAndMaterial(key: Vector3i, transform: Transform): Material = material
 
-    override fun getData(key: Vector3i, mesh: DetailedBlockMesh32): StaticBuffer? {
+    override fun createBuffer(key: Vector3i, mesh: DetailedBlockMesh32): Pair<StaticBuffer, IntArray?>? {
         if (mesh.numPrimitives == 0L) return null
         mesh.ensureBuffer()
-        return mesh.buffer
+        val buffer = mesh.buffer ?: return null
+        return buffer to null
     }
 
     companion object {

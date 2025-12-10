@@ -14,12 +14,12 @@ import kotlin.math.max
 
 object DrawingShader : Shader(
     "blockTracing", listOf(
-        Variable(GLSLType.V3F, "coords", VariableMode.ATTR),
+        Variable(GLSLType.V3F, "positions", VariableMode.ATTR),
         Variable(GLSLType.M4x4, "transform"),
         Variable(GLSLType.M4x3, "localTransform"),
     ), "" +
             "void main() {\n" +
-            "   vec3 pos = matMul(localTransform,vec4(coords,1.0));\n" +
+            "   vec3 pos = matMul(localTransform,vec4(positions,1.0));\n" +
             "   gl_Position = matMul(transform,vec4(pos,1.0));\n" +
             "   dir0 = pos;\n" +
             "}", listOf(

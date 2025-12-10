@@ -45,7 +45,7 @@ object BlockRegistry {
             val id = byId.size
             assertTrue(id < 65536, "Too many blocks")
             byId.add(blockType)
-            byUUID.put(blockType.typeUUID, blockType)
+            byUUID[blockType.typeUUID] = blockType
             blockType.id = id.toShort()
         }
     }

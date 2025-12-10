@@ -1,5 +1,6 @@
 package me.anno.minecraft.world
 
+import me.anno.cache.Promise
 import me.anno.maths.chunks.cartesian.ChunkSystem
 import me.anno.minecraft.block.BlockRegistry.Air
 import me.anno.minecraft.block.BlockType
@@ -10,14 +11,13 @@ import me.anno.utils.pooling.ObjectPool
 import me.anno.utils.types.Floats.f3
 import org.apache.logging.log4j.LogManager
 import org.joml.Vector3f
-import org.joml.Vector3i
 import kotlin.math.min
 
 class Dimension(val generator: Generator, val decorators: List<Decorator>) : ChunkSystem<Chunk, BlockType>(5, 5, 5) {
 
     val gravity = Vector3f(0f, -9.81f, 0f)
 
-    override fun createChunk(chunkX: Int, chunkY: Int, chunkZ: Int, size: Int): Chunk {
+    override fun createChunk(chunkX: Int, chunkY: Int, chunkZ: Int, size: Int, result: Promise<Chunk>) {
         val t0 = System.nanoTime()
         val chunk = chunkPool.create()
         chunk.set(chunkX * sizeX, chunkY * sizeY, chunkZ * sizeZ)
@@ -27,7 +27,7 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         // 27ms -> 7ms by using faster noise on Ryzen 5 2600
         // 3.0-3.5ms on Ryzen 9 7950x3D
         if (printTimes) LOGGER.info("gen ${((t1 - t0) * 1e-6).f3()}ms/c")
-        return chunk
+        result.value = chunk
     }
 
     override fun getElement(container: Chunk, localX: Int, localY: Int, localZ: Int, index: Int): BlockType {
@@ -57,7 +57,7 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
     }
 
     fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stage: Int): Chunk? {
-        val chunk = getChunk(chunkX, chunkY, chunkZ, true) ?: return null
+        val chunk = getChunk(chunkX, chunkY, chunkZ, true)?.waitFor() ?: return null
         for (stage2 in chunk.decorator until min(stage, decorators.size)) {
             decorators[stage2].decorate(chunk)
             chunk.decorator = stage2 + 1
@@ -77,8 +77,9 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
     }
 
     fun unload(chunk: Chunk) {
-        val c2 = remove(Vector3i(chunk.chunkX, chunk.chunkY, chunk.chunkZ))
-        if (c2 != null) chunkPool.destroy(c2)
+        removeChunk(chunk.chunkX, chunk.chunkY, chunk.chunkZ)?.waitFor { value ->
+            if (value != null) chunkPool.destroy(value)
+        }
     }
 
     private val chunkPool = ObjectPool { Chunk(this, 0, 0, 0) }

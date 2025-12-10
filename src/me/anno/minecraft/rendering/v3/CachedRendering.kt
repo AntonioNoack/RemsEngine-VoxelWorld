@@ -6,6 +6,7 @@ import me.anno.ecs.systems.OnUpdate
 import me.anno.gpu.GFXState.timeRendering
 import me.anno.gpu.buffer.Attribute
 import me.anno.gpu.buffer.AttributeType
+import me.anno.gpu.buffer.CompactAttributeLayout.Companion.bind
 import me.anno.gpu.buffer.ComputeBuffer
 import me.anno.gpu.framebuffer.DepthBufferType
 import me.anno.gpu.framebuffer.Framebuffer
@@ -20,7 +21,6 @@ import me.anno.minecraft.block.BlockRegistry.Dirt
 import me.anno.minecraft.block.BlockRegistry.Grass
 import me.anno.minecraft.block.BlockRegistry.Stone
 import me.anno.minecraft.world.Dimension
-import me.anno.utils.structures.lists.Lists.createList
 import kotlin.math.max
 
 class CachedRendering(dimension: Dimension, entity0: Entity) : Component(), OnUpdate {
@@ -43,9 +43,9 @@ class CachedRendering(dimension: Dimension, entity0: Entity) : Component(), OnUp
                 "   return xzIndex * $DELTA_Y + y;\n" +
                 "}\n"
 
-        private val attributes = listOf(Attribute("block", AttributeType.UINT32, 1, true))
+        private val attributes = bind(Attribute("block", AttributeType.UINT32, 1))
         val TOTAL_CHUNK_SIZE = CHUNK_SIZE * DELTA_Y * CHUNK_SIZE
-        val chunkBuffers = createList(NUM_CHUNK_BUFFERS) {
+        val chunkBuffers = List(NUM_CHUNK_BUFFERS) {
             ComputeBuffer("buffer", attributes, TOTAL_CHUNK_SIZE)
         }
 
@@ -116,7 +116,7 @@ class CachedRendering(dimension: Dimension, entity0: Entity) : Component(), OnUp
     // todo render LOD 0 with proper triangle mesh
 
     val NUM_LODS = 3
-    val lods = createList(NUM_LODS) {
+    val lods = List(NUM_LODS) {
         // todo LODs with step are not correctly positioned or generated :/
         val step = 1 shl max(0, it - 2)
         val min = 2 * (1 shl it) / step // @ chunkSize = 32

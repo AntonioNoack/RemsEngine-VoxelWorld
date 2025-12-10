@@ -3,6 +3,7 @@ package me.anno.minecraft.rendering.v2
 import me.anno.ecs.components.mesh.utils.MeshVertexData
 import me.anno.gpu.buffer.Attribute
 import me.anno.gpu.buffer.AttributeType
+import me.anno.gpu.buffer.CompactAttributeLayout.Companion.bind
 import me.anno.gpu.shader.GLSLType
 import me.anno.gpu.shader.builder.ShaderStage
 import me.anno.gpu.shader.builder.Variable
@@ -10,26 +11,28 @@ import me.anno.gpu.shader.builder.VariableMode
 
 object VertexFormat {
 
-    val blockAttributes = listOf(
+    val blockAttributes16Bit = bind(
         // more than that is unnecessary anyway
-        Attribute("coords", AttributeType.SINT16, 3, true),
-        Attribute("texId", AttributeType.SINT16, 1, true)
+        Attribute("positions", AttributeType.SINT16, 3),
+        Attribute("texIds", AttributeType.SINT16, 1)
     )
 
-    val blockAttributes2 = listOf(
+    val blockAttributes32Bit = bind(
         // more than that is unnecessary anyway
-        Attribute("coords", AttributeType.SINT32, 3, true),
-        Attribute("texId", AttributeType.SINT32, 1, true)
+        Attribute("positions", AttributeType.SINT32, 3),
+        Attribute("texIds", AttributeType.SINT32, 1)
     )
 
     val blockVertexData = MeshVertexData(
         listOf(
             ShaderStage(
-                "coords", listOf(
-                    Variable(GLSLType.V3I, "coords", VariableMode.ATTR),
-                    Variable(GLSLType.V1I, "texId", VariableMode.ATTR),
+                "positions", listOf(
+                    Variable(GLSLType.V3I, "positions", VariableMode.ATTR),
+                    Variable(GLSLType.V1I, "texIds", VariableMode.ATTR),
                     Variable(GLSLType.V3F, "localPosition", VariableMode.OUT),
-                ), "localPosition = vec3(coords);\n"
+                    Variable(GLSLType.V1I, "texId", VariableMode.OUT),
+                ), "localPosition = vec3(positions);\n" +
+                        "texId = texIds;\n"
             )
         ),
         listOf(
@@ -56,11 +59,13 @@ object VertexFormat {
     val detailsBlockVertexData = MeshVertexData(
         listOf(
             ShaderStage(
-                "coords", listOf(
-                    Variable(GLSLType.V3I, "coords", VariableMode.ATTR),
-                    Variable(GLSLType.V1I, "texId", VariableMode.ATTR),
+                "positions", listOf(
+                    Variable(GLSLType.V3I, "positions", VariableMode.ATTR),
+                    Variable(GLSLType.V1I, "texIds", VariableMode.ATTR),
                     Variable(GLSLType.V3F, "localPosition", VariableMode.OUT),
-                ), "localPosition = vec3(coords) * ${1.0 / 16.0};\n"
+                    Variable(GLSLType.V1I, "texId", VariableMode.OUT),
+                ), "localPosition = vec3(positions) * ${1.0 / 16.0};\n" +
+                        "texId = texIds;\n"
             )
         ),
         blockVertexData.loadNorTan,

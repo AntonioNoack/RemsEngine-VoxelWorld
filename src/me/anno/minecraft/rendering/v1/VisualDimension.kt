@@ -9,6 +9,7 @@ import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.serialization.NotSerializedProperty
 import me.anno.engine.ui.render.RenderState
 import me.anno.engine.ui.render.RenderView
+import me.anno.gpu.pipeline.Pipeline
 import me.anno.gpu.pipeline.PipelineStage
 import me.anno.maths.patterns.SpiralPattern
 import me.anno.minecraft.entity.Player
@@ -146,7 +147,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
         }
     }
 
-    override fun forEachMesh(run: (IMesh, Material?, Transform) -> Boolean) {
+    override fun forEachMesh(pipeline: Pipeline?, callback: (IMesh, Material?, Transform) -> Boolean) {
         var i = 0
         for ((v, visualChunk) in visualChunks) {
             if (visualChunk.hasMesh) {
@@ -156,8 +157,8 @@ class VisualDimension : MeshSpawner(), OnUpdate {
                     v.y * dimension.sizeY.toDouble(),
                     v.z * dimension.sizeZ.toDouble()
                 )
-                run(visualChunk.solidMesh, solidMaterial, transform)
-                run(visualChunk.fluidMesh, fluidMaterial, transform)
+                callback(visualChunk.solidMesh, solidMaterial, transform)
+                callback(visualChunk.fluidMesh, fluidMaterial, transform)
             }
         }
     }

@@ -6,5 +6,4 @@ import me.anno.utils.Color.black
 object UnknownBlock : BlockType(
     "unknown", 0xff00ff or black, 0,
     NameDesc("Unknown Block")
-) {
-}
+)

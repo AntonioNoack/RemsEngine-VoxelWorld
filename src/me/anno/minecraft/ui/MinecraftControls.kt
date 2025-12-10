@@ -210,7 +210,7 @@ abstract class MinecraftControls(
         // expensive way, using raycasting:
         val query = RayQuery(
             renderView.cameraPosition,
-            Vector3d(renderView.mouseDirection),
+            renderView.mouseDirection,
             1e3
         )
 

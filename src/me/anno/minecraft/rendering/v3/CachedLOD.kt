@@ -20,7 +20,6 @@ import me.anno.gpu.texture.CubemapTexture
 import me.anno.input.Input
 import me.anno.input.Key
 import me.anno.maths.Maths
-import me.anno.maths.Maths.max
 import me.anno.maths.Maths.sq
 import me.anno.maths.patterns.SpiralPattern
 import me.anno.mesh.Shapes.flatCube
@@ -39,6 +38,7 @@ import org.joml.Matrix4f
 import org.joml.Matrix4x3f
 import org.joml.Quaternionf
 import org.joml.Vector3i
+import kotlin.math.max
 
 // todo we could skip chunks, where we don't look... is complicated with being finished or not though
 class CachedLOD(
@@ -95,7 +95,7 @@ class CachedLOD(
         transform.localPosition = transform.localPosition
             .set(renderPosition)
         transform.teleportUpdate()
-        invalidateAABB()
+        invalidateBounds()
     }
 
     fun update() {
@@ -160,7 +160,7 @@ class CachedLOD(
                         val st = 1f / step
                         val ts = 0.5f * step
                         model.identity()
-                            .setTranslation(cx.toFloat() , y0, cz.toFloat())
+                            .setTranslation(cx.toFloat(), y0, cz.toFloat())
                             .scale(sx * ts, DELTA_Y * ts, sx * ts)
                         shader.m4x4("transform", transform)
                         shader.m4x3("localTransform", model)

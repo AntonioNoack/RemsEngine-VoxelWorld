@@ -1,7 +1,7 @@
 package me.anno.minecraft.block.builder
 
 import me.anno.gpu.buffer.StaticBuffer
-import me.anno.minecraft.rendering.v2.VertexFormat.blockAttributes
+import me.anno.minecraft.rendering.v2.VertexFormat.blockAttributes16Bit
 import me.anno.utils.algorithms.ForLoop.forLoopSafely
 
 class DetailedBlockMesh16 : DetailedBlockMesh<ShortArray>() {
@@ -15,9 +15,10 @@ class DetailedBlockMesh16 : DetailedBlockMesh<ShortArray>() {
     override fun ensureBuffer() {
         if (buffer != null) return
         val data = data ?: return
-        val buffer = StaticBuffer("detailedBlockMesh16", blockAttributes, data.size shr 2)
+        val buffer = StaticBuffer("detailedBlockMesh16", blockAttributes16Bit, data.size shr 2)
+        val nio = buffer.getOrCreateNioBuffer()
         for (i in data.indices) {
-            buffer.putShort(data[i])
+            nio.putShort(data[i])
         }
         this.buffer = buffer
     }
