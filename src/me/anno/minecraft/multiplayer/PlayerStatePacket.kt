@@ -1,7 +1,7 @@
 package me.anno.minecraft.multiplayer
 
 import me.anno.engine.Events.addEvent
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.network.Packet
 import me.anno.network.Server
 import me.anno.network.TCPClient
@@ -43,7 +43,7 @@ class PlayerStatePacket(magic: String = "JOIN") : Packet(magic) {
                 val players = client.network.players
                 synchronized(players) {
                     if (join) {
-                        players.getOrPut(name) { Player(false, name) }
+                        players.getOrPut(name) { PlayerEntity(false, name) }
                         LOGGER.info("Added $name")
                     } else {
                         players.remove(name)?.entity?.removeFromParent()

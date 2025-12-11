@@ -19,7 +19,7 @@ class PyramidDecorator(
             val radius = halfSize - 1 - dy
             for (dx in -radius..radius) {
                 for (dz in -radius..radius) {
-                    chunk.addBlockWithin(lx + dx, y, lz + dz, material)
+                    chunk.setBlockIfAir(lx + dx, y, lz + dz, material)
                 }
             }
         }

@@ -2,7 +2,7 @@ package me.anno.minecraft.multiplayer
 
 import me.anno.Time
 import me.anno.engine.Events.addEvent
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.network.Server
 import me.anno.network.TCPClient
 import me.anno.network.packets.POS1Packet
@@ -65,7 +65,7 @@ class POSXPacket : POS1Packet("POSX") {
 
         private val LOGGER = LogManager.getLogger(POSXPacket::class)
 
-        fun createPacket(player: Player, client: TCPClient?): POSXPacket {
+        fun createPacket(player: PlayerEntity, client: TCPClient?): POSXPacket {
             val entity = player.entity!!
             val pos = entity.transform.globalPosition
             val packet = POSXPacket()

@@ -6,7 +6,7 @@ import me.anno.io.utils.StringMap
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.item.DurableItem
 import me.anno.minecraft.item.DurableItem.Companion.METADATA_DURABILITY
 import me.anno.minecraft.item.ItemType
@@ -17,7 +17,7 @@ import me.anno.minecraft.world.Dimension
 import org.joml.Vector3i
 
 open class SurvivalControls(
-    player: Player, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView,
+    player: PlayerEntity, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView,
     val allowsBlockPlacing: Boolean = true
 ) : MinecraftControls(player, dimension, chunkLoader, renderer) {
 

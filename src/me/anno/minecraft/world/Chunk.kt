@@ -97,6 +97,16 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         return setBlock(x, y, z, block.id)
     }
 
+    fun setBlock(x: Int, y: Int, z: Int, block: BlockType, metadata: Metadata?): Boolean {
+        val index = dimension.getIndex(x, y, z)
+        val changed0 = setBlock(x, y, z, block.id)
+        val oldMetadata = this.metadata[index]
+        if (metadata != null) this.metadata[index] = metadata
+        else this.metadata.remove(index)
+        val changed1 = metadata != oldMetadata
+        return changed0 || changed1
+    }
+
     fun setBlockWithin(lx: Int, ly: Int, lz: Int, block: BlockType): Boolean {
         val dim = dimension
         return if (lx in 0 until dim.sizeX && ly in 0 until dim.sizeY && lz in 0 until dim.sizeZ) {
@@ -104,9 +114,12 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         } else false
     }
 
-    fun addBlockWithin(lx: Int, ly: Int, lz: Int, block: BlockType): Boolean {
+    fun setBlockIfAir(lx: Int, ly: Int, lz: Int, block: BlockType): Boolean {
         val dim = dimension
-        return if (lx in 0 until dim.sizeX && ly in 0 until dim.sizeY && lz in 0 until dim.sizeZ) {
+        return if (lx in 0 until dim.sizeX &&
+            ly in 0 until dim.sizeY &&
+            lz in 0 until dim.sizeZ
+        ) {
             val index = dim.getIndex(lx, ly, lz)
             if (blocks[index] == 0.toShort()) {
                 blocks[index] = block.id

@@ -12,7 +12,7 @@ import me.anno.engine.ui.render.RenderView
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.gpu.pipeline.PipelineStage
 import me.anno.maths.patterns.SpiralPattern
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.multiplayer.MCProtocol
 import me.anno.minecraft.world.SampleDimensions.perlin2dDim
 import me.anno.minecraft.world.SampleDimensions.perlin3dDim
@@ -93,7 +93,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
         return tmp.set(anchor).add(dx, dy, dz)
     }
 
-    val player = Player()
+    val player = PlayerEntity()
 
     override fun onUpdate() {
 

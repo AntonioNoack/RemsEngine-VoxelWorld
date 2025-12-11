@@ -4,7 +4,7 @@ import me.anno.Time
 import me.anno.ecs.Entity
 import me.anno.ecs.components.mesh.MeshComponent
 import me.anno.engine.ui.render.RenderView
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.multiplayer.POSXPacket.Companion.createPacket
 import me.anno.network.NetworkProtocol
 import me.anno.network.Protocol
@@ -36,7 +36,7 @@ object MCProtocol {
     private val tcpPort = 65024
     private val udpPort = tcpPort + 1
 
-    fun updatePlayers(player: Player, entities: Entity) {
+    fun updatePlayers(player: PlayerEntity, entities: Entity) {
 
         // Packet.debugPackets = true
         // doesn't work yet
@@ -100,7 +100,7 @@ object MCProtocol {
         }
     }
 
-    fun stop(player: Player) {
+    fun stop(player: PlayerEntity) {
         stop(player.networkData)
     }
 
@@ -116,7 +116,7 @@ object MCProtocol {
         data.players.clear()
     }
 
-    fun createPlayer(name: String, entities: Entity, player: Player = Player()): Player {
+    fun createPlayer(name: String, entities: Entity, player: PlayerEntity = PlayerEntity()): PlayerEntity {
         val entity = Entity(name)
         player.name = name
         entity.add(player)
@@ -125,7 +125,7 @@ object MCProtocol {
         return player
     }
 
-    private fun tryStartClient(player: Player) {
+    private fun tryStartClient(player: PlayerEntity) {
         player.networkData.client = try {
             LOGGER.info("starting client")
             val socket = TCPClient.createSocket(InetAddress.getLocalHost(), tcpPort, tcpProtocol)
@@ -139,7 +139,7 @@ object MCProtocol {
         }
     }
 
-    private fun tryStartServer(player: Player): Boolean {
+    private fun tryStartServer(player: PlayerEntity): Boolean {
         return try {
             val server = object : Server() {
 
@@ -173,7 +173,7 @@ object MCProtocol {
             LOGGER.info("started server, assigning to player ${player.name}")
             player.networkData.server = server
             true
-        } catch (e: BindException) {
+        } catch (_: BindException) {
             LOGGER.info("server port is already bound")
             player.networkData.server = null
             false

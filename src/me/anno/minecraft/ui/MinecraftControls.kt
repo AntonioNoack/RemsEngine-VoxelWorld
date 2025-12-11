@@ -10,14 +10,11 @@ import me.anno.input.Input
 import me.anno.input.Key
 import me.anno.language.translation.NameDesc
 import me.anno.maths.Maths.MILLIS_TO_NANOS
-import me.anno.maths.Maths.PIf
-import me.anno.maths.Maths.TAUf
-import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.rendering.v2.*
 import me.anno.minecraft.world.Dimension
 import me.anno.ui.base.SpacerPanel
@@ -31,10 +28,9 @@ import org.joml.AABBi
 import org.joml.Vector3i
 import kotlin.math.abs
 import kotlin.math.floor
-import kotlin.math.max
 
 abstract class MinecraftControls(
-    val player: Player,
+    val player: PlayerEntity,
     val dimension: Dimension,
     val chunkLoader: ChunkLoader,
     renderer: RenderView
@@ -84,6 +80,8 @@ abstract class MinecraftControls(
 
         // set initial rotation
         rotatePlayer(0f, 0f)
+
+        zoom(2f / renderView.radius)
     }
 
     override fun onMouseMoved(x: Float, y: Float, dx: Float, dy: Float) {
@@ -96,9 +94,14 @@ abstract class MinecraftControls(
     }
 
     fun rotatePlayer(dx: Float, dy: Float) {
-        val speed = 1f / max(width, height)
-        player.headRotationX = clamp(player.headRotationX + dy * speed, -PIf, PIf)
-        player.bodyRotationY = (player.bodyRotationY + dx * speed) % TAUf
+        val entity = player.entity!!
+        val transform = entity.transform
+        val speed = 5f / (width + height)
+        transform.localRotation = transform.localRotation
+            .rotationY(player.bodyRotationY + dx * speed)
+        // todo configure/adjust head rotation
+        player.headRotation
+            .rotationX(player.headRotationX + dy * speed)
         rotationTargetDegrees.set(
             player.headRotationX.toDouble().toDegrees(),
             player.bodyRotationY.toDouble().toDegrees(),

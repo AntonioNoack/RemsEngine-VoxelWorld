@@ -2,15 +2,21 @@ package me.anno.minecraft.rendering.v2
 
 import me.anno.ecs.Entity
 import me.anno.engine.OfficialExtensions
-import me.anno.engine.ui.render.RenderMode
+import me.anno.engine.ui.ECSTreeView
+import me.anno.engine.ui.render.SceneView
+import me.anno.engine.ui.render.SceneView.Companion.createSceneUI
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.minecraft.block.BlockRegistry
+import me.anno.minecraft.entity.BoarEntity
 import me.anno.minecraft.entity.MovingEntity
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.rendering.createLighting
 import me.anno.minecraft.ui.*
 import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem
+import me.anno.ui.base.groups.PanelList
+import me.anno.ui.debug.TestEngine.Companion.testUI3
+import me.anno.ui.editor.PropertyInspector
 
 val saveSystem = SaveLoadSystem("Minecraft")
 val dimension = SampleDimensions.perlin2dDim.apply {
@@ -37,7 +43,13 @@ val csz = dimension.sizeZ
  * */
 fun main() {
 
-    // todo physics is extremely fast - gravity too high???
+    // todo implement falling sand
+    //  -> if block below is removed,
+    //     then spawn a block entity
+    //  -> if block entity hits floor (isOnGround)
+    //     then set a block
+
+    // todo remove side panels, lock mouse
 
     OfficialExtensions.initForTests()
     val scene = Entity("Scene")
@@ -47,7 +59,7 @@ fun main() {
     val detailRenderer = DetailChunkRenderer(TextureMaterial.solid)
     val chunkLoader = ChunkLoader(solidRenderer, fluidRenderer, detailRenderer)
 
-    val player = Player(isPrimary = true, "Friedolin")
+    val player = PlayerEntity(isPrimary = true, "Friedolin")
     player.physics.position.y = 77.0
 
     // place a few special blocks for testing
@@ -62,18 +74,24 @@ fun main() {
     dimension.setElementAt(3, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.fence"]!!)
 
     val entities = Entity("Entities", scene)
-    spawnPlayer(entities, player)
+    spawnEntity(entities, player)
+
+    val boar = BoarEntity()
+    boar.physics.position.set(-3.0, 77.0, 0.0)
+    spawnEntity(entities, boar)
 
     scene.add(solidRenderer)
     scene.add(fluidRenderer)
     scene.add(detailRenderer)
     scene.add(chunkLoader)
     scene.add(createLighting())
-    testSceneWithUI("Minecraft", scene) {
-        val creativeControls = CreativeControls(player, dimension, chunkLoader, it.renderView)
-        val spectatorControls = SpectatorControls(player, dimension, chunkLoader, it.renderView)
-        val survivalControls = SurvivalControls(player, dimension, chunkLoader, it.renderView)
-        val adventureControls = AdventureControls(player, dimension, chunkLoader, it.renderView)
+
+    fun init(sceneView: SceneView) {
+        val renderer = sceneView.renderView
+        val creativeControls = CreativeControls(player, dimension, chunkLoader, renderer)
+        val spectatorControls = SpectatorControls(player, dimension, chunkLoader, renderer)
+        val survivalControls = SurvivalControls(player, dimension, chunkLoader, renderer)
+        val adventureControls = AdventureControls(player, dimension, chunkLoader, renderer)
         val allControls = mapOf(
             ControlMode.CREATIVE to creativeControls,
             ControlMode.SURVIVAL to survivalControls,
@@ -83,11 +101,38 @@ fun main() {
         for (control in allControls.values) {
             control.controlModes = allControls
         }
-        it.editControls = creativeControls
+        sceneView.editControls = creativeControls
+    }
+
+    if (false) {
+        testSceneWithUI("RemCraft", scene) { sceneView ->
+            init(sceneView)
+        }
+    } else {
+        testUI3("RemCraft") {
+            // todo bug: why is nothing being rendered???
+            lateinit var sv: SceneView
+            val ui = createSceneUI(scene) { init(it); sv = it }
+            /*Systems.world = scene
+            ECSSceneTabs.open(ECSSceneTab(scene.ref, PlayMode.EDITING), true)
+            PrefabInspector.currentInspector = PrefabInspector(scene.ref)
+            val sceneView = SceneView(RenderView1(PlayMode.EDITING, scene, style), style)
+            init(sceneView)
+            sceneView*/
+
+            // todo why is ECSSceneTabs required for things to be rendered???
+            ui.forAllPanels { panel ->
+                if (panel is PanelList) {
+                    panel.children.removeIf { child -> child is PropertyInspector || child is ECSTreeView }
+                }
+            }
+            ui
+
+        }
     }
 }
 
-fun spawnPlayer(scene: Entity, entity: me.anno.minecraft.entity.Entity) {
+fun spawnEntity(scene: Entity, entity: me.anno.minecraft.entity.Entity) {
     val childEntity = Entity(scene).add(entity)
     if (entity is MovingEntity) {
         childEntity.setPosition(entity.physics.position)

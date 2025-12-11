@@ -17,10 +17,9 @@ fun createLighting(): Entity {
         .setScale(250f)
     sunEntity.add(object : Component(), OnUpdate {
         // move shadows with player
-        var updateCtr = 0
         override fun onUpdate() {
             val rv = RenderView.currentInstance
-            if (rv != null && posMod(updateCtr++, 10) == 0) {
+            if (rv != null) {
                 sun.needsUpdate1 = true
                 sunEntity.transform.localPosition = rv.orbitCenter
                 sunEntity.transform.teleportUpdate()

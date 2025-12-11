@@ -4,13 +4,13 @@ import me.anno.engine.ui.render.RenderView
 import me.anno.input.Key
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.item.RightClickBlock
 import me.anno.minecraft.item.RightClickItem
 import me.anno.minecraft.rendering.v2.ChunkLoader
 import me.anno.minecraft.world.Dimension
 
-open class CreativeControls(player: Player, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView) :
+open class CreativeControls(player: PlayerEntity, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView) :
     MinecraftControls(player, dimension, chunkLoader, renderer) {
 
     override val canFly: Boolean

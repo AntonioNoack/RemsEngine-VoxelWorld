@@ -5,14 +5,14 @@ import me.anno.ecs.Entity
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.extensions.mods.Mod
 import me.anno.io.saveable.Saveable.Companion.registerCustomClass
-import me.anno.minecraft.entity.Player
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.rendering.v1.VisualDimension
 
 class MinecraftMod : Mod() {
 
     override fun onPreInit() {
         super.onPreInit()
-        registerCustomClass(Player())
+        registerCustomClass(PlayerEntity())
         registerCustomClass(VisualDimension())
     }
 
