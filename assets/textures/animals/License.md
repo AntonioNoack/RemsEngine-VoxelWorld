@@ -1,2 +1,5 @@
-# Boar
-https://minecraft.novaskin.me/post/5086630320799744/128x64-boar
+# Boar ("Hog")
+https://minecraft.novaskin.me/post/1984233069/hog-story-mode
+
+# Boar Skeleton
+https://minecraft.novaskin.me/post/2048349/porco-esqueleto

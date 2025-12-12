@@ -47,6 +47,21 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         return getBlockAt(globalX, globalY, globalZ, chunk.decorator)
     }
 
+    fun setBlockAt(
+        globalX: Int, globalY: Int, globalZ: Int,
+        blockType: BlockType, metadata: Metadata?
+    ): Boolean {
+        val chunk = getChunkAt(globalX, globalY, globalZ, Int.MAX_VALUE) ?: return false
+        return setBlockAt(globalX, globalY, globalZ, chunk, blockType, metadata)
+    }
+
+    fun setBlockAt(
+        globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk,
+        blockType: BlockType, metadata: Metadata?
+    ): Boolean {
+        return chunk.setBlock(globalX and maskX, globalY and maskY, globalZ and maskZ, blockType, metadata)
+    }
+
     fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata? {
         return getMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)
     }

@@ -3,15 +3,19 @@ package me.anno.minecraft.entity
 import me.anno.Time
 import me.anno.ecs.Transform
 import me.anno.ecs.systems.OnUpdate
+import me.anno.minecraft.entity.physics.AABBPhysics
 import me.anno.minecraft.rendering.v2.dimension
 import org.joml.Matrix4x3
 import org.joml.Quaternionf
 import org.joml.Vector3d
 import org.joml.Vector3f
 
-abstract class MovingEntity(size: Vector3f) : Entity(size), OnUpdate {
+abstract class MovingEntity(halfExtents: Vector3f) : Entity(halfExtents), OnUpdate {
 
     companion object {
+
+        private const val VOXEL = 1f / 16f
+
         fun Transform.place(
             bx: Float, by: Float, bz: Float,
             dx: Float, dy: Float, dz: Float,
@@ -25,6 +29,7 @@ abstract class MovingEntity(size: Vector3f) : Entity(size), OnUpdate {
             val v = Vector3f(-dx, -dy, -dz)
                 .rotate(q)
                 .add(bx + dx, by + dy, bz + dz)
+                .mul(VOXEL)
 
             if (parent != null) {
                 parent.validate()
@@ -44,10 +49,13 @@ abstract class MovingEntity(size: Vector3f) : Entity(size), OnUpdate {
             rx: Float, ry: Float, rz: Float,
             parent: Transform?
         ) = place(bx, by, bz, 0f, 0f, 0f, rx, ry, rz, parent)
+
     }
 
-    val physics = AABBPhysics(Vector3d(), size)
-    val moveIntend = Vector3f()
+    val physics = AABBPhysics(Vector3d(), halfExtents)
+    val minPosition = Vector3d()
+    val maxPosition = Vector3d()
+
     var gravityFactor = 1f
 
     override fun onUpdate() {
@@ -60,9 +68,10 @@ abstract class MovingEntity(size: Vector3f) : Entity(size), OnUpdate {
         if (this is PlayerEntity && spectatorMode) {
             physics.stepSpectator(dt)
         } else {
-            physics.step(dimension, dt)
+            physics.step(dt)
             physics.applyFriction(dt)
         }
+        physics.acceleration.set(0f) // reset forces for next frame
         physicsToEngine()
     }
 
@@ -73,8 +82,6 @@ abstract class MovingEntity(size: Vector3f) : Entity(size), OnUpdate {
 
     open fun collectForces() {
         val acceleration = physics.acceleration
-        dimension.gravity.mul(gravityFactor, acceleration)
-        acceleration.add(moveIntend)
+        acceleration.fma(gravityFactor, dimension.gravity)
     }
-
 }

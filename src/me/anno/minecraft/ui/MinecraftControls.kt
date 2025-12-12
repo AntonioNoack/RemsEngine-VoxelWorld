@@ -1,6 +1,8 @@
 package me.anno.minecraft.ui
 
 import me.anno.Time
+import me.anno.engine.debug.DebugAABB
+import me.anno.engine.debug.DebugShapes
 import me.anno.engine.raycast.BlockTracing
 import me.anno.engine.raycast.RayQuery
 import me.anno.engine.ui.control.ControlScheme
@@ -24,7 +26,9 @@ import me.anno.ui.base.groups.PanelListX
 import me.anno.utils.assertions.assertTrue
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
+import org.joml.AABBd
 import org.joml.AABBi
+import org.joml.Vector3f
 import org.joml.Vector3i
 import kotlin.math.abs
 import kotlin.math.floor
@@ -93,6 +97,25 @@ abstract class MinecraftControls(
         }
     }
 
+    override fun onUpdate() {
+        super.onUpdate()
+        showHoveredBlock()
+    }
+
+    fun showHoveredBlock() {
+        val query = clickCast() ?: return
+        val coords = getCoords(query, +clickDistanceDelta)
+        val block = getBlock(coords)
+        if (block != BlockRegistry.Air) {
+            val bounds = AABBd()
+            block.getBounds(coords.x, coords.y, coords.z, bounds)
+                .addMargin(0.001)
+            DebugShapes.showDebugAABB(
+                DebugAABB(bounds, -1, 0f)
+            )
+        }
+    }
+
     fun rotatePlayer(dx: Float, dy: Float) {
         val entity = player.entity!!
         val transform = entity.transform
@@ -134,7 +157,8 @@ abstract class MinecraftControls(
             isRunning -> 20f
             else -> 10f
         }
-        player.moveIntend.set(
+        val moveIntend = Vector3f()
+        moveIntend.set(
             checkKeys(Key.KEY_D, Key.KEY_ARROW_RIGHT) - checkKeys(Key.KEY_A, Key.KEY_ARROW_LEFT), dy,
             checkKeys(Key.KEY_S, Key.KEY_ARROW_DOWN) - checkKeys(Key.KEY_W, Key.KEY_ARROW_UP)
         ).rotateY(player.bodyRotationY).mul(moveSpeed, 1f, moveSpeed)
@@ -142,8 +166,10 @@ abstract class MinecraftControls(
 
         // if player is flying, add artificial friction
         if (isFlying) {
-            player.moveIntend.fma(-0.1f / dt, player.physics.actualVelocity)
+            moveIntend.fma(-0.1f / dt, player.physics.actualVelocity)
         }
+
+        player.physics.acceleration.add(moveIntend)
 
         // shift: sprint
         // control: duck

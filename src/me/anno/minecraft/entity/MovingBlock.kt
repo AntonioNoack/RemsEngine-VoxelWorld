@@ -1,19 +1,23 @@
 package me.anno.minecraft.entity
 
-import me.anno.ecs.Transform
-import me.anno.gpu.pipeline.Pipeline
-import me.anno.mesh.Shapes.flatCube
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.entity.model.Model
+import me.anno.minecraft.entity.model.MovingBlockModel
+import me.anno.minecraft.item.ItemType
 import me.anno.minecraft.rendering.v2.dimension
 import me.anno.minecraft.ui.ItemSlot
+import me.anno.utils.OS.res
+import me.anno.utils.structures.maps.LazyMap
 import org.joml.Vector3d
 import org.joml.Vector3f
 import kotlin.math.floor
 
-class MovingBlock(val stack: ItemSlot) : MovingEntity(size) {
+class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents) {
+
     companion object {
-        private val size = Vector3f(1f)
+        // 0.45 instead of 0.50 is necessary to avoid getting stuck on edges
+        private val halfExtents = Vector3f(0.45f)
 
         fun playSetBlockSound(pos: Vector3d) {
             // todo play set block sound
@@ -23,13 +27,20 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(size) {
             // todo play drop item sound
         }
 
-        private val mesh = flatCube.scaled(0.5f).front
+        private val texture = Texture(res.getChild("textures/blocks/blocks.png"), 256, 512)
+        private val blockModel = LazyMap { type: ItemType ->
+            val block = (type as? BlockType) ?: BlockRegistry.Unknown
+            val texId = block.texId
+            MovingBlockModel(
+                16, 16, 16,
+                texId.and(15) * 16, texId.shr(4) * 16,
+                texture
+            )
+        }
     }
 
-    override fun fill(pipeline: Pipeline, transform: Transform) {
-        // todo bake visuals into mesh instead of just a cube
-        pipeline.addMesh(mesh, this, transform)
-    }
+    override val model: Model<*>
+        get() = blockModel[stack.type]
 
     override fun onUpdate() {
         super.onUpdate()
@@ -52,7 +63,7 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(size) {
         if (here == BlockRegistry.Air && dst != null && stackType is BlockType) {
             // set block -> destroy entity
             playSetBlockSound(soundPos)
-            dst.setBlock(gx, gy, gz, stackType, stack.metadata)
+            dimension.setBlockAt(gx, gy, gz, dst, stackType, stack.metadata)
             count--
         }
         if (count > 0) {

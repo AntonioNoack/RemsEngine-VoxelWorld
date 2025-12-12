@@ -4,13 +4,23 @@ import me.anno.ecs.Component
 import me.anno.ecs.Transform
 import me.anno.ecs.components.FillSpace
 import me.anno.ecs.interfaces.Renderable
+import me.anno.gpu.pipeline.Pipeline
+import me.anno.minecraft.entity.model.Model
 import org.joml.AABBd
 import org.joml.Matrix4x3
 import org.joml.Vector3f
 
-abstract class Entity(val size: Vector3f) : Component(), FillSpace, Renderable {
+abstract class Entity(val halfExtents: Vector3f) : Component(), FillSpace, Renderable {
 
     // todo animations, behaviour, ...
+
+    abstract val model: Model<*>
+
+    override fun fill(pipeline: Pipeline, transform: Transform) {
+        @Suppress("UNCHECKED_CAST")
+        (model as Model<Entity>).self = this
+        model.fill(pipeline, transform)
+    }
 
     fun removeEntity() {
         val entity = entity ?: return
@@ -29,9 +39,9 @@ abstract class Entity(val size: Vector3f) : Component(), FillSpace, Renderable {
     }
 
     override fun fillSpace(globalTransform: Matrix4x3, dstUnion: AABBd) {
-        val dx = size.x * 0.5
-        val dy = size.y * 0.5
-        val dz = size.z * 0.5
+        val dx = halfExtents.x
+        val dy = halfExtents.y
+        val dz = halfExtents.z
         dstUnion
             .union(globalTransform.m30 - dx, globalTransform.m31 - dy, globalTransform.m32 - dz)
             .union(globalTransform.m30 + dx, globalTransform.m31 + dy, globalTransform.m32 + dz)

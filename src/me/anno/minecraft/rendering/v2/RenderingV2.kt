@@ -1,15 +1,20 @@
 package me.anno.minecraft.rendering.v2
 
 import me.anno.ecs.Entity
+import me.anno.ecs.systems.Systems.registerSystem
 import me.anno.engine.OfficialExtensions
 import me.anno.engine.ui.ECSTreeView
 import me.anno.engine.ui.render.SceneView
 import me.anno.engine.ui.render.SceneView.Companion.createSceneUI
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.minecraft.block.BlockRegistry
+import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.entity.BoarEntity
+import me.anno.minecraft.entity.BoarSkeletonEntity
+import me.anno.minecraft.entity.MovingBlock
 import me.anno.minecraft.entity.MovingEntity
 import me.anno.minecraft.entity.PlayerEntity
+import me.anno.minecraft.entity.physics.CollisionSystem
 import me.anno.minecraft.rendering.createLighting
 import me.anno.minecraft.ui.*
 import me.anno.minecraft.world.SampleDimensions
@@ -17,6 +22,7 @@ import me.anno.minecraft.world.SaveLoadSystem
 import me.anno.ui.base.groups.PanelList
 import me.anno.ui.debug.TestEngine.Companion.testUI3
 import me.anno.ui.editor.PropertyInspector
+import org.joml.Vector3d
 
 val saveSystem = SaveLoadSystem("Minecraft")
 val dimension = SampleDimensions.perlin2dDim.apply {
@@ -53,6 +59,7 @@ fun main() {
 
     OfficialExtensions.initForTests()
     val scene = Entity("Scene")
+    registerSystem(CollisionSystem)
 
     val solidRenderer = ChunkRenderer(TextureMaterial.solid)
     val fluidRenderer = ChunkRenderer(TextureMaterial.fluid)
@@ -76,9 +83,12 @@ fun main() {
     val entities = Entity("Entities", scene)
     spawnEntity(entities, player)
 
-    val boar = BoarEntity()
-    boar.physics.position.set(-3.0, 77.0, 0.0)
-    spawnEntity(entities, boar)
+    spawnEntity(entities, BoarEntity(), Vector3d(-2.0, 77.0, 0.0))
+    spawnEntity(entities, BoarSkeletonEntity(), Vector3d(2.0, 77.0, 0.0))
+    spawnEntity(
+        entities, MovingBlock(ItemSlot(BlockRegistry.Sand, 1, null)),
+        Vector3d(0.5, 90.5, 0.5)
+    )
 
     scene.add(solidRenderer)
     scene.add(fluidRenderer)
@@ -137,5 +147,11 @@ fun spawnEntity(scene: Entity, entity: me.anno.minecraft.entity.Entity) {
     if (entity is MovingEntity) {
         childEntity.setPosition(entity.physics.position)
     }
+}
+
+
+fun spawnEntity(scene: Entity, entity: MovingEntity, pos: Vector3d) {
+    entity.physics.position.set(pos)
+    spawnEntity(scene, entity)
 }
 

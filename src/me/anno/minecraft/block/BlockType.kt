@@ -4,9 +4,15 @@ import me.anno.io.files.InvalidRef
 import me.anno.language.translation.NameDesc
 import me.anno.minecraft.item.ItemType
 import me.anno.utils.Color.a
+import org.joml.AABBd
+import org.joml.AABBf
 
 open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: NameDesc) :
     ItemType(typeUUID, InvalidRef, texId, nameDesc) {
+
+    companion object {
+        private val defaultBlockSize = AABBf(0f, 0f, 0f, 1f, 1f, 1f)
+    }
 
     var id: Short = -1
 
@@ -17,6 +23,14 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
 
     override fun toString(): String {
         return nameDesc.name
+    }
+
+    fun getBounds(x: Int, y: Int, z: Int,  dst: AABBd): AABBd {
+        val cx = x.toDouble()
+        val cy = y.toDouble()
+        val cz = z.toDouble()
+        val size = (this as? CustomBlockBounds)?.customSize ?: defaultBlockSize
+        return dst.set(size).translate(cx, cy, cz)
     }
 
 }

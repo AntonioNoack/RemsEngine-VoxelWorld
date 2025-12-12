@@ -5,10 +5,10 @@ import me.anno.minecraft.entity.model.PigModel
 import me.anno.utils.OS.res
 import org.joml.Vector3f
 
-class BoarEntity : Animal(halfExtents) {
+class BoarSkeletonEntity : Animal(halfExtents) {
     companion object {
         private val halfExtents = Vector3f(7f / 16f)
-        private val boarModel = PigModel(res.getChild("textures/animals/Boar.png"))
+        private val boarModel = PigModel(res.getChild("textures/animals/BoarSkeleton.png"))
     }
 
     override val model: Model<*>

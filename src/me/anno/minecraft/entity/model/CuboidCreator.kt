@@ -1,16 +1,16 @@
-package me.anno.minecraft.entity
+package me.anno.minecraft.entity.model
 
 import me.anno.cache.FileCacheList
 import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.material.Material
 import me.anno.ecs.components.mesh.utils.MeshJoiner
-import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.io.files.FileReference
-import me.anno.mesh.Shapes.flatCube
-import me.anno.utils.algorithms.ForLoop.forLoopSafely
+import me.anno.mesh.Shapes
+import me.anno.minecraft.entity.Texture
+import me.anno.utils.algorithms.ForLoop
 import org.joml.Vector2i
 
-object TexturedCube {
+object CuboidCreator {
 
     private const val VOXEL = 1f / 16f
 
@@ -52,25 +52,63 @@ object TexturedCube {
         PosDir(+1, -1, +1, 0, -1, 0) to 7,
         PosDir(-1, -1, +1, 0, -1, 0) to 10,
         PosDir(+1, -1, -1, 0, -1, 0) to 12,
-        PosDir(-1, -1, -1, 0, -1, 0) to 13,
+        PosDir(-1, -1, -1, 0, -1, 0) to 13
+    )
 
-        )
+    private val posDirToMono: Map<PosDir, Int> = mapOf(
+        // left side
+        PosDir(-1, -1, -1, -1, 0, 0) to 0,
+        PosDir(-1, -1, +1, -1, 0, 0) to 1,
+        PosDir(-1, +1, -1, -1, 0, 0) to 2,
+        PosDir(-1, +1, +1, -1, 0, 0) to 3,
+
+        // front side
+        PosDir(-1, -1, +1, 0, 0, +1) to 0,
+        PosDir(+1, -1, +1, 0, 0, +1) to 1,
+        PosDir(-1, +1, +1, 0, 0, +1) to 2,
+        PosDir(+1, +1, +1, 0, 0, +1) to 3,
+
+        // right side
+        PosDir(+1, -1, +1, +1, 0, 0) to 0,
+        PosDir(+1, -1, -1, +1, 0, 0) to 1,
+        PosDir(+1, +1, +1, +1, 0, 0) to 2,
+        PosDir(+1, +1, -1, +1, 0, 0) to 3,
+
+        // back side
+        PosDir(+1, -1, -1, 0, 0, -1) to 0,
+        PosDir(-1, -1, -1, 0, 0, -1) to 1,
+        PosDir(+1, +1, -1, 0, 0, -1) to 2,
+        PosDir(-1, +1, -1, 0, 0, -1) to 3,
+
+        // top side
+        PosDir(+1, +1, +1, 0, 1, 0) to 0,
+        PosDir(-1, +1, +1, 0, 1, 0) to 1,
+        PosDir(+1, +1, -1, 0, 1, 0) to 2,
+        PosDir(-1, +1, -1, 0, 1, 0) to 3,
+
+        // bottom side
+        PosDir(+1, -1, +1, 0, -1, 0) to 0,
+        PosDir(-1, -1, +1, 0, -1, 0) to 1,
+        PosDir(+1, -1, -1, 0, -1, 0) to 2,
+        PosDir(-1, -1, -1, 0, -1, 0) to 3
+    )
 
     fun createCuboid(
         sx: Int, sy: Int, sz: Int,
         x0: Int, y0: Int,
-        texWidth: Int, texHeight: Int,
-        texture: FileReference,
-        scale: Float = 1f
+        texture: Texture,
+        scale: Float = 1f,
     ): Mesh {
 
-        check(x0 >= 0 && y0 >= 0)
-        check(x0 + (sz + sx) * 2 <= texWidth)
-        check(y0 + (sy + sz) <= texHeight)
-
-        val mesh = flatCube.front.deepClone()
-        val positions = mesh.positions!!
-        mesh.ensureNorTanUVs()
+        check(x0 >= 0 && y0 >= 0) {
+            "$x0, $y0 < 0"
+        }
+        check(x0 + (sz + sx) * 2 <= texture.width) {
+            "$x0 + ($sz + $sx)*2 (${x0 + (sx + sz) * 2}) > ${texture.width}"
+        }
+        check(y0 + (sy + sz) <= texture.height) {
+            "$y0 + $sy + $sz (${y0 + sy + sz}) > ${texture.height}"
+        }
 
         val newUvs = listOf(
             // bottom row
@@ -96,6 +134,57 @@ object TexturedCube {
             Vector2i(sz + sx * 2, 0), // 13
         )
 
+        return createCuboidCore(
+            sx, sy, sz, x0, y0,
+            texture, scale,
+            posDirTo, newUvs
+        )
+    }
+
+    fun createMonoCuboid(
+        sx: Int, sy: Int, sz: Int,
+        x0: Int, y0: Int,
+        texture: Texture,
+        scale: Float = 1f,
+    ): Mesh {
+
+        check(x0 >= 0 && y0 >= 0) {
+            "$x0, $y0 < 0"
+        }
+        check(x0 + sx <= texture.width) {
+            "$x0 + $sx (${x0 + sx}) > ${texture.width}"
+        }
+        check(y0 + sy <= texture.height) {
+            "$y0 + $sy (${y0 + sy}) > ${texture.height}"
+        }
+
+        val newUvs = listOf(
+            Vector2i(0, sy),
+            Vector2i(sx, sy),
+            Vector2i(0, 0),
+            Vector2i(sx, 0),
+        )
+
+        return createCuboidCore(
+            sx, sy, sz, x0, y0,
+            texture, scale,
+            posDirToMono, newUvs
+        )
+    }
+
+    fun createCuboidCore(
+        sx: Int, sy: Int, sz: Int,
+        x0: Int, y0: Int,
+        texture: Texture,
+        scale: Float,
+        posDirTo: Map<PosDir, Int>,
+        newUvs: List<Vector2i>,
+    ): Mesh {
+
+        val mesh = Shapes.flatCube.front.deepClone()
+        val positions = mesh.positions!!
+        mesh.ensureNorTanUVs()
+
         val normals = mesh.normals!!
         val uvs = FloatArray(positions.size / 3 * 2)
         for (i in 0 until positions.size / 3) {
@@ -106,12 +195,12 @@ object TexturedCube {
             )
             val i2 = i * 2
             val index = newUvs[posDirTo[pd] ?: 0]
-            uvs[i2] = (index.x + x0) / texWidth.toFloat()
-            uvs[i2 + 1] = 1f - (index.y + y0) / texHeight.toFloat()
+            uvs[i2] = (index.x + x0) / texture.width.toFloat()
+            uvs[i2 + 1] = 1f - (index.y + y0) / texture.height.toFloat()
         }
 
         val baseScale = VOXEL * 0.5f * scale
-        forLoopSafely(positions.size, 3) { i ->
+        ForLoop.forLoopSafely(positions.size, 3) { i ->
             positions[i] *= sx * baseScale
             positions[i + 1] *= sy * baseScale
             positions[i + 2] *= sz * baseScale
@@ -121,8 +210,8 @@ object TexturedCube {
 
         val material = Material()
         material.linearFiltering = false
-        material.diffuseMap = texture
-        mesh.materials = FileCacheList.of(material)
+        material.diffuseMap = texture.src
+        mesh.materials = FileCacheList.Companion.of(material)
         return mesh
     }
 
@@ -130,11 +219,10 @@ object TexturedCube {
         sx: Int, sy: Int, sz: Int,
         x0: Int, y0: Int,
         x1: Int, y1: Int,
-        texWidth: Int, texHeight: Int,
-        texture: FileReference,
+        texture: Texture,
     ): Mesh {
-        val mesh0 = createCuboid(sx, sy, sz, x0, y0, texWidth, texHeight, texture, 1f)
-        val mesh1 = createCuboid(sx, sy, sz, x1, y1, texWidth, texHeight, texture, (sx + 0.5f) / sx)
+        val mesh0 = createCuboid(sx, sy, sz, x0, y0, texture, 1f)
+        val mesh1 = createCuboid(sx, sy, sz, x1, y1, texture, (sx + 0.5f) / sx)
         return mesh0 + mesh1
     }
 
@@ -144,8 +232,4 @@ object TexturedCube {
             override fun getMaterials(element: Mesh): List<FileReference> = element.materials
         }.join(listOf(this, other))
     }
-}
-
-fun main() {
-    testSceneWithUI("Player Mesh", PlayerEntity.torsoMesh)
 }
