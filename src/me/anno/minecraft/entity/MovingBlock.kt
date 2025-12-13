@@ -64,6 +64,7 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents) {
             // set block -> destroy entity
             playSetBlockSound(soundPos)
             dimension.setBlockAt(gx, gy, gz, dst, stackType, stack.metadata)
+            dimension.invalidateAt(gx, gy, gz, stackType)
             count--
         }
         if (count > 0) {

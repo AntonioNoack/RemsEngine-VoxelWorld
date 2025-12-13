@@ -6,6 +6,7 @@ import me.anno.io.utils.StringMap
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
+import me.anno.minecraft.entity.ItemEntity
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.item.DurableItem
 import me.anno.minecraft.item.DurableItem.Companion.METADATA_DURABILITY
@@ -13,7 +14,9 @@ import me.anno.minecraft.item.ItemType
 import me.anno.minecraft.item.RightClickBlock
 import me.anno.minecraft.item.RightClickItem
 import me.anno.minecraft.rendering.v2.ChunkLoader
+import me.anno.minecraft.rendering.v2.spawnEntity
 import me.anno.minecraft.world.Dimension
+import org.joml.Vector3d
 import org.joml.Vector3i
 
 open class SurvivalControls(
@@ -35,9 +38,14 @@ open class SurvivalControls(
         }
     }
 
-    fun spawnItem(itemType: ItemType, metadata: Metadata?, position: Vector3i) {
+    fun dropItem(itemType: ItemType, metadata: Metadata?, position: Vector3i) {
         // todo if nearby stack with same metadata and type exists, increment count there
-        // todo add item to visuals
+        val entities = player.entity!!.parentEntity!!
+        val stack = ItemSlot(itemType, 1, metadata)
+        spawnEntity(
+            entities, ItemEntity(stack),
+            Vector3d(position.x + 0.5, position.y + 0.5, position.z + 0.5)
+        )
     }
 
     fun removeItemDurability() {
@@ -46,7 +54,7 @@ open class SurvivalControls(
         val oldHealth = inHand.metadata?.get(METADATA_DURABILITY, item.maxHealth) ?: item.maxHealth
         val newHealth = oldHealth - 1
         if (newHealth <= 0) {
-            inHand.set(BlockRegistry.Air, 0, null)
+            inHand.set(BlockRegistry.Air, 0, inHandMetadata)
         } else {
             val newMetadata = inHand.metadata ?: StringMap()
             newMetadata[METADATA_DURABILITY] = newHealth
@@ -67,8 +75,8 @@ open class SurvivalControls(
                 val dropped = getBlock(coords)
                 if (dropped != BlockRegistry.Air && !dropped.isFluid) {
                     val droppedMetadata = getBlockMetadata(coords)
-                    setBlock(coords, BlockRegistry.Air)
-                    spawnItem(dropped, droppedMetadata, coords)
+                    setBlock(coords, BlockRegistry.Air, inHandMetadata)
+                    dropItem(dropped, droppedMetadata, coords)
                     removeItemDurability()
                 }
             }
@@ -83,7 +91,7 @@ open class SurvivalControls(
                         // set block
                         val coords = getCoords(query, -clickDistanceDelta)
                         if (allowsBlockPlacing && item is BlockType && item != BlockRegistry.Air) {
-                            setBlock(coords, item)
+                            setBlock(coords, item, inHandMetadata)
                             removeItemAfterPlacing()
                         } else if (item is RightClickItem) {
                             item.onRightClick(this, coords)

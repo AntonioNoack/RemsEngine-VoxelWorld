@@ -17,13 +17,12 @@ import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.PlayerEntity
-import me.anno.minecraft.rendering.v2.*
+import me.anno.minecraft.rendering.v2.ChunkLoader
 import me.anno.minecraft.world.Dimension
 import me.anno.ui.base.SpacerPanel
 import me.anno.ui.base.buttons.TextButton
 import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.base.groups.PanelListX
-import me.anno.utils.assertions.assertTrue
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
 import org.joml.AABBd
@@ -46,6 +45,7 @@ abstract class MinecraftControls(
 
         val inHand get() = inventory.slots[inHandSlot]
         val inHandItem get() = inHand.type
+        val inHandMetadata get() = inHand.metadata
 
         val inventory = Inventory(9)
         val offHand = Inventory(1)
@@ -230,14 +230,6 @@ abstract class MinecraftControls(
         return Vector3i(floor(pos.x).toInt(), floor(pos.y).toInt(), floor(pos.z).toInt())
     }
 
-    fun coordsToChunkId(coords: Vector3i): Vector3i {
-        return Vector3i(
-            coords.x shr dimension.bitsX,
-            coords.y shr dimension.bitsY,
-            coords.z shr dimension.bitsZ
-        )
-    }
-
     fun getBlock(coords: Vector3i): BlockType {
         return dimension.getBlockAt(coords.x, coords.y, coords.z)
     }
@@ -246,46 +238,9 @@ abstract class MinecraftControls(
         return dimension.getMetadataAt(coords.x, coords.y, coords.z)
     }
 
-    fun setBlock(coords: Vector3i, block: BlockType) {
-        dimension.setElementAt(coords.x, coords.y, coords.z, true, block)
-        val chunkId = coordsToChunkId(coords)
-        // todo chunk invalidation is extremely slow
-        // todo when setting blocks, we can temporarily place a block until the mesh has been recalculated
-        invalidateChunk(chunkId)
-        val localCoords = Vector3i(
-            coords.x and dimension.maskX,
-            coords.y and dimension.maskY,
-            coords.z and dimension.maskZ
-        )
-        // when we're on the edge, and we remove a block (set a transparent one), we need to invalidate our neighbors, too
-        if (!block.isSolid) {
-            if (localCoords.x == 0) invalidateChunk(Vector3i(chunkId).sub(1, 0, 0))
-            else if (localCoords.x == csx - 1) invalidateChunk(Vector3i(chunkId).add(1, 0, 0))
-            if (localCoords.y == 0) invalidateChunk(Vector3i(chunkId).sub(0, 1, 0))
-            else if (localCoords.y == csy - 1) invalidateChunk(Vector3i(chunkId).add(0, 1, 0))
-            if (localCoords.z == 0) invalidateChunk(Vector3i(chunkId).sub(0, 0, 1))
-            else if (localCoords.z == csz - 1) invalidateChunk(Vector3i(chunkId).add(0, 0, 1))
-        }
-        saveSystem.get(chunkId) { changesInChunk ->
-            changesInChunk[localCoords] = block.id
-            saveSystem.put(chunkId, changesInChunk)
-        }
-    }
-
-    private val invalidChunks = HashSet<Vector3i>()
-    fun invalidateChunk(coords: Vector3i) {
-        val needsWorker = synchronized(invalidChunks) {
-            invalidChunks.add(coords)
-        }
-        if (needsWorker) {
-            chunkLoader.worker += {
-                val changed = synchronized(invalidChunks) {
-                    invalidChunks.remove(coords)
-                }
-                assertTrue(changed)
-                chunkLoader.generateChunk(coords)
-            }
-        }
+    fun setBlock(coords: Vector3i, type: BlockType, metadata: Metadata?) {
+        dimension.setBlockAt(coords.x, coords.y, coords.z, type, metadata)
+        dimension.invalidateAt(coords.x, coords.y, coords.z, type)
     }
 
     fun clickCast(): RayQuery? {

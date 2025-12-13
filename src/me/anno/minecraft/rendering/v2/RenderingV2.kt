@@ -8,7 +8,6 @@ import me.anno.engine.ui.render.SceneView
 import me.anno.engine.ui.render.SceneView.Companion.createSceneUI
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.minecraft.block.BlockRegistry
-import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.entity.BoarEntity
 import me.anno.minecraft.entity.BoarSkeletonEntity
 import me.anno.minecraft.entity.MovingBlock
@@ -22,7 +21,9 @@ import me.anno.minecraft.world.SaveLoadSystem
 import me.anno.ui.base.groups.PanelList
 import me.anno.ui.debug.TestEngine.Companion.testUI3
 import me.anno.ui.editor.PropertyInspector
+import me.anno.utils.assertions.assertTrue
 import org.joml.Vector3d
+import org.joml.Vector3i
 
 val saveSystem = SaveLoadSystem("Minecraft")
 val dimension = SampleDimensions.perlin2dDim.apply {
@@ -32,6 +33,25 @@ val dimension = SampleDimensions.perlin2dDim.apply {
 val csx = dimension.sizeX
 val csy = dimension.sizeY
 val csz = dimension.sizeZ
+
+lateinit var chunkLoader: ChunkLoader
+
+private val invalidChunks = HashSet<Vector3i>()
+fun invalidateChunk(coords: Vector3i) {
+    val needsWorker = synchronized(invalidChunks) {
+        invalidChunks.add(coords)
+    }
+    if (needsWorker) {
+        chunkLoader.worker += {
+            val changed = synchronized(invalidChunks) {
+                invalidChunks.remove(coords)
+            }
+            assertTrue(changed)
+            chunkLoader.generateChunk(coords)
+        }
+    }
+}
+
 
 /**
  * load/unload a big voxel world without much stutter;
@@ -64,7 +84,7 @@ fun main() {
     val solidRenderer = ChunkRenderer(TextureMaterial.solid)
     val fluidRenderer = ChunkRenderer(TextureMaterial.fluid)
     val detailRenderer = DetailChunkRenderer(TextureMaterial.solid)
-    val chunkLoader = ChunkLoader(solidRenderer, fluidRenderer, detailRenderer)
+    chunkLoader = ChunkLoader(solidRenderer, fluidRenderer, detailRenderer)
 
     val player = PlayerEntity(isPrimary = true, "Friedolin")
     player.physics.position.y = 77.0
@@ -142,16 +162,16 @@ fun main() {
     }
 }
 
-fun spawnEntity(scene: Entity, entity: me.anno.minecraft.entity.Entity) {
-    val childEntity = Entity(scene).add(entity)
+fun spawnEntity(entities: Entity, entity: me.anno.minecraft.entity.Entity) {
+    val childEntity = Entity(entities).add(entity)
     if (entity is MovingEntity) {
         childEntity.setPosition(entity.physics.position)
     }
 }
 
 
-fun spawnEntity(scene: Entity, entity: MovingEntity, pos: Vector3d) {
+fun spawnEntity(entities: Entity, entity: MovingEntity, pos: Vector3d) {
     entity.physics.position.set(pos)
-    spawnEntity(scene, entity)
+    spawnEntity(entities, entity)
 }
 

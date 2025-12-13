@@ -1,6 +1,7 @@
 package me.anno.minecraft.ui
 
 import me.anno.engine.ui.render.RenderView
+import me.anno.input.Input
 import me.anno.input.Key
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
@@ -10,7 +11,12 @@ import me.anno.minecraft.item.RightClickItem
 import me.anno.minecraft.rendering.v2.ChunkLoader
 import me.anno.minecraft.world.Dimension
 
-open class CreativeControls(player: PlayerEntity, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView) :
+open class CreativeControls(
+    player: PlayerEntity,
+    dimension: Dimension,
+    chunkLoader: ChunkLoader,
+    renderer: RenderView
+) :
     MinecraftControls(player, dimension, chunkLoader, renderer) {
 
     override val canFly: Boolean
@@ -37,7 +43,7 @@ open class CreativeControls(player: PlayerEntity, dimension: Dimension, chunkLoa
                 val coords = getCoords(query, +clickDistanceDelta)
                 val block = getBlock(coords)
                 if (block != BlockRegistry.Air) {
-                    setBlock(coords, BlockRegistry.Air)
+                    setBlock(coords, BlockRegistry.Air, null)
                 }
             }
             Key.BUTTON_RIGHT -> {
@@ -46,17 +52,17 @@ open class CreativeControls(player: PlayerEntity, dimension: Dimension, chunkLoa
                 if (query != null) {
                     val activeCoords = getCoords(query, +clickDistanceDelta)
                     val activeBlock = getBlock(activeCoords)
-                    if (activeBlock is RightClickBlock) {
+                    if (activeBlock is RightClickBlock && !Input.isShiftDown) {
                         activeBlock.onRightClick(this, activeCoords)
                     } else {
                         val placeCoords = getCoords(query, -clickDistanceDelta)
                         if (item is BlockType && item != BlockRegistry.Air) {
-                            setBlock(placeCoords, item)
-                        } else if (item is RightClickItem) {
+                            setBlock(placeCoords, item, inHandMetadata)
+                        } else if (item is RightClickItem && !Input.isShiftDown) {
                             item.onRightClick(this, placeCoords)
                         }
                     }
-                } else if (item is RightClickItem) {
+                } else if (item is RightClickItem && !Input.isShiftDown) {
                     item.onRightClick(this, null)
                 }
             }

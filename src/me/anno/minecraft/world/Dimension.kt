@@ -5,12 +5,15 @@ import me.anno.maths.chunks.cartesian.ChunkSystem
 import me.anno.minecraft.block.BlockRegistry.Air
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
+import me.anno.minecraft.rendering.v2.invalidateChunk
+import me.anno.minecraft.rendering.v2.saveSystem
 import me.anno.minecraft.world.decorator.Decorator
 import me.anno.minecraft.world.generator.Generator
 import me.anno.utils.pooling.ObjectPool
 import me.anno.utils.types.Floats.f3
 import org.apache.logging.log4j.LogManager
 import org.joml.Vector3f
+import org.joml.Vector3i
 import kotlin.math.min
 
 class Dimension(val generator: Generator, val decorators: List<Decorator>) : ChunkSystem<Chunk, BlockType>(5, 5, 5) {
@@ -95,6 +98,35 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         removeChunk(chunk.chunkX, chunk.chunkY, chunk.chunkZ)?.waitFor { value ->
             if (value != null) chunkPool.destroy(value)
         }
+    }
+
+    fun invalidateAt(x: Int, y: Int, z: Int, newBlock: BlockType) {
+        val chunkId = coordsToChunkId(x, y, z)
+        // todo chunk invalidation is extremely slow
+        // todo when setting blocks, we can temporarily place a block until the mesh has been recalculated
+        invalidateChunk(chunkId)
+        val localCoords = Vector3i(
+            x and maskX,
+            y and maskY,
+            z and maskZ
+        )
+        // when we're on the edge, and we remove a block (set a transparent one), we need to invalidate our neighbors, too
+        if (!newBlock.isSolid) {
+            if (localCoords.x == 0) invalidateChunk(Vector3i(chunkId).sub(1, 0, 0))
+            else if (localCoords.x == maskX) invalidateChunk(Vector3i(chunkId).add(1, 0, 0))
+            if (localCoords.y == 0) invalidateChunk(Vector3i(chunkId).sub(0, 1, 0))
+            else if (localCoords.y == maskY) invalidateChunk(Vector3i(chunkId).add(0, 1, 0))
+            if (localCoords.z == 0) invalidateChunk(Vector3i(chunkId).sub(0, 0, 1))
+            else if (localCoords.z == maskZ) invalidateChunk(Vector3i(chunkId).add(0, 0, 1))
+        }
+        saveSystem.get(chunkId) { changesInChunk ->
+            changesInChunk[localCoords] = newBlock.id
+            saveSystem.put(chunkId, changesInChunk)
+        }
+    }
+
+    fun coordsToChunkId(x: Int, y: Int, z: Int): Vector3i {
+        return Vector3i(x shr bitsX, y shr bitsY, z shr bitsZ)
     }
 
     private val chunkPool = ObjectPool { Chunk(this, 0, 0, 0) }
