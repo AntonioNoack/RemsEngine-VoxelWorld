@@ -6,6 +6,7 @@ import me.anno.minecraft.entity.model.Model
 import me.anno.minecraft.entity.model.PlayerModel
 import me.anno.minecraft.multiplayer.NetworkData
 import org.joml.Vector3f
+import org.joml.Vector3i
 
 class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents) {
 
@@ -22,6 +23,12 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents) {
 
     override val model: Model<*>
         get() = femaleModel
+
+    override val maxJumpDown: Int
+        get() = 3
+
+    // idk what players would be looking for ;)
+    override fun findTarget(start: Vector3i, seed: Long): Vector3i? = null
 
     val networkData = NetworkData()
     var spectatorMode = false

@@ -18,7 +18,7 @@ open class CreativeControls(player: PlayerEntity, dimension: Dimension, chunkLoa
 
     override fun onUpdate() {
         super.onUpdate()
-        updateMoveIntend()
+        applyPlayerMovement()
         updatePlayerCamera()
     }
 

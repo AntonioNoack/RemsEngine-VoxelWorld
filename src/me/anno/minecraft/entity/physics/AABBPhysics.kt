@@ -144,6 +144,11 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
         val stepY = targetVelocity.y * dt
         val stepZ = targetVelocity.z * dt
 
+        var stepHeight = stepHeight
+        if (actualVelocity.x == 0f && actualVelocity.z == 0f) {
+            stepHeight = 0f
+        }
+
         tryMove(stepHeight, 1)
         tryMove(stepX, 0)
         tryMove(stepZ, 2)

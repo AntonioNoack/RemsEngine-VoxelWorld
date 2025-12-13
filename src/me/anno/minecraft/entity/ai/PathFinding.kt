@@ -110,9 +110,12 @@ class PathFinding(val halfExtents: Vector3f) {
         start: Vector3i, end: Vector3i,
         height: Int, maxJumpDown: Int
     ): Boolean {
-        val path = aStarHelper(start, end, height, maxJumpDown)
+        val dy = findStandAtY(start.x, start.y, start.z, height, maxJumpDown)
+        if (dy == INVALID) return false // cannot just use that
+        val newStart = Vector3i(start).apply { y += dy }
+        val path = aStarHelper(newStart, end, height, maxJumpDown)
             ?: return false
-        setPath(start, path)
+        setPath(newStart, path)
         return true
     }
 

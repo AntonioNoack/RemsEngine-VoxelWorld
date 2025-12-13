@@ -7,6 +7,7 @@ import me.anno.ecs.interfaces.Renderable
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.minecraft.entity.model.Model
 import org.joml.*
+import kotlin.math.floor
 
 abstract class Entity(val halfExtents: Vector3f) : Component(), FillSpace, Renderable {
 
@@ -30,6 +31,16 @@ abstract class Entity(val halfExtents: Vector3f) : Component(), FillSpace, Rende
 
     val rotation: Quaternionf
         get() = transform!!.localRotation
+
+    val blockPosition: Vector3i
+        get() {
+            val pos = position
+            return Vector3i(
+                floor(pos.x).toInt(),
+                floor(pos.y).toInt(),
+                floor(pos.z).toInt()
+            )
+        }
 
     private val transforms = ArrayList<Transform>()
     fun getTransform(index: Int): Transform {
