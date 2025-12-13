@@ -2,6 +2,7 @@ package me.anno.minecraft.entity.model
 
 import me.anno.Time
 import me.anno.ecs.Transform
+import me.anno.gpu.drawing.GFXx2D.getSize
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.maths.Maths.PIf
 import me.anno.maths.Maths.TAUf
@@ -9,52 +10,48 @@ import me.anno.maths.Maths.dtTo01
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.entity.MovingEntity.Companion.place
 import me.anno.minecraft.entity.PlayerEntity
-import me.anno.minecraft.entity.Texture
 import me.anno.minecraft.entity.model.CuboidCreator.createCuboidX2
-import me.anno.utils.OS.res
 
 class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
 
-    // todo make src instance-dependent
-    private val texture =
-        Texture(res.getChild("textures/players/Reyviee.png"), 64,64)
+    private val texSize = getSize(64, 64)
 
     val headMesh = createCuboidX2(
         8, 8, 8,
         0, 0, 32, 0,
-        texture
+        texSize
     )
 
     val torsoMesh = createCuboidX2(
         8, 12, 4,
         16, 16, 16, 32,
-        texture
+        texSize
     )
 
     // left from front, right from self
     val rightArmMesh = createCuboidX2(
         3, 12, 4,
         40, 16, 40, 32,
-        texture
+        texSize
     )
 
     val leftArmMesh = createCuboidX2(
         3, 12, 4,
         32, 48, 46, 48,
-        texture
+        texSize
     )
 
     // left from front, right from self
     val rightLegMesh = createCuboidX2(
         4, 12, 4,
         0, 16, 0, 32,
-        texture
+        texSize
     )
 
     val leftLegMesh = createCuboidX2(
         4, 12, 4,
         16, 48, 0, 48,
-        texture
+        texSize
     )
 
     override fun fill(pipeline: Pipeline, transform: Transform) {

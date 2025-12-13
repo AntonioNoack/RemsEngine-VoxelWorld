@@ -8,6 +8,7 @@ import me.anno.engine.ui.render.SceneView
 import me.anno.engine.ui.render.SceneView.Companion.createSceneUI
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.minecraft.block.BlockRegistry
+import me.anno.minecraft.entity.ArrowEntity
 import me.anno.minecraft.entity.BoarEntity
 import me.anno.minecraft.entity.BoarSkeletonEntity
 import me.anno.minecraft.entity.MovingBlock
@@ -109,6 +110,7 @@ fun main() {
         entities, MovingBlock(ItemSlot(BlockRegistry.Sand, 1, null)),
         Vector3d(0.5, 90.5, 0.5)
     )
+    spawnEntity(entities, ArrowEntity(), Vector3d(-2.0, 90.0, 0.0))
 
     scene.add(solidRenderer)
     scene.add(fluidRenderer)

@@ -1,5 +1,6 @@
 package me.anno.minecraft.entity
 
+import me.anno.gpu.drawing.GFXx2D.getSize
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.entity.model.Model
@@ -13,7 +14,7 @@ import org.joml.Vector3d
 import org.joml.Vector3f
 import kotlin.math.floor
 
-class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents) {
+class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents, texture) {
 
     companion object {
         // 0.45 instead of 0.50 is necessary to avoid getting stuck on edges
@@ -27,14 +28,14 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents) {
             // todo play drop item sound
         }
 
-        private val texture = Texture(res.getChild("textures/blocks/blocks.png"), 256, 512)
+        private val texture = Texture(res.getChild("textures/blocks/Blocks.png"))
         private val blockModel = LazyMap { type: ItemType ->
             val block = (type as? BlockType) ?: BlockRegistry.Unknown
             val texId = block.texId
             MovingBlockModel(
                 16, 16, 16,
                 texId.and(15) * 16, texId.shr(4) * 16,
-                texture
+                getSize(256, 512)
             )
         }
     }
@@ -78,7 +79,7 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents) {
             entity.add(ItemEntity(newStack))
         } else {
             // finished :)
-            removeEntity()
+            destroyEntity()
         }
     }
 }

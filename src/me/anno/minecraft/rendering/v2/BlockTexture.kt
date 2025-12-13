@@ -11,7 +11,7 @@ object BlockTexture {
     val texture = Texture2DArray("Blocks", 1, 1, 1)
 
     init {
-        val srcFile = res.getChild("textures/blocks/blocks.png")
+        val srcFile = res.getChild("textures/blocks/Blocks.png")
         LOGGER.info("Starting loading $srcFile as image")
         ImageCache[srcFile, ImageCache.timeoutMillis]
             .waitFor { src ->

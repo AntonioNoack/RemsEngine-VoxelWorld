@@ -5,7 +5,6 @@ import me.anno.ecs.prefab.PrefabSaveable
 import me.anno.engine.debug.DebugLine
 import me.anno.engine.debug.DebugShapes
 import me.anno.maths.Maths
-import me.anno.maths.Maths.PIf
 import me.anno.maths.Maths.dtTo01
 import me.anno.maths.Maths.length
 import me.anno.maths.Maths.mixAngle
@@ -16,13 +15,12 @@ import org.joml.Quaternionf
 import org.joml.Vector3d
 import org.joml.Vector3f
 import org.joml.Vector3i
-import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.max
 
-abstract class Animal(halfExtents: Vector3f) : MovingEntity(halfExtents) {
+abstract class Animal(halfExtents: Vector3f, texture: Texture) : MovingEntity(halfExtents, texture) {
 
     val bodyRotation: Quaternionf get() = transform!!.localRotation
     val headRotation = Quaternionf()

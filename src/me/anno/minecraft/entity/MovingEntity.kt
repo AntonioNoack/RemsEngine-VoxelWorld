@@ -10,7 +10,8 @@ import org.joml.Quaternionf
 import org.joml.Vector3d
 import org.joml.Vector3f
 
-abstract class MovingEntity(halfExtents: Vector3f) : Entity(halfExtents), OnUpdate {
+abstract class MovingEntity(halfExtents: Vector3f, texture: Texture) :
+    Entity(halfExtents, texture), OnUpdate {
 
     companion object {
 

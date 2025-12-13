@@ -9,18 +9,15 @@ import me.anno.utils.OS.res
 import org.joml.Vector3f
 import org.joml.Vector3i
 
-class BoarSkeletonEntity : Animal(halfExtents) {
+class BoarSkeletonEntity : Animal(halfExtents, texture) {
 
     companion object {
         private val halfExtents = Vector3f(7f / 16f)
-        private val boarModel = PigModel(res.getChild("textures/animals/BoarSkeleton.png"))
+        private val texture = Texture(res.getChild("textures/animals/BoarSkeleton.png"))
     }
 
-    override val model: Model<*>
-        get() = boarModel
-
-    override val maxJumpDown: Int
-        get() = 2
+    override val model: Model<*> get() = PigModel
+    override val maxJumpDown: Int get() = 2
 
     // todo when player is no longer on path, calculate a new path
     // todo abstract this into general hostile AI

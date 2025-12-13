@@ -3,13 +3,18 @@ package me.anno.minecraft.entity
 import me.anno.ecs.Component
 import me.anno.ecs.Transform
 import me.anno.ecs.components.FillSpace
+import me.anno.ecs.components.mesh.material.MaterialOverride
 import me.anno.ecs.interfaces.Renderable
 import me.anno.gpu.pipeline.Pipeline
+import me.anno.io.files.FileReference
 import me.anno.minecraft.entity.model.Model
 import org.joml.*
 import kotlin.math.floor
 
-abstract class Entity(val halfExtents: Vector3f) : Component(), FillSpace, Renderable {
+abstract class Entity(
+    val halfExtents: Vector3f,
+    val texture: Texture
+) : Component(), FillSpace, Renderable, MaterialOverride {
 
     // todo animations, behaviour, ...
 
@@ -21,7 +26,10 @@ abstract class Entity(val halfExtents: Vector3f) : Component(), FillSpace, Rende
         model.fill(pipeline, transform)
     }
 
-    fun removeEntity() {
+    override val materials: List<FileReference>
+        get() = texture.materials
+
+    fun destroyEntity() {
         val entity = entity ?: return
         entity.destroy()
     }

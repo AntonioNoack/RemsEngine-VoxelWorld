@@ -9,12 +9,10 @@ import me.anno.mesh.Shapes.flatCube
 import me.anno.minecraft.entity.ItemEntity
 import kotlin.math.sin
 
-class ItemModel : Model<ItemEntity>() {
+object ItemModel : Model<ItemEntity>() {
 
-    companion object {
-        private const val Y_SWINGING = 0.3f
-        private val mesh = flatCube.scaled(0.2f).front
-    }
+    private const val Y_SWINGING = 0.3f
+    private val mesh = flatCube.scaled(0.2f).front
 
     val angle: Float
         get() = posMod(Time.gameTime - self.spawnTime, TAU).toFloat()

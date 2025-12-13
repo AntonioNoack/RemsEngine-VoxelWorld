@@ -1,12 +1,11 @@
 package me.anno.minecraft.entity.model
 
-import me.anno.cache.FileCacheList
 import me.anno.ecs.components.mesh.Mesh
-import me.anno.ecs.components.mesh.material.Material
 import me.anno.ecs.components.mesh.utils.MeshJoiner
+import me.anno.gpu.drawing.GFXx2D.getSizeX
+import me.anno.gpu.drawing.GFXx2D.getSizeY
 import me.anno.io.files.FileReference
 import me.anno.mesh.Shapes
-import me.anno.minecraft.entity.Texture
 import me.anno.utils.algorithms.ForLoop
 import org.joml.Vector2i
 
@@ -96,18 +95,18 @@ object CuboidCreator {
     fun createCuboid(
         sx: Int, sy: Int, sz: Int,
         x0: Int, y0: Int,
-        texture: Texture,
+        texSize: Int,
         scale: Float = 1f,
     ): Mesh {
 
         check(x0 >= 0 && y0 >= 0) {
             "$x0, $y0 < 0"
         }
-        check(x0 + (sz + sx) * 2 <= texture.width) {
-            "$x0 + ($sz + $sx)*2 (${x0 + (sx + sz) * 2}) > ${texture.width}"
+        check(x0 + (sz + sx) * 2 <= texSize.width) {
+            "$x0 + ($sz + $sx)*2 (${x0 + (sx + sz) * 2}) > ${texSize.width}"
         }
-        check(y0 + (sy + sz) <= texture.height) {
-            "$y0 + $sy + $sz (${y0 + sy + sz}) > ${texture.height}"
+        check(y0 + (sy + sz) <= texSize.height) {
+            "$y0 + $sy + $sz (${y0 + sy + sz}) > ${texSize.height}"
         }
 
         val newUvs = listOf(
@@ -136,7 +135,7 @@ object CuboidCreator {
 
         return createCuboidCore(
             sx, sy, sz, x0, y0,
-            texture, scale,
+            texSize, scale,
             posDirTo, newUvs
         )
     }
@@ -144,18 +143,18 @@ object CuboidCreator {
     fun createMonoCuboid(
         sx: Int, sy: Int, sz: Int,
         x0: Int, y0: Int,
-        texture: Texture,
+        texSize: Int,
         scale: Float = 1f,
     ): Mesh {
 
         check(x0 >= 0 && y0 >= 0) {
             "$x0, $y0 < 0"
         }
-        check(x0 + sx <= texture.width) {
-            "$x0 + $sx (${x0 + sx}) > ${texture.width}"
+        check(x0 + sx <= texSize.width) {
+            "$x0 + $sx (${x0 + sx}) > ${texSize.width}"
         }
-        check(y0 + sy <= texture.height) {
-            "$y0 + $sy (${y0 + sy}) > ${texture.height}"
+        check(y0 + sy <= texSize.height) {
+            "$y0 + $sy (${y0 + sy}) > ${texSize.height}"
         }
 
         val newUvs = listOf(
@@ -167,7 +166,7 @@ object CuboidCreator {
 
         return createCuboidCore(
             sx, sy, sz, x0, y0,
-            texture, scale,
+            texSize, scale,
             posDirToMono, newUvs
         )
     }
@@ -175,7 +174,7 @@ object CuboidCreator {
     fun createCuboidCore(
         sx: Int, sy: Int, sz: Int,
         x0: Int, y0: Int,
-        texture: Texture,
+        texSize: Int,
         scale: Float,
         posDirTo: Map<PosDir, Int>,
         newUvs: List<Vector2i>,
@@ -195,8 +194,8 @@ object CuboidCreator {
             )
             val i2 = i * 2
             val index = newUvs[posDirTo[pd] ?: 0]
-            uvs[i2] = (index.x + x0) / texture.width.toFloat()
-            uvs[i2 + 1] = 1f - (index.y + y0) / texture.height.toFloat()
+            uvs[i2] = (index.x + x0) / texSize.width.toFloat()
+            uvs[i2 + 1] = 1f - (index.y + y0) / texSize.height.toFloat()
         }
 
         val baseScale = VOXEL * 0.5f * scale
@@ -207,11 +206,6 @@ object CuboidCreator {
         }
         mesh.uvs = uvs
         mesh.invalidateGeometry()
-
-        val material = Material()
-        material.linearFiltering = false
-        material.diffuseMap = texture.src
-        mesh.materials = FileCacheList.Companion.of(material)
         return mesh
     }
 
@@ -219,12 +213,15 @@ object CuboidCreator {
         sx: Int, sy: Int, sz: Int,
         x0: Int, y0: Int,
         x1: Int, y1: Int,
-        texture: Texture,
+        texSize: Int,
     ): Mesh {
-        val mesh0 = createCuboid(sx, sy, sz, x0, y0, texture, 1f)
-        val mesh1 = createCuboid(sx, sy, sz, x1, y1, texture, (sx + 0.5f) / sx)
+        val mesh0 = createCuboid(sx, sy, sz, x0, y0, texSize, 1f)
+        val mesh1 = createCuboid(sx, sy, sz, x1, y1, texSize, (sx + 0.5f) / sx)
         return mesh0 + mesh1
     }
+
+    private val Int.width get() = getSizeX(this)
+    private val Int.height get() = getSizeY(this)
 
     operator fun Mesh.plus(other: Mesh): Mesh {
         return object : MeshJoiner<Mesh>(false, false, true) {

@@ -7,18 +7,15 @@ import me.anno.utils.OS.res
 import org.joml.Vector3f
 import org.joml.Vector3i
 
-class BoarEntity : Animal(halfExtents) {
+class BoarEntity : Animal(halfExtents, texture) {
 
     companion object {
         private val halfExtents = Vector3f(7f / 16f)
-        private val boarModel = PigModel(res.getChild("textures/animals/Boar.png"))
+        private val texture = Texture(res.getChild("textures/animals/Boar.png"))
     }
 
-    override val model: Model<*>
-        get() = boarModel
-
-    override val maxJumpDown: Int
-        get() = 2
+    override val model: Model<*> get() = PigModel
+    override val maxJumpDown: Int get() = 2
 
     override fun findTarget(start: Vector3i, seed: Long): Vector3i? {
         return findGrassyBlock(start, 16.0, 16, 1, true, seed)
