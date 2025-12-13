@@ -11,7 +11,7 @@ import org.joml.Vector3f
 
 object CollisionSystem : System(), OnUpdate {
 
-    private val tree = EntityTree()
+    val tree = EntityTree()
 
     private val oldMin = Vector3d()
     private val oldMax = Vector3d()

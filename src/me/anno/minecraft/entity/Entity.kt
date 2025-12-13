@@ -6,9 +6,7 @@ import me.anno.ecs.components.FillSpace
 import me.anno.ecs.interfaces.Renderable
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.minecraft.entity.model.Model
-import org.joml.AABBd
-import org.joml.Matrix4x3
-import org.joml.Vector3f
+import org.joml.*
 
 abstract class Entity(val halfExtents: Vector3f) : Component(), FillSpace, Renderable {
 
@@ -26,6 +24,12 @@ abstract class Entity(val halfExtents: Vector3f) : Component(), FillSpace, Rende
         val entity = entity ?: return
         entity.destroy()
     }
+
+    val position: Vector3d
+        get() = transform!!.localPosition
+
+    val rotation: Quaternionf
+        get() = transform!!.localRotation
 
     private val transforms = ArrayList<Transform>()
     fun getTransform(index: Int): Transform {

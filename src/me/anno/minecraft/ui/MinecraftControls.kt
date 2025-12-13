@@ -146,7 +146,6 @@ abstract class MinecraftControls(
         val dt = Time.deltaTime.toFloat()
         val dy = when {
             canFly && isFlying -> (Input.isKeyDown(Key.KEY_SPACE).toFloat() - Input.isControlDown.toFloat()) * 100f
-            player.physics.isOnGround -> Input.wasKeyPressed(Key.KEY_SPACE).toFloat() * 7f / dt
             else -> 0f
         }
         player.gravityFactor = if (isFlying) 0f else 1f
@@ -162,6 +161,7 @@ abstract class MinecraftControls(
             checkKeys(Key.KEY_D, Key.KEY_ARROW_RIGHT) - checkKeys(Key.KEY_A, Key.KEY_ARROW_LEFT), dy,
             checkKeys(Key.KEY_S, Key.KEY_ARROW_DOWN) - checkKeys(Key.KEY_W, Key.KEY_ARROW_UP)
         ).rotateY(player.bodyRotationY).mul(moveSpeed, 1f, moveSpeed)
+        if(dy == 0f && player.physics.isOnGround && Input.wasKeyPressed(Key.KEY_SPACE)) player.jump()
         player.spectatorMode = this is SpectatorControls
 
         // if player is flying, add artificial friction

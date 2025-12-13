@@ -84,4 +84,10 @@ abstract class MovingEntity(halfExtents: Vector3f) : Entity(halfExtents), OnUpda
         val acceleration = physics.acceleration
         acceleration.fma(gravityFactor, dimension.gravity)
     }
+
+    fun jump() {
+        val dt = Time.deltaTime.toFloat()
+        physics.acceleration.y += 7f / dt // dt = 1/60 -> 360?
+        physics.actualVelocity.y += 0.001f // mark as already-jumped
+    }
 }

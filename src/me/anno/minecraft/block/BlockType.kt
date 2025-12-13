@@ -18,6 +18,8 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
 
     val isSolid get() = color.a() == 255
     val isFluid get() = color.a() in 1 until 255
+    val isWalkable get() = !isSolid && !isFluid
+    val isGrassy = "grass" in typeUUID
 
     var friction = 5f
 
