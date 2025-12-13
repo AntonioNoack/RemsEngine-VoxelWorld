@@ -25,6 +25,7 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
 
     override val model: Model<*> get() = femaleModel
     override val maxJumpDown: Int get() = 3
+    override val maxHealth: Int get() = 20
 
     // idk what players would be looking for ;)
     override fun findTarget(start: Vector3i, seed: Long): Vector3i? = null

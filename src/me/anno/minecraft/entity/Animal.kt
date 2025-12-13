@@ -5,6 +5,7 @@ import me.anno.ecs.prefab.PrefabSaveable
 import me.anno.engine.debug.DebugLine
 import me.anno.engine.debug.DebugShapes
 import me.anno.maths.Maths
+import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.dtTo01
 import me.anno.maths.Maths.length
 import me.anno.maths.Maths.mixAngle
@@ -40,11 +41,14 @@ abstract class Animal(halfExtents: Vector3f, texture: Texture) : MovingEntity(ha
         pathFinding.debugDraw()
     }
 
+    var health = maxHealth
+
     var thinkTimeout = 0f
     val pathFinding = PathFinding(halfExtents)
 
     abstract fun findTarget(start: Vector3i, seed: Long): Vector3i?
     abstract val maxJumpDown: Int
+    abstract val maxHealth: Int
 
     fun executeAI() {
         // thinking

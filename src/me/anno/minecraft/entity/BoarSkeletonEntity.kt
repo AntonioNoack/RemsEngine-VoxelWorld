@@ -18,6 +18,7 @@ class BoarSkeletonEntity : Animal(halfExtents, texture) {
 
     override val model: Model<*> get() = PigModel
     override val maxJumpDown: Int get() = 2
+    override val maxHealth: Int get() = 12
 
     // todo when player is no longer on path, calculate a new path
     // todo abstract this into general hostile AI

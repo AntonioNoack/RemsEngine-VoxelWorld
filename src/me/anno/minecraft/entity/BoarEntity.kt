@@ -16,6 +16,7 @@ class BoarEntity : Animal(halfExtents, texture) {
 
     override val model: Model<*> get() = PigModel
     override val maxJumpDown: Int get() = 2
+    override val maxHealth: Int get() = 8
 
     override fun findTarget(start: Vector3i, seed: Long): Vector3i? {
         return findGrassyBlock(start, 16.0, 16, 1, true, seed)

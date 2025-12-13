@@ -70,12 +70,9 @@ fun invalidateChunk(coords: Vector3i) {
  * */
 fun main() {
 
-    // todo implement falling sand
-    //  -> if block below is removed,
-    //     then spawn a block entity
-    //  -> if block entity hits floor (isOnGround)
-    //     then set a block
-
+    // todo check dropped items
+    // todo player lives -> health bar, or list of player heads
+    
     // todo remove side panels, lock mouse
 
     OfficialExtensions.initForTests()
