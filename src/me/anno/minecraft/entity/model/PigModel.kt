@@ -3,35 +3,33 @@ package me.anno.minecraft.entity.model
 import me.anno.ecs.Transform
 import me.anno.gpu.drawing.GFXx2D.getSize
 import me.anno.gpu.pipeline.Pipeline
-import me.anno.io.files.FileReference
 import me.anno.minecraft.entity.MovingEntity.Companion.place
 import me.anno.minecraft.entity.PlayerEntity
-import me.anno.minecraft.entity.Texture
 import me.anno.minecraft.entity.model.CuboidCreator.createCuboid
 
 object PigModel : Model<PlayerEntity>() {
 
     private val texSize = getSize(64, 32)
 
-    val headMesh = createCuboid(
+    private val headMesh = createCuboid(
         8, 8, 8,
         0, 0,
         texSize
     )
 
-    val snotMesh = createCuboid(
+    private val snotMesh = createCuboid(
         4, 3, 1,
         16, 16,
         texSize
     )
 
-    val bodyMesh = createCuboid(
+    private val bodyMesh = createCuboid(
         10, 16, 8,
         28, 8,
         texSize
     ).apply { rotateX90Degrees() }
 
-    val legMesh = createCuboid(
+    private val legMesh = createCuboid(
         4, 6, 4,
         0, 16,
         texSize

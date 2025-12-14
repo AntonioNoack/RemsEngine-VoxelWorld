@@ -16,6 +16,7 @@ import me.anno.minecraft.entity.MovingEntity
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.entity.physics.CollisionSystem
 import me.anno.minecraft.rendering.createLighting
+import me.anno.minecraft.rendering.v3.ChunkRenderer2
 import me.anno.minecraft.ui.*
 import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem

@@ -3,7 +3,6 @@ package me.anno.minecraft.rendering.v2
 import me.anno.cache.FileCacheList
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.Mesh
-import me.anno.ecs.components.mesh.MeshAttributes.color0
 import me.anno.ecs.components.mesh.material.Material
 import me.anno.ecs.components.mesh.unique.UniqueMeshRendererImpl
 import me.anno.gpu.buffer.DrawMode
@@ -11,7 +10,6 @@ import me.anno.gpu.buffer.StaticBuffer
 import me.anno.io.files.FileReference
 import me.anno.minecraft.rendering.v2.VertexFormat.blockAttributes16Bit
 import me.anno.minecraft.rendering.v2.VertexFormat.blockVertexData
-import me.anno.utils.types.Floats.roundToIntOr
 import org.joml.AABBd
 import org.joml.Matrix4x3
 import org.joml.Vector3i
@@ -43,24 +41,11 @@ class ChunkRenderer(val material: Material) :
 
     override fun createBuffer(key: Vector3i, mesh: Mesh): Pair<StaticBuffer, IntArray?>? {
         if (mesh.numPrimitives == 0L) return null
-        val pos = mesh.positions!!
-        val col = mesh.color0!!
+        val pos = mesh.positions ?: return null
         val buffer = StaticBuffer("chunk$key", attributes, pos.size / 3)
-        val nio = buffer.getOrCreateNioBuffer()
-        val dx = key.x * csx
-        val dy = key.y * csy
-        val dz = key.z * csz
-        for (i in 0 until buffer.vertexCount) {
-            val texId = col[i] - 1 // 0 is air
-            val x = dx + pos[i * 3].roundToIntOr()
-            val y = dy + pos[i * 3 + 1].roundToIntOr()
-            val z = dz + pos[i * 3 + 2].roundToIntOr()
-            nio.putShort(x.toShort())
-            nio.putShort(y.toShort())
-            nio.putShort(z.toShort())
-            nio.putShort(texId.toShort())
-        }
-        buffer.isUpToDate = false
+        val nio = ChunkLoaderModel.createBuffer(key.x * csx, key.y * csy, key.z * csz, mesh)
+        buffer.nioBuffer = nio
+        buffer.cpuSideChanged()
         return buffer to null
     }
 }

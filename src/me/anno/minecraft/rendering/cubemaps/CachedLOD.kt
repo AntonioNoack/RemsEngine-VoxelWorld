@@ -1,4 +1,4 @@
-package me.anno.minecraft.rendering.v3
+package me.anno.minecraft.rendering.cubemaps
 
 import me.anno.ecs.Component
 import me.anno.ecs.annotations.DebugProperty
@@ -23,14 +23,14 @@ import me.anno.maths.Maths
 import me.anno.maths.Maths.sq
 import me.anno.maths.patterns.SpiralPattern
 import me.anno.mesh.Shapes.flatCube
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.CHUNKS_PER_FRAME
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.CHUNK_SIZE
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.DELTA_Y
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.MAX_Y
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.MIN_Y
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.chunkBuffers
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.generationShader
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.helper
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.CHUNKS_PER_FRAME
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.CHUNK_SIZE
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.DELTA_Y
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.MAX_Y
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.MIN_Y
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.chunkBuffers
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.generationShader
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.helper
 import me.anno.minecraft.world.Dimension
 import me.anno.utils.structures.lists.Lists.wrap
 import me.anno.utils.types.Floats.roundToIntOr

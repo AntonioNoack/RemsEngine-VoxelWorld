@@ -16,39 +16,39 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
 
     private val texSize = getSize(64, 64)
 
-    val headMesh = createCuboidX2(
+    private val headMesh = createCuboidX2(
         8, 8, 8,
         0, 0, 32, 0,
         texSize
     )
 
-    val torsoMesh = createCuboidX2(
+    private val torsoMesh = createCuboidX2(
         8, 12, 4,
         16, 16, 16, 32,
         texSize
     )
 
     // left from front, right from self
-    val rightArmMesh = createCuboidX2(
+    private val rightArmMesh = createCuboidX2(
         3, 12, 4,
         40, 16, 40, 32,
         texSize
     )
 
-    val leftArmMesh = createCuboidX2(
+    private val leftArmMesh = createCuboidX2(
         3, 12, 4,
         32, 48, 46, 48,
         texSize
     )
 
     // left from front, right from self
-    val rightLegMesh = createCuboidX2(
+    private val rightLegMesh = createCuboidX2(
         4, 12, 4,
         0, 16, 0, 32,
         texSize
     )
 
-    val leftLegMesh = createCuboidX2(
+    private val leftLegMesh = createCuboidX2(
         4, 12, 4,
         16, 48, 0, 48,
         texSize

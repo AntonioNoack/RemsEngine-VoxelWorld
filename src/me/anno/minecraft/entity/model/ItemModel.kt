@@ -14,7 +14,7 @@ object ItemModel : Model<ItemEntity>() {
     private const val Y_SWINGING = 0.3f
     private val mesh = flatCube.scaled(0.2f).front
 
-    val angle: Float
+    private val angle: Float
         get() = posMod(Time.gameTime - self.spawnTime, TAU).toFloat()
 
     override fun fill(pipeline: Pipeline, transform: Transform) {

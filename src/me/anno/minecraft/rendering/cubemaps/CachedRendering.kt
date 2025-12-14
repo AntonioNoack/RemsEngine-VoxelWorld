@@ -1,4 +1,4 @@
-package me.anno.minecraft.rendering.v3
+package me.anno.minecraft.rendering.cubemaps
 
 import me.anno.ecs.Component
 import me.anno.ecs.Entity

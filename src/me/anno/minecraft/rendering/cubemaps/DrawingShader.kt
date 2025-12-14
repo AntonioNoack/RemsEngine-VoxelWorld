@@ -1,15 +1,15 @@
-package me.anno.minecraft.rendering.v3
+package me.anno.minecraft.rendering.cubemaps
 
 import me.anno.gpu.shader.GLSLType
 import me.anno.gpu.shader.Shader
 import me.anno.gpu.shader.builder.Variable
 import me.anno.gpu.shader.builder.VariableMode
 import me.anno.gpu.texture.CubemapTexture.Companion.cubemapsAreLeftHanded
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.CHUNK_SIZE
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.DELTA_Y
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.getIndex
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.getIndexXZ
-import me.anno.minecraft.rendering.v3.CachedRendering.Companion.isOutOfBounds
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.CHUNK_SIZE
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.DELTA_Y
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.getIndex
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.getIndexXZ
+import me.anno.minecraft.rendering.cubemaps.CachedRendering.Companion.isOutOfBounds
 import kotlin.math.max
 
 object DrawingShader : Shader(
