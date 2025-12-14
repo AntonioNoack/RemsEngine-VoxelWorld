@@ -11,8 +11,7 @@ class FenceBlock(val blockType: BlockType) : BlockType(
 ), CustomBlockBounds, DetailedBlockVisuals {
 
     override val customSize: AABBf get() = fenceSize
-    override fun getModel() = modelInstance
-    private val modelInstance = fenceModel[texId]
+    override fun getModel() = fenceModel[texId]
 
     companion object {
         val fenceSize = AABBf(0f, 0f, 0f, 1f, 1.5f, 1f)

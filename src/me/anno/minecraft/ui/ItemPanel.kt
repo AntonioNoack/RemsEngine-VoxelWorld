@@ -1,13 +1,17 @@
 package me.anno.minecraft.ui
 
+import me.anno.cache.FileCacheList
 import me.anno.config.DefaultConfig.style
+import me.anno.ecs.components.mesh.material.Material
 import me.anno.gpu.GFX
+import me.anno.gpu.drawing.GFXx2D.getSize
 import me.anno.input.Key
 import me.anno.io.files.InvalidRef
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.DetailedBlockVisuals
 import me.anno.minecraft.block.builder.BlockBuilder
+import me.anno.minecraft.entity.model.CuboidCreator
 import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.minecraft.ui.MinecraftControls.Companion.inHandSlot
 import me.anno.minecraft.ui.MinecraftControls.Companion.inventory
@@ -16,26 +20,41 @@ import me.anno.ui.utils.ThumbnailPanel
 import me.anno.utils.Color.black
 import me.anno.utils.Color.mixARGB
 import me.anno.utils.Color.white
+import me.anno.utils.OS.res
 import me.anno.utils.structures.maps.LazyMap
 import kotlin.math.min
 
 class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef, style) {
 
     companion object {
+        val blockMaterial = Material().apply {
+            linearFiltering = false
+            diffuseMap = res.getChild("textures/blocks/Blocks.png")
+        }
         val previewBlocks = LazyMap { type: BlockType ->
             when (type) {
                 BlockRegistry.Air -> null
                 is DetailedBlockVisuals -> type.getModel()
                 else -> {
-                    // todo this isn't really working (always using texId==0???), and we need to
-                    //  wait for the texture to be loaded to get good results
-                    val builder = BlockBuilder()
-                    builder.addCube(0, 0, 0, 16, 16, 16, type.texId)
-                    val mesh = builder.build()
-                    if (type.isFluid) mesh.materials = listOf(TextureMaterial.fluid.ref)
-                    mesh
+                    if (true) {
+                        val mesh = CuboidCreator.createMonoCuboid(
+                            16, 16, 16,
+                            type.texId.and(15) * 16,
+                            type.texId.shr(4) * 16,
+                            getSize(256, 512)
+                        )
+                        mesh.materials = FileCacheList.of(blockMaterial)
+                        mesh
+                    } else {
+                        // todo why is this variant invisible???
+                        val builder = BlockBuilder()
+                        builder.addCube(0, 0, 0, 16, 16, 16, type.texId)
+                        val mesh = builder.build()
+                        if (type.isFluid) mesh.materials = listOf(TextureMaterial.fluid.ref)
+                        mesh
+                    }
                 }
-            }
+            }?.ref
         }
     }
 
@@ -51,7 +70,7 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
 
     override fun onUpdate() {
         super.onUpdate()
-        source = previewBlocks[slot.type]?.ref ?: InvalidRef
+        source = previewBlocks[slot.type] ?: InvalidRef
         background.color = if (inHandSlot == index) bg1 else bg0
     }
 

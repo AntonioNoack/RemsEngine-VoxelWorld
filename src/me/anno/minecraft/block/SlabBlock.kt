@@ -12,9 +12,7 @@ class SlabBlock(val blockType: BlockType, val side: BlockSide) : BlockType(
 ), CustomBlockBounds, DetailedBlockVisuals {
 
     override val customSize: AABBf = slabSizes[side]!!
-
-    override fun getModel() = modelInstance
-    private val modelInstance = slabModels[blockType.texId * 6 + side.ordinal]
+    override fun getModel() = slabModels[blockType.texId * 6 + side.ordinal]
 
     companion object {
 
