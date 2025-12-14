@@ -6,7 +6,7 @@ import me.anno.gpu.buffer.Buffer
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.gpu.shader.Shader
 import me.anno.minecraft.rendering.v2.*
-import me.anno.minecraft.rendering.v2.ChunkLoader.Companion.mapPalette
+import me.anno.minecraft.rendering.v2.ChunkLoaderBase.Companion.mapPalette
 import me.anno.minecraft.world.Chunk
 import me.anno.utils.types.Ranges.size
 import org.joml.AABBf
@@ -28,17 +28,16 @@ class ChunkMesh(
         )
     }
 
-    val palette = if (solidRenderer.material is TextureMaterial) {
-        mapPalette { it.texId + 1 }
-    } else {
-        mapPalette { it.color }
+    val buffer = run {
+        val palette = if (solidRenderer.material is TextureMaterial) {
+            mapPalette { it.texId + 1 }
+        } else {
+            mapPalette { it.color }
+        }
+        // todo use faster, without-intermediate-mesh method
+        ChunkLoaderModel(chunk)
+            .createBuffer(palette, blockFilter)
     }
-
-    // todo bake mesh in here
-    //  as a simple start, just use the existing logic with intermediate mesh
-
-    val buffer = ChunkLoaderModel(chunk)
-        .createBuffer(palette, blockFilter)
 
     var vertexRange = emptyRange
 
