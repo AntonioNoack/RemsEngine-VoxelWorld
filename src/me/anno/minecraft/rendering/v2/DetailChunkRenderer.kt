@@ -3,7 +3,6 @@ package me.anno.minecraft.rendering.v2
 import me.anno.cache.FileCacheList
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.material.Material
-import me.anno.ecs.components.mesh.material.MaterialCache
 import me.anno.ecs.components.mesh.unique.UniqueMeshRendererImpl
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.gpu.buffer.DrawMode

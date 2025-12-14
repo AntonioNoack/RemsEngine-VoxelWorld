@@ -1,7 +1,5 @@
 package me.anno.minecraft.rendering.v2
 
-import me.anno.minecraft.rendering.v3.ChunkLoader2.Companion.fluidFilter
-import me.anno.minecraft.rendering.v3.ChunkLoader2.Companion.solidFilter
 import me.anno.minecraft.world.Dimension
 import org.joml.Vector3i
 
