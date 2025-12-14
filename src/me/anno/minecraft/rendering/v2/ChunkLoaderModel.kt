@@ -4,7 +4,6 @@ import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.MeshAttributes.color0
 import me.anno.mesh.vox.model.VoxelModel
 import me.anno.minecraft.block.BlockRegistry
-import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.world.Chunk
 import me.anno.utils.pooling.ByteBufferPool
 import me.anno.utils.types.Floats.roundToIntOr
@@ -18,11 +17,12 @@ class ChunkLoaderModel(val chunk: Chunk) : VoxelModel(csx, csy, csz) {
     fun createMesh(palette: IntArray, blockFilter: BlockFilter): Mesh {
         center0()
         return createMesh(palette, { x, y, z ->
-            dimension.getBlockAt(
+            val block = dimension.getBlockAt(
                 x + chunk.x0,
                 y + chunk.y0,
                 z + chunk.z0
-            ).id.toInt().and(0xffff)
+            ) ?: BlockRegistry.Air
+            block.id.toInt().and(0xffff)
         }, { inside, outside ->
             val inside1 = BlockRegistry.byId[inside]
             val outside1 = BlockRegistry.byId[outside]

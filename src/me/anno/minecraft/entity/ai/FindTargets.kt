@@ -56,7 +56,8 @@ object FindTargets {
 
             for (yi in start.y - maxDistanceI..start.y + maxDistanceI) {
                 if (canStandAt(xi, yi, zi, height)) {
-                    val isGrassy = dimension.getBlockAt(xi, yi - 1, zi).isGrassy
+                    val ground = dimension.getBlockAt(xi, yi - 1, zi) ?: continue
+                    val isGrassy = ground.isGrassy
                     val score = abs(yi - start.y) + (isGrassy == wantGrassy).toInt(maxDistanceI + 1)
                     if (score < bestScore) {
                         bestScore = score
@@ -83,9 +84,11 @@ object FindTargets {
     }
 
     fun canStandAt(x: Int, y: Int, z: Int, height: Int): Boolean {
-        if (!dimension.getBlockAt(x, y - 1, z).isSolid) return false
+        val ground = dimension.getBlockAt(x, y - 1, z)
+        if (ground == null || !ground.isSolid) return false
         for (yi in y until y + height) {
-            if (!dimension.getBlockAt(x, yi, z).isWalkable) return false
+            val above = dimension.getBlockAt(x, yi, z)
+            if (above == null || !above.isWalkable) return false
         }
         return true
     }

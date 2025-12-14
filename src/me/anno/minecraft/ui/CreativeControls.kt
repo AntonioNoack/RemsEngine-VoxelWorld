@@ -38,7 +38,7 @@ open class CreativeControls(
                 // remove block
                 query ?: return
                 val coords = getCoords(query, +clickDistanceDelta)
-                val block = getBlock(coords)
+                val block = getBlock(coords) ?: BlockRegistry.Air
                 if (block != BlockRegistry.Air) {
                     if (drop) block.dropAsItem(coords.x, coords.y, coords.z, getBlockMetadata(coords))
                     else setBlock(coords, BlockRegistry.Air, null)
@@ -69,7 +69,10 @@ open class CreativeControls(
                 query ?: return
                 val coords = getCoords(query, +clickDistanceDelta)
                 val slot = inventory.slots[inHandSlot]
-                slot.set(getBlock(coords), 1, getBlockMetadata(coords))
+                val found = getBlock(coords) ?: BlockRegistry.Air
+                if (found != BlockRegistry.Air) {
+                    slot.set(found, 1, getBlockMetadata(coords))
+                }
             }
             else -> {}
         }

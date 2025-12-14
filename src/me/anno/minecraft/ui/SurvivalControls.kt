@@ -71,7 +71,7 @@ open class SurvivalControls(
                 if (!allowsBlockPlacing || query == null) return
                 // remove block
                 val coords = getCoords(query, +clickDistanceDelta)
-                val dropped = getBlock(coords)
+                val dropped = getBlock(coords) ?: BlockRegistry.Air
                 if (dropped != BlockRegistry.Air && !dropped.isFluid) {
                     val droppedMetadata = getBlockMetadata(coords)
                     setBlock(coords, BlockRegistry.Air, inHandMetadata)

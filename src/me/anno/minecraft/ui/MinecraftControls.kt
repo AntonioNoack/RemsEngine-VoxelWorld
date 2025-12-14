@@ -103,7 +103,7 @@ abstract class MinecraftControls(
     fun showHoveredBlock() {
         val query = clickCast() ?: return
         val coords = getCoords(query, +clickDistanceDelta)
-        val block = getBlock(coords)
+        val block = getBlock(coords) ?: return
         if (block != BlockRegistry.Air) {
             val bounds = AABBd()
             block.getBounds(coords.x, coords.y, coords.z, bounds)
@@ -228,7 +228,7 @@ abstract class MinecraftControls(
         return Vector3i(floor(pos.x).toInt(), floor(pos.y).toInt(), floor(pos.z).toInt())
     }
 
-    fun getBlock(coords: Vector3i): BlockType {
+    fun getBlock(coords: Vector3i): BlockType? {
         return dimension.getBlockAt(coords.x, coords.y, coords.z)
     }
 

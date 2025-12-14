@@ -27,7 +27,7 @@ class CactusBlock(typeUUID: String, color: Int, texId: Int, nameDesc: NameDesc) 
         val tmp = JomlPools.aabbd.create()
         val shouldBreak = checkedSides.any2 { side ->
             val other = dimension.getBlockAt(x, y, z, side)
-            other.isSolid && other.getBounds(side.x, side.y, side.z, tmp).testAABB(selfBounds)
+            other != null && other.isSolid && other.getBounds(side.x, side.y, side.z, tmp).testAABB(selfBounds)
             false
         }
         JomlPools.aabbd.sub(1)

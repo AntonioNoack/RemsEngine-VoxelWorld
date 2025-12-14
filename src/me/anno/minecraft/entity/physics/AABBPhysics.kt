@@ -108,6 +108,7 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
             for (y in y0 until y1) {
                 for (x in x0 until x1) {
                     val block = dimension.getBlockAt(x, y, z)
+                        ?: BlockRegistry.Stone // cannot enter void
                     block.getBounds(x, y, z, blockBounds)
 
                     // todo is this correct, or do we need to add 0.5?

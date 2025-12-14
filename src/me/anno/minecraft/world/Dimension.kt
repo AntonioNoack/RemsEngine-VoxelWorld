@@ -3,7 +3,6 @@ package me.anno.minecraft.world
 import me.anno.cache.Promise
 import me.anno.maths.chunks.cartesian.ChunkSystem
 import me.anno.mesh.vox.meshing.BlockSide
-import me.anno.minecraft.block.BlockRegistry.Air
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.rendering.v2.invalidateChunk
@@ -38,20 +37,20 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         return container.getBlock(localX, localY, localZ)
     }
 
-    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int): BlockType {
+    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int): BlockType? {
         return getBlockAt(globalX, globalY, globalZ, Int.MAX_VALUE)
     }
 
-    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, side: BlockSide): BlockType {
+    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, side: BlockSide): BlockType? {
         return getBlockAt(globalX + side.x, globalY + side.y, globalZ + side.z)
     }
 
-    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): BlockType {
+    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): BlockType? {
         return getChunkAt(globalX, globalY, globalZ, stage)
-            ?.getBlock(globalX and maskX, globalY and maskY, globalZ and maskZ) ?: Air
+            ?.getBlock(globalX, globalY, globalZ)
     }
 
-    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk): BlockType {
+    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk): BlockType? {
         return getBlockAt(globalX, globalY, globalZ, chunk.stage)
     }
 
@@ -67,7 +66,7 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk,
         blockType: BlockType, metadata: Metadata?
     ): Boolean {
-        return chunk.setBlock(globalX and maskX, globalY and maskY, globalZ and maskZ, blockType, metadata)
+        return chunk.setBlock(globalX, globalY, globalZ, blockType, metadata)
     }
 
     fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata? {
@@ -76,7 +75,7 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
 
     fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): Metadata? {
         return getChunkAt(globalX, globalY, globalZ, stage)
-            ?.getMetadata(globalX and maskX, globalY and maskY, globalZ and maskZ)
+            ?.getMetadata(globalX, globalY, globalZ)
     }
 
     fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stage: Int): Chunk? {

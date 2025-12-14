@@ -1,7 +1,5 @@
 package me.anno.minecraft.world
 
-import me.anno.engine.debug.DebugAABB
-import me.anno.engine.debug.DebugShapes
 import me.anno.io.base.BaseWriter
 import me.anno.io.saveable.Saveable
 import me.anno.minecraft.block.BlockRegistry
@@ -11,7 +9,6 @@ import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.Entity
 import me.anno.utils.pooling.JomlPools
 import me.anno.utils.structures.arrays.IntArrayList
-import org.joml.AABBd
 
 class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
 

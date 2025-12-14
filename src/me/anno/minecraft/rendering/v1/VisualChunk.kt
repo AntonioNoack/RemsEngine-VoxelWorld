@@ -26,8 +26,8 @@ class VisualChunk {
         val t0 = System.nanoTime()
         val dimension = chunk.dimension
         val outsideBlocks = GetBlockId { x, y, z ->
-            dimension.getBlockAt(x + chunk.x0, y + chunk.y0, z + chunk.z0, Int.MAX_VALUE)
-                .id.toInt()
+            val block = dimension.getBlockAt(x + chunk.x0, y + chunk.y0, z + chunk.z0, Int.MAX_VALUE)
+            (block ?: BlockRegistry.Air).id.toInt()
         }
 
         ChunkVoxelModel(chunk)
