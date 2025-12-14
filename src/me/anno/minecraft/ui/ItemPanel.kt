@@ -56,14 +56,15 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
                 }
             }?.ref
         }
+
+        val leftColor = style.getColor("borderColorLeft", black or 0x999999)
+        val rightColor = style.getColor("borderColorRight", black or 0x111111)
+        val topColor = style.getColor("borderColorTop", black or 0x999999)
+        val bottomColor = style.getColor("borderColorBottom", black or 0x111111)
+
+        val borderSize = style.getPadding("borderSize", 2)
     }
 
-    val leftColor = style.getColor("borderColorLeft", black or 0x999999)
-    val rightColor = style.getColor("borderColorRight", black or 0x111111)
-    val topColor = style.getColor("borderColorTop", black or 0x999999)
-    val bottomColor = style.getColor("borderColorBottom", black or 0x111111)
-
-    val borderSize = style.getPadding("borderSize", 2)
     val bg0 = backgroundColor
     val bg1 = mixARGB(backgroundColor, white, 0.5f)
     var isPressed = false
@@ -71,7 +72,7 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
     override fun onUpdate() {
         super.onUpdate()
         source = previewBlocks[slot.type] ?: InvalidRef
-        background.color = if (inHandSlot == index) bg1 else bg0
+        background.color = if (inHandSlot == index || isPressed) bg1 else bg0
     }
 
     override fun calculateSize(w: Int, h: Int) {

@@ -23,13 +23,14 @@ open class CreativeControls(
         updatePlayerCamera()
     }
 
-    // todo if in air, and space, activate fly-mode
-    // todo if space, and not fly-mode, jump
-    // todo update camera based on player
-
-    val drop = true
+    val dropItems = true
 
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
+        if (inventoryUI.isVisible) {
+            inventoryUI.isVisible = false
+            return
+        }
+
         // find, which block was clicked
         // expensive way, using raycasting:
         val query = clickCast()
@@ -38,10 +39,11 @@ open class CreativeControls(
                 // remove block
                 query ?: return
                 val coords = getCoords(query, +clickDistanceDelta)
-                val block = getBlock(coords) ?: BlockRegistry.Air
-                if (block != BlockRegistry.Air) {
-                    if (drop) block.dropAsItem(coords.x, coords.y, coords.z, getBlockMetadata(coords))
-                    else setBlock(coords, BlockRegistry.Air, null)
+                val dropped = getBlock(coords) ?: BlockRegistry.Air
+                if (dropped != BlockRegistry.Air) {
+                    val droppedMetadata = getBlockMetadata(coords)
+                    setBlock(coords, BlockRegistry.Air, null)
+                    if (dropItems) dropped.dropAsItem(coords.x, coords.y, coords.z, droppedMetadata)
                 }
             }
             Key.BUTTON_RIGHT -> {

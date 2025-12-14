@@ -22,6 +22,7 @@ import me.anno.ui.base.SpacerPanel
 import me.anno.ui.base.buttons.TextButton
 import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.base.groups.PanelListX
+import me.anno.ui.base.groups.PanelListY
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
 import org.joml.AABBd
@@ -45,7 +46,8 @@ abstract class MinecraftControls(
         val inHandItem get() = inHand.type
         val inHandMetadata get() = inHand.metadata
 
-        val inventory = Inventory(9)
+        val inventorySizeX = 9
+        val inventory = Inventory(inventorySizeX * (6 + 1))
         val offHand = Inventory(1)
 
         val clickDistanceDelta = 0.001
@@ -55,12 +57,18 @@ abstract class MinecraftControls(
 
     val modeButton = TextButton(NameDesc("Next Mode"), style)
 
+    // todo open creative inventory
+    // todo and open your own inventory for survival mode
+
+    val inventoryUI = PanelListY(style)
+
     init {
         for ((i, type) in listOf(
             BlockRegistry.byUUID["remcraft.sandstone.slab[2]"]!!,
             BlockRegistry.byUUID["remcraft.sandstone.fence"]!!,
             BlockRegistry.Dirt, BlockRegistry.Grass, BlockRegistry.Water, BlockRegistry.Lava,
-            BlockRegistry.Sand, BlockRegistry.Sandstone
+            BlockRegistry.Sand, BlockRegistry.Sandstone, BlockRegistry.Cactus, BlockRegistry.Stone,
+            BlockRegistry.Gravel
         ).withIndex()) {
             val slot = inventory.slots.getOrNull(i) ?: break
             slot.set(type, 1, null)
@@ -68,12 +76,25 @@ abstract class MinecraftControls(
         val inventoryBar = PanelListX(style)
         inventoryBar.add(ItemPanel(offHand.slots[0], Int.MAX_VALUE))
         inventoryBar.add(SpacerPanel(10, 0, style))
-        for ((i, slot) in inventory.slots.withIndex()) {
-            inventoryBar.add(ItemPanel(slot, i))
+        for (i in 0 until inventorySizeX) {
+            inventoryBar.add(ItemPanel(inventory.slots[i], i))
         }
         inventoryBar.alignmentX = AxisAlignment.CENTER
         inventoryBar.alignmentY = AxisAlignment.MAX
         add(inventoryBar)
+
+        for (i in 0 until 6) {
+            val list = PanelListX(style)
+            for (j in 0 until inventorySizeX) {
+                val index = (i + 1) * inventorySizeX + j
+                list.add(ItemPanel(inventory.slots[index], index))
+            }
+            inventoryUI.add(list)
+        }
+        inventoryUI.alignmentX = AxisAlignment.CENTER
+        inventoryUI.alignmentY = AxisAlignment.CENTER
+        inventoryUI.isVisible = false
+        add(inventoryUI)
 
         modeButton.addLeftClickListener { nextMode() }
         modeButton.alignmentX = AxisAlignment.MAX
@@ -210,8 +231,19 @@ abstract class MinecraftControls(
                 }
                 lastWTime = time
             }
+            Key.KEY_E -> {
+                inventoryUI.isVisible = !inventoryUI.isVisible
+            }
             else -> super.onKeyTyped(x, y, key)
         }
+    }
+
+    override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
+        inventoryUI.isVisible = false
+    }
+
+    override fun onEscapeKey(x: Float, y: Float) {
+        inventoryUI.isVisible = false
     }
 
     override fun onKeyUp(x: Float, y: Float, key: Key) {
