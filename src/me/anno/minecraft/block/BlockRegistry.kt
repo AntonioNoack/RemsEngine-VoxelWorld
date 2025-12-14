@@ -15,17 +15,18 @@ object BlockRegistry {
     val Stone = BlockType("remcraft.stone", black or 0x778899, 48, NameDesc("Stone"))
     val Grass = BlockType("remcraft.grass", black or 0x55aa33, 226, NameDesc("Grass"))
     val Dirt = BlockType("remcraft.dirt", black or 0x997755, 112, NameDesc("Dirt"))
-    val Water = BlockType("remcraft.water", trans or 0x3344ff, 8 * 16 + 2, NameDesc("Water"))
-    val Lava = BlockType("remcraft.lava", trans or 0xd97520, 9 * 16 + 7, NameDesc("Lava"))
+    val Water = WaterBlock("remcraft.water", trans or 0x3344ff, 8 * 16 + 2, NameDesc("Water"))
+    val Lava = LavaBlock("remcraft.lava", trans or 0xd97520, 9 * 16 + 7, NameDesc("Lava"))
     val Log = BlockType("remcraft.log", black or 0x835127, 189, NameDesc("Log"))
     val Leaves = BlockType("remcraft.leaves", black or 0x187423, 240, NameDesc("Leaves"))
-    val Sand = BlockType("remcraft.sand", black or 0xeddc9e, 7 * 16 + 2, NameDesc("Sand"))
+    val Sand = SandBlock("remcraft.sand", black or 0xeddc9e, 7 * 16 + 2, NameDesc("Sand"))
     val Sandstone = BlockType("remcraft.sandstone", black or 0x9f946b, 185, NameDesc("Sandstone"))
-    val Cactus = BlockType("remcraft.cactus", black or 0x77975a, 13 * 16 + 15, NameDesc("Cactus"))
+    val Gravel = SandBlock("remcraft.gravel", black or 0x556060, 7 * 16 + 6, NameDesc("Gravel"))
+    val Cactus = CactusBlock("remcraft.cactus", black or 0x77975a, 13 * 16 + 15, NameDesc("Cactus"))
 
     val initialBlocks = listOf(
         Air, Unknown, Stone, Grass, Dirt, Water, Lava, Log, Leaves, Sand, Sandstone,
-        Cactus
+        Gravel, Cactus
     )
 
     val masonryBlocks = listOf(
@@ -51,17 +52,14 @@ object BlockRegistry {
     }
 
     init {
-
-        // todo make IDs auto-increment, and always serialize a map of what which ID means using a name-ID
-        //  (byID becomes an ArrayList, which saves allocations, and we avoid the hassle of ID overlaps)
-
         for (block in initialBlocks) {
             register(block)
         }
 
         for (block in masonryBlocks) {
-            register(SlabBlock(block, BlockSide.PY))
-            register(SlabBlock(block, BlockSide.NY))
+            for (side in BlockSide.entries) {
+                register(SlabBlock(block, side))
+            }
             register(DoubleSlabBlock(block))
             register(FenceBlock(block))
         }

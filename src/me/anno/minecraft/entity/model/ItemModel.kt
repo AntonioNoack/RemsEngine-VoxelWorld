@@ -2,17 +2,17 @@ package me.anno.minecraft.entity.model
 
 import me.anno.Time
 import me.anno.ecs.Transform
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.maths.Maths.TAU
 import me.anno.maths.Maths.posMod
-import me.anno.mesh.Shapes.flatCube
 import me.anno.minecraft.entity.ItemEntity
 import kotlin.math.sin
 
-object ItemModel : Model<ItemEntity>() {
-
-    private const val Y_SWINGING = 0.3f
-    private val mesh = flatCube.scaled(0.2f).front
+class ItemModel(private val mesh: Mesh) : Model<ItemEntity>() {
+    companion object {
+        private const val Y_SWINGING = 0.3f
+    }
 
     private val angle: Float
         get() = posMod(Time.gameTime - self.spawnTime, TAU).toFloat()

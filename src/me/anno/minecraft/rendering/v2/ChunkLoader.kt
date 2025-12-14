@@ -9,14 +9,13 @@ class ChunkLoader(
     val detailRenderer: DetailChunkRenderer
 ) : ChunkLoaderBase<ChunkRenderer>(
     solidRenderer.material,
-    solidRenderer,
-    fluidRenderer
+    solidRenderer, fluidRenderer
 ) {
     override fun generateChunk(chunkId: Vector3i) {
         // val clock = Clock("ChunkLoader")
         // 9s vs 27s, so 3x faster to use a clone 🤯
         // todo fix that... we cannot be THAT slow just to synchronize stuff...
-        val dimension = Dimension(dimension.generator, dimension.decorators)
+        val dimension = Dimension(dimension.generator, dimension.stages)
         val chunk = dimension.getChunk(chunkId.x, chunkId.y, chunkId.z, Int.MAX_VALUE)!!
         val model = ChunkLoaderModel(chunk)
         val solidMesh = model.createMesh(palette, solidFilter)
@@ -34,6 +33,8 @@ class ChunkLoader(
     }
 
     override fun destroyMesh(renderer: ChunkRenderer, vec: Vector3i, destroyMesh: Boolean) {
-        renderer.remove(vec, true)
+        synchronized(renderer) {
+            renderer.remove(vec, true)
+        }
     }
 }

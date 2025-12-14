@@ -2,6 +2,7 @@ package me.anno.minecraft.world
 
 import me.anno.cache.Promise
 import me.anno.maths.chunks.cartesian.ChunkSystem
+import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.minecraft.block.BlockRegistry.Air
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
@@ -16,7 +17,7 @@ import org.joml.Vector3f
 import org.joml.Vector3i
 import kotlin.math.min
 
-class Dimension(val generator: Generator, val decorators: List<Decorator>) : ChunkSystem<Chunk, BlockType>(5, 5, 5) {
+class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSystem<Chunk, BlockType>(5, 5, 5) {
 
     val gravity = Vector3f(0f, -9.81f, 0f)
 
@@ -41,13 +42,17 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
         return getBlockAt(globalX, globalY, globalZ, Int.MAX_VALUE)
     }
 
+    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, side: BlockSide): BlockType {
+        return getBlockAt(globalX + side.x, globalY + side.y, globalZ + side.z)
+    }
+
     fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): BlockType {
         return getChunkAt(globalX, globalY, globalZ, stage)
             ?.getBlock(globalX and maskX, globalY and maskY, globalZ and maskZ) ?: Air
     }
 
     fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk): BlockType {
-        return getBlockAt(globalX, globalY, globalZ, chunk.decorator)
+        return getBlockAt(globalX, globalY, globalZ, chunk.stage)
     }
 
     fun setBlockAt(
@@ -75,15 +80,15 @@ class Dimension(val generator: Generator, val decorators: List<Decorator>) : Chu
     }
 
     fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stage: Int): Chunk? {
-        val chunk = getChunk(chunkX, chunkY, chunkZ, true)?.waitFor() ?: return null
-        for (stage2 in chunk.decorator until min(stage, decorators.size)) {
-            decorators[stage2].decorate(chunk)
-            chunk.decorator = stage2 + 1
+        val chunk = getChunk(chunkX, chunkY, chunkZ, true)?.waitFor(stage >= 0) ?: return null
+        for (stage2 in chunk.stage until min(stage, stages.size)) {
+            stages[stage2].decorate(chunk)
+            chunk.stage = stage2 + 1
         }
         return chunk
     }
 
-    fun getChunkAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): Chunk? =
+    fun getChunkAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int = Int.MAX_VALUE): Chunk? =
         getChunk(globalX shr bitsX, globalY shr bitsY, globalZ shr bitsZ, stage)
 
     override fun setElement(

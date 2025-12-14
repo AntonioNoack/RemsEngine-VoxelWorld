@@ -58,7 +58,7 @@ class SaveLoadSystem(name: String) {
         // then load all blocks
         val numBlocks = stream.readBE32()
         val answer = HashMap<Vector3i, Short>(numBlocks)
-        for (i in 0 until numBlocks) {
+        repeat( numBlocks) {
             val x = stream.read()
             val y = stream.read()
             val z = stream.read()

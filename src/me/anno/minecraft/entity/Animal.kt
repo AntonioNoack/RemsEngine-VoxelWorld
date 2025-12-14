@@ -5,12 +5,12 @@ import me.anno.ecs.prefab.PrefabSaveable
 import me.anno.engine.debug.DebugLine
 import me.anno.engine.debug.DebugShapes
 import me.anno.maths.Maths
-import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.dtTo01
 import me.anno.maths.Maths.length
 import me.anno.maths.Maths.mixAngle
 import me.anno.minecraft.entity.ai.FindTargets
 import me.anno.minecraft.entity.ai.PathFinding
+import me.anno.minecraft.entity.effect.Effect
 import me.anno.ui.UIColors
 import org.joml.Quaternionf
 import org.joml.Vector3d
@@ -22,6 +22,8 @@ import kotlin.math.ceil
 import kotlin.math.max
 
 abstract class Animal(halfExtents: Vector3f, texture: Texture) : MovingEntity(halfExtents, texture) {
+
+    val effects = ArrayList<Effect>()
 
     val bodyRotation: Quaternionf get() = transform!!.localRotation
     val headRotation = Quaternionf()
@@ -39,6 +41,20 @@ abstract class Animal(halfExtents: Vector3f, texture: Texture) : MovingEntity(ha
         super.onUpdate()
         executeAI()
         pathFinding.debugDraw()
+    }
+
+    fun processEffects() {
+        val dt = Time.deltaTime.toFloat()
+        for (i in effects.indices) {
+            val effect = effects[i]
+            processEffect(effect)
+            effect.remainingDuration -= dt
+        }
+        effects.removeIf { it.remainingDuration <= 0f }
+    }
+
+    fun processEffect(effect: Effect) {
+        // todo implement this
     }
 
     var health = maxHealth

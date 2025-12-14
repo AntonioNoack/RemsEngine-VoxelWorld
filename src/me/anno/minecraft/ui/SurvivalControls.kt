@@ -13,16 +13,15 @@ import me.anno.minecraft.item.DurableItem.Companion.METADATA_DURABILITY
 import me.anno.minecraft.item.ItemType
 import me.anno.minecraft.item.RightClickBlock
 import me.anno.minecraft.item.RightClickItem
-import me.anno.minecraft.rendering.v2.ChunkLoader
 import me.anno.minecraft.rendering.v2.spawnEntity
 import me.anno.minecraft.world.Dimension
 import org.joml.Vector3d
 import org.joml.Vector3i
 
 open class SurvivalControls(
-    player: PlayerEntity, dimension: Dimension, chunkLoader: ChunkLoader, renderer: RenderView,
+    player: PlayerEntity, dimension: Dimension, renderer: RenderView,
     val allowsBlockPlacing: Boolean = true
-) : MinecraftControls(player, dimension, chunkLoader, renderer) {
+) : MinecraftControls(player, dimension, renderer) {
 
     override val canFly: Boolean
         get() = false
@@ -43,7 +42,7 @@ open class SurvivalControls(
         val entities = player.entity!!.parentEntity!!
         val stack = ItemSlot(itemType, 1, metadata)
         spawnEntity(
-            entities, ItemEntity(stack),
+            ItemEntity(stack),
             Vector3d(position.x + 0.5, position.y + 0.5, position.z + 0.5)
         )
     }

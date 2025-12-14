@@ -17,7 +17,6 @@ import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.PlayerEntity
-import me.anno.minecraft.rendering.v2.ChunkLoader
 import me.anno.minecraft.world.Dimension
 import me.anno.ui.base.SpacerPanel
 import me.anno.ui.base.buttons.TextButton
@@ -35,7 +34,6 @@ import kotlin.math.floor
 abstract class MinecraftControls(
     val player: PlayerEntity,
     val dimension: Dimension,
-    val chunkLoader: ChunkLoader,
     renderer: RenderView
 ) : ControlScheme(renderer) {
 
@@ -238,9 +236,11 @@ abstract class MinecraftControls(
         return dimension.getMetadataAt(coords.x, coords.y, coords.z)
     }
 
-    fun setBlock(coords: Vector3i, type: BlockType, metadata: Metadata?) {
-        dimension.setBlockAt(coords.x, coords.y, coords.z, type, metadata)
-        dimension.invalidateAt(coords.x, coords.y, coords.z, type)
+    fun setBlock(coords: Vector3i, type: BlockType, metadata: Metadata?): Boolean {
+        val chunk = dimension.getChunkAt(coords.x, coords.y, coords.z) ?: return false
+        chunk.setBlock(coords.x, coords.y, coords.z, type, metadata)
+        chunk.afterBlockChange(coords.x, coords.y, coords.z)
+        return true
     }
 
     fun clickCast(): RayQuery? {
@@ -258,10 +258,16 @@ abstract class MinecraftControls(
         // queryBounds.addMargin(ceil(query.result.distance + 1.0).toInt())
         queryBounds.all()
 
-        // todo we no longer need the meshes... where can we throw them away?
         val hitSomething =
             BlockTracing.blockTrace(query, (query.result.distance * 3).toInt(), queryBounds) { xi, yi, zi ->
-                if (dimension.getBlockAt(xi, yi, zi, Int.MAX_VALUE).isSolid) BlockTracing.SOLID_BLOCK
+                val chunk = dimension.getChunk(
+                    xi shr dimension.bitsX,
+                    yi shr dimension.bitsY,
+                    zi shr dimension.bitsZ,
+                    false
+                )?.value
+                val block = chunk?.getBlock(xi, yi, zi) ?: BlockRegistry.Air
+                if (block.isSolid) BlockTracing.SOLID_BLOCK
                 else BlockTracing.AIR_BLOCK
             }
 

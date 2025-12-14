@@ -1,11 +1,17 @@
 package me.anno.minecraft.world
 
+import me.anno.engine.debug.DebugAABB
+import me.anno.engine.debug.DebugShapes
 import me.anno.io.base.BaseWriter
 import me.anno.io.saveable.Saveable
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.ChangingBlock
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.Entity
+import me.anno.utils.pooling.JomlPools
+import me.anno.utils.structures.arrays.IntArrayList
+import org.joml.AABBd
 
 class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
 
@@ -30,7 +36,7 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     var z1 = z0 + dimension.sizeZ
         private set
 
-    var decorator = 0
+    var stage = 0
 
     // what is the maximum number of block types? int32, I think
     // int16 will be enough without mods
@@ -39,6 +45,46 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     val metadata = HashMap<Int, Metadata>()
 
     val entities = ArrayList<Entity>()
+    val blockUpdates = IntArrayList()
+
+    fun afterBlockChange(x: Int, y: Int, z: Int) {
+        val index = getIndex(x, y, z)
+        blockUpdates.add(index)
+        dimension.invalidateAt(x, y, z, getBlock(index))
+    }
+
+    fun processBlockUpdates() {
+        val size0 = blockUpdates.size
+        for (i in blockUpdates.indices) {
+            processBlockUpdate(blockUpdates[i])
+        }
+        blockUpdates.removeBetween(0, size0)
+    }
+
+    /**
+     * update center and all sides
+     * */
+    fun processBlockUpdate(i: Int) {
+        val (lx, ly, lz) = dimension.decodeIndex(i, JomlPools.vec3i.borrow())
+        val x = lx + x0
+        val y = ly + y0
+        val z = lz + z0
+
+        processBlockUpdate(x, y, z)
+        processBlockUpdate(x - 1, y, z)
+        processBlockUpdate(x + 1, y, z)
+        processBlockUpdate(x, y - 1, z)
+        processBlockUpdate(x, y + 1, z)
+        processBlockUpdate(x, y, z - 1)
+        processBlockUpdate(x, y, z + 1)
+    }
+
+    fun processBlockUpdate(x: Int, y: Int, z: Int) {
+        val chunk = dimension.getChunkAt(x, y, z) ?: return
+        val index = chunk.getIndex(x, y, z)
+        val type = chunk.getBlock(index) as? ChangingBlock ?: return
+        type.onBlockUpdate(x, y, z, chunk.getMetadata(index), chunk)
+    }
 
     fun set(x: Int, y: Int, z: Int) {
         x0 = x
@@ -56,19 +102,11 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         blocks.fill(0)
         metadata.clear()
         entities.clear()
-        decorator = 0
+        stage = 0
     }
 
     fun getIndex(localX: Int, localY: Int, localZ: Int): Int {
         return dimension.getIndex(localX, localY, localZ)
-    }
-
-    fun isAir(index: Int): Boolean {
-        return blocks[index] == 0.toShort()
-    }
-
-    fun isAir(localX: Int, localY: Int, localZ: Int): Boolean {
-        return blocks[dimension.getIndex(localX, localY, localZ)] == 0.toShort()
     }
 
     fun getBlockId(localX: Int, localY: Int, localZ: Int): Short {
@@ -76,12 +114,18 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     }
 
     fun getBlock(localX: Int, localY: Int, localZ: Int): BlockType {
-        return BlockRegistry.byId(blocks[dimension.getIndex(localX, localY, localZ)]) ?: BlockRegistry.Air
+        return getBlock(getIndex(localX, localY, localZ))
+    }
+
+    fun getBlock(index: Int): BlockType {
+        return BlockRegistry.byId(blocks[index]) ?: BlockRegistry.Air
     }
 
     fun getMetadata(localX: Int, localY: Int, localZ: Int): Metadata? {
-        return metadata[dimension.getIndex(localX, localY, localZ)]
+        return getMetadata(getIndex(localX, localY, localZ))
     }
+
+    fun getMetadata(index: Int): Metadata? = metadata[index]
 
     fun setBlock(x: Int, y: Int, z: Int, block: Short): Boolean {
         val key = dimension.getIndex(x, y, z)
@@ -139,7 +183,7 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     override fun save(writer: BaseWriter) {
         super.save(writer)
         writer.writeObjectList(this, "entities", entities)
-        writer.writeInt("decorator", decorator)
+        writer.writeInt("decorator", stage)
         for ((key, value) in metadata) {
             writer.writeObject(this, "m$key", value)
         }

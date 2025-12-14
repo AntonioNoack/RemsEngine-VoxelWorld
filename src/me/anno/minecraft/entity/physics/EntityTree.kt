@@ -7,8 +7,8 @@ import org.joml.Vector3d
 /**
  * Acceleration structure for finding colliding entities
  * */
-class EntityTree : OctTree<MovingEntity>(16) {
-    override fun createChild() = EntityTree()
-    override fun getMin(data: MovingEntity): Vector3d = data.minPosition
-    override fun getMax(data: MovingEntity): Vector3d = data.maxPosition
+class EntityTree<Type: MovingEntity> : OctTree<Type>(16) {
+    override fun createChild() = EntityTree<Type>()
+    override fun getMin(data: Type): Vector3d = data.minPosition
+    override fun getMax(data: Type): Vector3d = data.maxPosition
 }

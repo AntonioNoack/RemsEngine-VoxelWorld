@@ -19,8 +19,12 @@ class SlabBlock(val blockType: BlockType, val side: BlockSide) : BlockType(
     companion object {
 
         val slabSizes = mapOf(
+            BlockSide.NX to AABBf(0f, 0f, 0f, 0.5f, 1f, 1f),
+            BlockSide.PX to AABBf(0.5f, 0f, 0f, 1f, 1f, 1f),
             BlockSide.NY to AABBf(0f, 0f, 0f, 1f, 0.5f, 1f),
             BlockSide.PY to AABBf(0f, 0.5f, 0f, 1f, 1f, 1f),
+            BlockSide.NZ to AABBf(0f, 0f, 0f, 1f, 0.5f, 1f),
+            BlockSide.PZ to AABBf(0f, 0f, 0.5f, 1f, 1f, 1f),
         )
 
         val slabModels = LazyList(6 * 65536) { id: Int ->
@@ -28,6 +32,5 @@ class SlabBlock(val blockType: BlockType, val side: BlockSide) : BlockType(
             val side = BlockSide.entries[id % 6]
             BlockBuilder.slab(texId, side)
         }
-
     }
 }

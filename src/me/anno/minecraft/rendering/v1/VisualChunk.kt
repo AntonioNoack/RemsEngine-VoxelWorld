@@ -3,7 +3,7 @@ package me.anno.minecraft.rendering.v1
 import me.anno.ecs.components.mesh.Mesh
 import me.anno.mesh.vox.meshing.GetBlockId
 import me.anno.minecraft.block.BlockRegistry
-import me.anno.minecraft.rendering.v2.ChunkLoader.Companion.mapPalette
+import me.anno.minecraft.rendering.v2.ChunkLoaderBase.Companion.mapPalette
 import me.anno.minecraft.world.Chunk
 import me.anno.utils.types.Floats.f3
 import org.apache.logging.log4j.LogManager

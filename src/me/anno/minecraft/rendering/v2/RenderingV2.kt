@@ -8,15 +8,10 @@ import me.anno.engine.ui.render.SceneView
 import me.anno.engine.ui.render.SceneView.Companion.createSceneUI
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.minecraft.block.BlockRegistry
-import me.anno.minecraft.entity.ArrowEntity
-import me.anno.minecraft.entity.BoarEntity
-import me.anno.minecraft.entity.BoarSkeletonEntity
-import me.anno.minecraft.entity.MovingBlock
-import me.anno.minecraft.entity.MovingEntity
-import me.anno.minecraft.entity.PlayerEntity
+import me.anno.minecraft.block.BlockUpdateSystem
+import me.anno.minecraft.entity.*
 import me.anno.minecraft.entity.physics.CollisionSystem
 import me.anno.minecraft.rendering.createLighting
-import me.anno.minecraft.rendering.v3.ChunkRenderer2
 import me.anno.minecraft.ui.*
 import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem
@@ -36,7 +31,8 @@ val csx = dimension.sizeX
 val csy = dimension.sizeY
 val csz = dimension.sizeZ
 
-lateinit var chunkLoader: ChunkLoader
+lateinit var chunkLoader: ChunkLoaderBase<*>
+lateinit var entities: Entity
 
 private val invalidChunks = HashSet<Vector3i>()
 fun invalidateChunk(coords: Vector3i) {
@@ -73,12 +69,13 @@ fun main() {
 
     // todo check dropped items
     // todo player lives -> health bar, or list of player heads
-    
+
     // todo remove side panels, lock mouse
 
     OfficialExtensions.initForTests()
     val scene = Entity("Scene")
     registerSystem(CollisionSystem)
+    registerSystem(BlockUpdateSystem)
 
     val solidRenderer = ChunkRenderer(TextureMaterial.solid)
     val fluidRenderer = ChunkRenderer(TextureMaterial.fluid)
@@ -99,16 +96,16 @@ fun main() {
     dimension.setElementAt(2, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.slab[3]"]!!)
     dimension.setElementAt(3, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.fence"]!!)
 
-    val entities = Entity("Entities", scene)
-    spawnEntity(entities, player)
+    entities = Entity("Entities", scene)
+    spawnEntity(player)
 
-    spawnEntity(entities, BoarEntity(), Vector3d(-2.0, 77.0, 0.0))
-    spawnEntity(entities, BoarSkeletonEntity(), Vector3d(2.0, 77.0, 0.0))
+    spawnEntity(BoarEntity(), Vector3d(-2.0, 77.0, 0.0))
+    spawnEntity(BoarSkeletonEntity(), Vector3d(2.0, 77.0, 0.0))
     spawnEntity(
-        entities, MovingBlock(ItemSlot(BlockRegistry.Sand, 1, null)),
+        MovingBlock(ItemSlot(BlockRegistry.Sand, 1, null)),
         Vector3d(0.5, 90.5, 0.5)
     )
-    spawnEntity(entities, ArrowEntity(), Vector3d(-2.0, 90.0, 0.0))
+    spawnEntity(ArrowEntity(), Vector3d(-2.0, 90.0, 0.0))
 
     scene.add(solidRenderer)
     scene.add(fluidRenderer)
@@ -118,10 +115,10 @@ fun main() {
 
     fun init(sceneView: SceneView) {
         val renderer = sceneView.renderView
-        val creativeControls = CreativeControls(player, dimension, chunkLoader, renderer)
-        val spectatorControls = SpectatorControls(player, dimension, chunkLoader, renderer)
-        val survivalControls = SurvivalControls(player, dimension, chunkLoader, renderer)
-        val adventureControls = AdventureControls(player, dimension, chunkLoader, renderer)
+        val creativeControls = CreativeControls(player, dimension, renderer)
+        val spectatorControls = SpectatorControls(player, dimension, renderer)
+        val survivalControls = SurvivalControls(player, dimension, renderer)
+        val adventureControls = AdventureControls(player, dimension, renderer)
         val allControls = mapOf(
             ControlMode.CREATIVE to creativeControls,
             ControlMode.SURVIVAL to survivalControls,
@@ -162,16 +159,18 @@ fun main() {
     }
 }
 
-fun spawnEntity(entities: Entity, entity: me.anno.minecraft.entity.Entity) {
+fun spawnEntity(entity: me.anno.minecraft.entity.Entity): me.anno.minecraft.entity.Entity {
     val childEntity = Entity(entities).add(entity)
     if (entity is MovingEntity) {
         childEntity.setPosition(entity.physics.position)
     }
+    return entity
 }
 
 
-fun spawnEntity(entities: Entity, entity: MovingEntity, pos: Vector3d) {
+fun spawnEntity(entity: MovingEntity, pos: Vector3d) : MovingEntity {
     entity.physics.position.set(pos)
-    spawnEntity(entities, entity)
+    spawnEntity(entity)
+    return entity
 }
 

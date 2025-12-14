@@ -8,16 +8,11 @@ import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.item.RightClickBlock
 import me.anno.minecraft.item.RightClickItem
-import me.anno.minecraft.rendering.v2.ChunkLoader
 import me.anno.minecraft.world.Dimension
 
 open class CreativeControls(
-    player: PlayerEntity,
-    dimension: Dimension,
-    chunkLoader: ChunkLoader,
-    renderer: RenderView
-) :
-    MinecraftControls(player, dimension, chunkLoader, renderer) {
+    player: PlayerEntity, dimension: Dimension, renderer: RenderView
+) : MinecraftControls(player, dimension, renderer) {
 
     override val canFly: Boolean
         get() = true
@@ -32,6 +27,8 @@ open class CreativeControls(
     // todo if space, and not fly-mode, jump
     // todo update camera based on player
 
+    val drop = true
+
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
         // find, which block was clicked
         // expensive way, using raycasting:
@@ -43,7 +40,8 @@ open class CreativeControls(
                 val coords = getCoords(query, +clickDistanceDelta)
                 val block = getBlock(coords)
                 if (block != BlockRegistry.Air) {
-                    setBlock(coords, BlockRegistry.Air, null)
+                    if (drop) block.dropAsItem(coords.x, coords.y, coords.z, getBlockMetadata(coords))
+                    else setBlock(coords, BlockRegistry.Air, null)
                 }
             }
             Key.BUTTON_RIGHT -> {

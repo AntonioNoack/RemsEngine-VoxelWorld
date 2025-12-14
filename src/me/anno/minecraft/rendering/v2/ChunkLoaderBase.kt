@@ -69,10 +69,6 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
 
     abstract fun generateChunk(chunkId: Vector3i)
 
-    private fun isSolid(a: BlockType): Boolean {
-        return a.isSolid && a !is DetailedBlockVisuals
-    }
-
     fun createDetailMesh(chunk: Chunk): DetailedBlockMesh32? {
         val joinedData = IntArrayList(64)
         for (z in 0 until dimension.sizeZ) {
@@ -105,8 +101,6 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
         renderer: UniqueMeshRendererImpl<Vector3i, V>, chunkId: Vector3i, mesh: V,
         translate: Boolean
     ) {
-        renderer.remove(chunkId, destroyMesh = true)
-
         val bounds = AABBd(mesh.getBounds())
         if (translate) {
             val x0 = chunkId.x * csx
@@ -115,7 +109,10 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
             bounds.translate(x0.toDouble(), y0.toDouble(), z0.toDouble())
         }
         addGPUTask("ChunkUpload", 1) { // change back to GPU thread
-            renderer.add(chunkId, mesh, bounds)
+            synchronized(renderer) {
+                renderer.remove(chunkId, true)
+                renderer.add(chunkId, mesh, bounds)
+            }
         }
     }
 

@@ -32,6 +32,7 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
 
     val networkData = NetworkData()
     var spectatorMode = false
+    var experience = 0
 
     var targetHeadY = 0f
 

@@ -177,4 +177,9 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
     private fun AABBd.getMinOrMax(dim: Int, isMin: Boolean, halfExtents: Double): Double {
         return if (isMin) getMin(dim) - halfExtents else getMax(dim) + halfExtents
     }
+
+    fun setVelocity(x: Float, y: Float, z: Float) {
+        targetVelocity.set(x, y, z)
+        actualVelocity.set(x, y, z)
+    }
 }
