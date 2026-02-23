@@ -20,7 +20,6 @@ open class CreativeControls(
     override fun onUpdate() {
         super.onUpdate()
         applyPlayerMovement()
-        updatePlayerCamera()
     }
 
     val dropItems = true

@@ -16,12 +16,11 @@ class XpModel(private val mesh: Mesh) : Model<PlayerEntity>() {
 
         // todo check whether lookAt-player works
         transform.localRotation = transform.localRotation
-            .identity()
-            .lookAlong(
+            .rotationTo(
+                0f, 0f, 1f,
                 (pos.x - cam.x).toFloat(),
                 (pos.y - cam.y).toFloat(),
                 (pos.z - cam.z).toFloat(),
-                0f, 1f, 0f
             )
 
         pipeline.addMesh(mesh, self, transform)

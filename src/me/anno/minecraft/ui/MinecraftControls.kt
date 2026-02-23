@@ -17,14 +17,17 @@ import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.PlayerEntity
+import me.anno.minecraft.rendering.v2.player
 import me.anno.minecraft.world.Dimension
 import me.anno.ui.base.SpacerPanel
 import me.anno.ui.base.buttons.TextButton
 import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.base.groups.PanelListX
 import me.anno.ui.base.groups.PanelListY
+import me.anno.utils.pooling.JomlPools
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
+import org.apache.logging.log4j.LogManager
 import org.joml.AABBd
 import org.joml.AABBi
 import org.joml.Vector3f
@@ -40,6 +43,8 @@ abstract class MinecraftControls(
 
     companion object {
 
+        private val LOGGER = LogManager.getLogger(MinecraftControls::class)
+
         var inHandSlot = 0
 
         val inHand get() = inventory.slots[inHandSlot]
@@ -47,8 +52,7 @@ abstract class MinecraftControls(
         val inHandMetadata get() = inHand.metadata
 
         val inventorySizeX = 9
-        val inventory = Inventory(inventorySizeX * (6 + 1))
-        val offHand = Inventory(1)
+        val inventory get() = player.inventory
 
         val clickDistanceDelta = 0.001
 
@@ -74,7 +78,7 @@ abstract class MinecraftControls(
             slot.set(type, 1, null)
         }
         val inventoryBar = PanelListX(style)
-        inventoryBar.add(ItemPanel(offHand.slots[0], Int.MAX_VALUE))
+        // inventoryBar.add(ItemPanel(offHand.slots[0], Int.MAX_VALUE))
         inventoryBar.add(SpacerPanel(10, 0, style))
         for (i in 0 until inventorySizeX) {
             inventoryBar.add(ItemPanel(inventory.slots[i], i))
@@ -91,6 +95,7 @@ abstract class MinecraftControls(
             }
             inventoryUI.add(list)
         }
+
         inventoryUI.alignmentX = AxisAlignment.CENTER
         inventoryUI.alignmentY = AxisAlignment.CENTER
         inventoryUI.isVisible = false
@@ -108,11 +113,13 @@ abstract class MinecraftControls(
     }
 
     override fun onMouseMoved(x: Float, y: Float, dx: Float, dy: Float) {
-        // todo if is in menu (inventory), handle super
         if (lookedAtInventory != null) {
+            // todo if is in menu (inventory), handle super
+            // todo unlock mouse cursor...
             super.onMouseMoved(x, y, dx, dy)
-        } else if (Input.isRightDown) { // todo always do it...
-            rotatePlayer(dx, dy)
+        } else {
+            val sign = if (player.firstPersonMode) -1f else +1f
+            rotatePlayer(dx * sign, dy * sign)
         }
     }
 
@@ -141,7 +148,6 @@ abstract class MinecraftControls(
         val speed = 5f / (width + height)
         transform.localRotation = transform.localRotation
             .rotationY(player.bodyRotationY + dx * speed)
-        // todo configure/adjust head rotation
         player.headRotation
             .rotationX(player.headRotationX + dy * speed)
         rotationTargetDegrees.set(
@@ -151,9 +157,30 @@ abstract class MinecraftControls(
         )
     }
 
-    fun updatePlayerCamera() {
+    override fun updateEditorCameraTransform() {
+        val renderView = renderView
         renderView.orbitCenter.set(player.physics.position)
-        renderView.updateEditorCameraTransform()
+        val radius = if (player.firstPersonMode) -0.25f else 5f
+
+        val camera = renderView.editorCamera
+        val cameraNode = renderView.editorCameraNode
+
+        camera.far = 1e6f
+        camera.near = 0.6f
+
+        // todo always have eyes before body, even if looking up or down
+        // todo body must not rotate backwards, if we walk backwards & are in first-person mode
+
+        val tmp3d = JomlPools.vec3d.borrow()
+        cameraNode.transform.localPosition =
+            renderView.orbitRotation.transform(tmp3d.set(0f, 0f, radius))
+                .add(renderView.orbitCenter).apply {
+                    y += .9f // todo adding player eye height...
+                }
+
+        cameraNode.transform.localRotation = renderView.orbitRotation
+        cameraNode.transform.teleportUpdate()
+        cameraNode.validateTransform()
     }
 
     abstract val canFly: Boolean
@@ -168,6 +195,7 @@ abstract class MinecraftControls(
             canFly && isFlying -> (Input.isKeyDown(Key.KEY_SPACE).toFloat() - Input.isControlDown.toFloat()) * 100f
             else -> 0f
         }
+
         player.gravityFactor = if (isFlying) 0f else 1f
         if (Input.isShiftDown) isRunning = true
         val moveSpeed = when {
@@ -176,6 +204,7 @@ abstract class MinecraftControls(
             isRunning -> 20f
             else -> 10f
         }
+
         val moveIntend = Vector3f()
         moveIntend.set(
             checkKeys(Key.KEY_D, Key.KEY_ARROW_RIGHT) - checkKeys(Key.KEY_A, Key.KEY_ARROW_LEFT), dy,
@@ -205,8 +234,12 @@ abstract class MinecraftControls(
         val thisEnum = controlModes.entries.first { it.value == this }.key
         val nextEnum = ControlMode.entries[posMod(thisEnum.ordinal + 1, ControlMode.entries.size)]
         val nextControls = controlModes[nextEnum] ?: this
-        (uiParent as SceneView).editControls = nextControls
+        val sv = uiParent as? SceneView
+        if (sv != null) sv.editControls = nextControls
+        else LOGGER.warn("Cannot change game mode, missing SceneView")
         modeButton.text = nextEnum.name
+
+        renderView.radius
     }
 
     var lastSpaceTime = 0L
@@ -243,7 +276,20 @@ abstract class MinecraftControls(
     }
 
     override fun onEscapeKey(x: Float, y: Float) {
-        inventoryUI.isVisible = false
+        if (inventoryUI.isVisible) {
+            inventoryUI.isVisible = false
+        } else {
+            unlockMouse()
+        }
+    }
+
+    override fun onKeyDown(x: Float, y: Float, key: Key) {
+        when (key) {
+            Key.KEY_LEFT_SHIFT, Key.KEY_RIGHT_SHIFT -> isRunning = true
+            Key.KEY_F5 -> player.firstPersonMode = !player.firstPersonMode
+            Key.BUTTON_LEFT, Key.BUTTON_RIGHT -> lockMouse()
+            else -> super.onKeyDown(x, y, key)
+        }
     }
 
     override fun onKeyUp(x: Float, y: Float, key: Key) {

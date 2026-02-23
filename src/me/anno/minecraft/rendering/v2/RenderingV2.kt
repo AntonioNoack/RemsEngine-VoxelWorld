@@ -10,6 +10,7 @@ import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockUpdateSystem
 import me.anno.minecraft.entity.*
+import me.anno.minecraft.entity.Entity.Companion.spawnEntity
 import me.anno.minecraft.entity.physics.CollisionSystem
 import me.anno.minecraft.rendering.createLighting
 import me.anno.minecraft.ui.*
@@ -33,6 +34,7 @@ val csz = dimension.sizeZ
 
 lateinit var chunkLoader: ChunkLoaderBase<*>
 lateinit var entities: Entity
+lateinit var player: PlayerEntity
 
 private val invalidChunks = HashSet<Vector3i>()
 fun invalidateChunk(coords: Vector3i) {
@@ -67,6 +69,11 @@ fun invalidateChunk(coords: Vector3i) {
  * */
 fun main() {
 
+    // todo hold items in hand
+    // todo collect items into player inventory
+    // todo collect xp into player
+    // todo block-break shader based on WorleyBreak texture for UV offset or carving black lines
+
     // todo check dropped items
     // todo player lives -> health bar, or list of player heads
 
@@ -82,7 +89,7 @@ fun main() {
     val detailRenderer = DetailChunkRenderer(TextureMaterial.solid)
     chunkLoader = ChunkLoader(solidRenderer, fluidRenderer, detailRenderer)
 
-    val player = PlayerEntity(isPrimary = true, "Friedolin")
+    player = PlayerEntity(isPrimary = true, "Friedolin")
     player.physics.position.y = 77.0
 
     // place a few special blocks for testing
@@ -158,19 +165,3 @@ fun main() {
         }
     }
 }
-
-fun spawnEntity(entity: me.anno.minecraft.entity.Entity): me.anno.minecraft.entity.Entity {
-    val childEntity = Entity(entities).add(entity)
-    if (entity is MovingEntity) {
-        childEntity.setPosition(entity.physics.position)
-    }
-    return entity
-}
-
-
-fun spawnEntity(entity: MovingEntity, pos: Vector3d) : MovingEntity {
-    entity.physics.position.set(pos)
-    spawnEntity(entity)
-    return entity
-}
-

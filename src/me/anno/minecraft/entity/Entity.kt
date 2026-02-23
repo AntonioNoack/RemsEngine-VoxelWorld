@@ -8,6 +8,7 @@ import me.anno.ecs.interfaces.Renderable
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.io.files.FileReference
 import me.anno.minecraft.entity.model.Model
+import me.anno.minecraft.rendering.v2.entities
 import org.joml.*
 import kotlin.math.floor
 
@@ -15,6 +16,22 @@ abstract class Entity(
     val halfExtents: Vector3f,
     val texture: Texture
 ) : Component(), FillSpace, Renderable, MaterialOverride {
+
+    companion object {
+        fun spawnEntity(entity: MovingEntity, pos: Vector3d): MovingEntity {
+            entity.physics.position.set(pos)
+            spawnEntity(entity)
+            return entity
+        }
+
+        fun spawnEntity(entity: Entity): Entity {
+            val childEntity = me.anno.ecs.Entity(entities).add(entity)
+            if (entity is MovingEntity) {
+                childEntity.setPosition(entity.physics.position)
+            }
+            return entity
+        }
+    }
 
     // todo animations, behaviour, ...
 

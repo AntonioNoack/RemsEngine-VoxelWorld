@@ -6,6 +6,7 @@ import me.anno.gpu.drawing.GFXx2D.getSize
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.maths.Maths.PIf
 import me.anno.maths.Maths.TAUf
+import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.dtTo01
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.entity.MovingEntity.Companion.place
@@ -64,7 +65,13 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
         val dt = Time.deltaTime.toFloat()
         val swing = getWalkingSwing(6f)
 
-        val angle0 = physics.actualVelocity.angleY() - self.bodyRotationY
+        var angle0 = physics.actualVelocity.angleY() - self.bodyRotationY
+        if (self.firstPersonMode) {
+            // todo is this good???
+            while (angle0 < -PIf * 0.5f) angle0 += PIf
+            while (angle0 > PIf * 0.5f) angle0 -= PIf
+            angle0 = clamp(angle0, -PIf * 0.25f, PIf * 0.25f)
+        }
 
         val torso = getTransform(0).place(0f, 2f, 0f, 0f, angle0, 0f, null)
         pipeline.addMesh(torsoMesh, self, torso)

@@ -5,6 +5,7 @@ import me.anno.ecs.prefab.PrefabSaveable
 import me.anno.minecraft.entity.model.Model
 import me.anno.minecraft.entity.model.PlayerModel
 import me.anno.minecraft.multiplayer.NetworkData
+import me.anno.minecraft.ui.Inventory
 import me.anno.utils.OS.res
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -27,11 +28,15 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
     override val maxJumpDown: Int get() = 3
     override val maxHealth: Int get() = 20
 
+    val inventory = Inventory(9 * (6 + 1) /* main + chest */ + 4 /* armor */ + 1 /* off-hand */)
+
     // idk what players would be looking for ;)
     override fun findTarget(start: Vector3i, seed: Long): Vector3i? = null
 
     val networkData = NetworkData()
     var spectatorMode = false
+    var firstPersonMode = true
+
     var experience = 0
 
     var targetHeadY = 0f

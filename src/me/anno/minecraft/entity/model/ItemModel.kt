@@ -11,7 +11,7 @@ import kotlin.math.sin
 
 class ItemModel(private val mesh: Mesh) : Model<ItemEntity>() {
     companion object {
-        private const val Y_SWINGING = 0.3f
+        private const val Y_SWINGING = 0.1f
     }
 
     private val angle: Float
@@ -23,6 +23,6 @@ class ItemModel(private val mesh: Mesh) : Model<ItemEntity>() {
         val y = sin(angle * 2f) * Y_SWINGING
         tr.localPosition = tr.localPosition.set(0f, y, 0f)
         tr.localRotation = tr.localRotation.rotationY(angle)
-        pipeline.addMesh(mesh, self, transform)
+        pipeline.addMesh(mesh, self, tr)
     }
 }

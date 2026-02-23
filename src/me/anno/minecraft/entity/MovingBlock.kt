@@ -1,6 +1,8 @@
 package me.anno.minecraft.entity
 
 import me.anno.gpu.drawing.GFXx2D.getSize
+import me.anno.minecraft.audio.playDropItemSound
+import me.anno.minecraft.audio.playSetBlockSound
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.entity.model.Model
@@ -19,14 +21,6 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents, texture) {
     companion object {
         // 0.45 instead of 0.50 is necessary to avoid getting stuck on edges
         private val halfExtents = Vector3f(0.45f)
-
-        fun playSetBlockSound(pos: Vector3d) {
-            // todo play set block sound
-        }
-
-        fun playDropItemSound(pos: Vector3d) {
-            // todo play drop item sound
-        }
 
         private val texture = Texture(res.getChild("textures/blocks/Blocks.png"))
         private val blockModel = LazyMap { type: ItemType ->
@@ -63,14 +57,14 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents, texture) {
         var count = stack.count
         if (here == BlockRegistry.Air && dst != null && stackType is BlockType) {
             // set block -> destroy entity
-            playSetBlockSound(soundPos)
+            playSetBlockSound(soundPos, stackType)
             dimension.setBlockAt(gx, gy, gz, dst, stackType, stack.metadata)
             dimension.invalidateAt(gx, gy, gz, stackType)
             count--
         }
         if (count > 0) {
             // drop item -> replace component
-            playDropItemSound(soundPos)
+            playDropItemSound(soundPos, stackType)
             val entity = entity ?: return
             removeFromParent()
             val newStack =
