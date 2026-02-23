@@ -1,6 +1,7 @@
 package me.anno.minecraft.ui
 
 import me.anno.Time
+import me.anno.engine.Events.addEvent
 import me.anno.engine.debug.DebugAABB
 import me.anno.engine.debug.DebugShapes
 import me.anno.engine.raycast.BlockTracing
@@ -13,6 +14,7 @@ import me.anno.gpu.drawing.DrawRectangles
 import me.anno.gpu.framebuffer.Screenshots
 import me.anno.input.Input
 import me.anno.input.Key
+import me.anno.jvm.OpenFileExternallyImpl.openInExplorer
 import me.anno.language.translation.NameDesc
 import me.anno.maths.Maths.MILLIS_TO_NANOS
 import me.anno.maths.Maths.posMod
@@ -27,7 +29,9 @@ import me.anno.ui.base.buttons.TextButton
 import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.base.groups.PanelListX
 import me.anno.ui.base.groups.PanelListY
+import me.anno.ui.base.text.TextPanel
 import me.anno.utils.Color
+import me.anno.utils.Color.withAlpha
 import me.anno.utils.pooling.JomlPools
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
@@ -73,6 +77,7 @@ abstract class MinecraftControls(
     val inventoryUI = PanelListY(style)
     val escapeUI = PanelListY(style)
     val inventoryBar = PanelListX(style)
+    val chatMessagesPanel = PanelListY(style)
 
     init {
         for ((i, type) in listOf(
@@ -118,6 +123,12 @@ abstract class MinecraftControls(
         escapeUI.alignmentY = AxisAlignment.CENTER
         escapeUI.isVisible = false
         add(escapeUI)
+
+        chatMessagesPanel.alignmentX = AxisAlignment.MIN
+        chatMessagesPanel.alignmentY = AxisAlignment.MAX
+        chatMessagesPanel.background.color =
+            chatMessagesPanel.background.color.withAlpha(127)
+        add(chatMessagesPanel)
 
         // set initial rotation
         rotatePlayer(0f, 0f)
@@ -331,10 +342,25 @@ abstract class MinecraftControls(
             if (image != null) {
                 image.cropped(x, y, width, height).write(dstFile)
                 image.destroy()
-                // todo show message in chat-messages
-                LOGGER.info("Took screenshot, and saved it to '$dstFile'")
+                addSystemChatMessage("Saved screenshot as '$dstFile'") {
+                    unlockMouse()
+                    openInExplorer(dstFile)
+                }
             }
         }
+    }
+
+    fun addSystemChatMessage(message: String, onClick: (() -> Unit)? = null) {
+        LOGGER.info(message)
+        // todo underline the text, if we can click it
+        val panel = TextPanel(message, style)
+        panel.makeBackgroundTransparent()
+        if (onClick != null) {
+            panel.addLeftClickListener { onClick() }
+        }
+        chatMessagesPanel.add(panel)
+        // hide message after time X
+        addEvent(3000) { panel.removeFromParent() }
     }
 
     override fun onKeyUp(x: Float, y: Float, key: Key) {
