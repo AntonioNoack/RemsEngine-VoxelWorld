@@ -8,6 +8,8 @@ import me.anno.maths.Maths.PIf
 import me.anno.maths.Maths.TAUf
 import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.dtTo01
+import me.anno.maths.Maths.dtTo10
+import me.anno.maths.Maths.mixAngle
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.entity.MovingEntity.Companion.place
 import me.anno.minecraft.entity.PlayerEntity
@@ -65,13 +67,19 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
         val dt = Time.deltaTime.toFloat()
         val swing = getWalkingSwing(6f)
 
-        var angle0 = physics.actualVelocity.angleY() - self.bodyRotationY
+        var angle0 = if (physics.actualVelocity.lengthXZSquared() < 0.01f)
+            self.smoothAngle0 else physics.actualVelocity.angleY() - self.bodyRotationY
+
         if (self.firstPersonMode) {
-            // todo is this good???
+            // angle0 += PIf -> doesn't matter
+            // body must not rotate backwards, if we walk backwards & are in first-person mode
             while (angle0 < -PIf * 0.5f) angle0 += PIf
             while (angle0 > PIf * 0.5f) angle0 -= PIf
             angle0 = clamp(angle0, -PIf * 0.25f, PIf * 0.25f)
+            angle0 += PIf
         }
+        angle0 = mixAngle(angle0, self.smoothAngle0, dtTo10(dt * 3f))
+        self.smoothAngle0 = angle0
 
         val torso = getTransform(0).place(0f, 2f, 0f, 0f, angle0, 0f, null)
         pipeline.addMesh(torsoMesh, self, torso)

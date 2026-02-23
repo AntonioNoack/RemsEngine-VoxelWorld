@@ -33,7 +33,9 @@ import org.joml.AABBi
 import org.joml.Vector3f
 import org.joml.Vector3i
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.sin
 
 abstract class MinecraftControls(
     val player: PlayerEntity,
@@ -115,7 +117,7 @@ abstract class MinecraftControls(
     override fun onMouseMoved(x: Float, y: Float, dx: Float, dy: Float) {
         if (lookedAtInventory != null) {
             // todo if is in menu (inventory), handle super
-            // todo unlock mouse cursor...
+            unlockMouse()
             super.onMouseMoved(x, y, dx, dy)
         } else {
             val sign = if (player.firstPersonMode) -1f else +1f
@@ -146,6 +148,7 @@ abstract class MinecraftControls(
         val entity = player.entity!!
         val transform = entity.transform
         val speed = 5f / (width + height)
+        player.smoothAngle0 -= dx * speed
         transform.localRotation = transform.localRotation
             .rotationY(player.bodyRotationY + dx * speed)
         player.headRotation
@@ -160,22 +163,24 @@ abstract class MinecraftControls(
     override fun updateEditorCameraTransform() {
         val renderView = renderView
         renderView.orbitCenter.set(player.physics.position)
-        val radius = if (player.firstPersonMode) -0.25f else 5f
+        val radius = if (player.firstPersonMode) 0f else 5f
 
         val camera = renderView.editorCamera
         val cameraNode = renderView.editorCameraNode
 
         camera.far = 1e6f
-        camera.near = 0.6f
-
-        // todo always have eyes before body, even if looking up or down
-        // todo body must not rotate backwards, if we walk backwards & are in first-person mode
+        camera.near = 0.1f
 
         val tmp3d = JomlPools.vec3d.borrow()
         cameraNode.transform.localPosition =
             renderView.orbitRotation.transform(tmp3d.set(0f, 0f, radius))
                 .add(renderView.orbitCenter).apply {
-                    y += .9f // todo adding player eye height...
+                    // always have eyes before body, even if looking up or down
+                    val radiusX = 0.4f
+                    val rotY = player.bodyRotationY
+                    x -= sin(rotY) * radiusX
+                    z -= cos(rotY) * radiusX
+                    y += 0.6f // adding player eye height...
                 }
 
         cameraNode.transform.localRotation = renderView.orbitRotation

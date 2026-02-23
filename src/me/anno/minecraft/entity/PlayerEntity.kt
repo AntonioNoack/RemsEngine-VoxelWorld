@@ -37,6 +37,8 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
     var spectatorMode = false
     var firstPersonMode = true
 
+    var smoothAngle0 = 0f
+
     var experience = 0
 
     var targetHeadY = 0f
