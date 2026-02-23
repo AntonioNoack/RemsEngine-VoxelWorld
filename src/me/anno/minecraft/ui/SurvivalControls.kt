@@ -20,6 +20,8 @@ open class SurvivalControls(
     override val canFly: Boolean
         get() = false
 
+    override fun getReachDistance(): Double = 3.5
+
     fun removeItemAfterPlacing() {
         val inHand = inHand
         val oldCount = inHand.count

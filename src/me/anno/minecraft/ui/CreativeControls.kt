@@ -17,6 +17,8 @@ open class CreativeControls(
     override val canFly: Boolean
         get() = true
 
+    override fun getReachDistance(): Double = 4.0
+
     override fun onUpdate() {
         super.onUpdate()
         applyPlayerMovement()

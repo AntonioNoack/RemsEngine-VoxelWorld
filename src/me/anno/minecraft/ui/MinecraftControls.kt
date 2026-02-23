@@ -8,6 +8,9 @@ import me.anno.engine.raycast.RayQuery
 import me.anno.engine.ui.control.ControlScheme
 import me.anno.engine.ui.render.RenderView
 import me.anno.engine.ui.render.SceneView
+import me.anno.gpu.GPUTasks.addGPUTask
+import me.anno.gpu.drawing.DrawRectangles
+import me.anno.gpu.framebuffer.Screenshots
 import me.anno.input.Input
 import me.anno.input.Key
 import me.anno.language.translation.NameDesc
@@ -24,6 +27,7 @@ import me.anno.ui.base.buttons.TextButton
 import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.base.groups.PanelListX
 import me.anno.ui.base.groups.PanelListY
+import me.anno.utils.Color
 import me.anno.utils.pooling.JomlPools
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
@@ -67,6 +71,8 @@ abstract class MinecraftControls(
     // todo and open your own inventory for survival mode
 
     val inventoryUI = PanelListY(style)
+    val escapeUI = PanelListY(style)
+    val inventoryBar = PanelListX(style)
 
     init {
         for ((i, type) in listOf(
@@ -79,7 +85,7 @@ abstract class MinecraftControls(
             val slot = inventory.slots.getOrNull(i) ?: break
             slot.set(type, 1, null)
         }
-        val inventoryBar = PanelListX(style)
+        // todo experience, health and food bar
         // inventoryBar.add(ItemPanel(offHand.slots[0], Int.MAX_VALUE))
         inventoryBar.add(SpacerPanel(10, 0, style))
         for (i in 0 until inventorySizeX) {
@@ -108,10 +114,21 @@ abstract class MinecraftControls(
         modeButton.alignmentY = AxisAlignment.MIN
         add(modeButton)
 
+        escapeUI.alignmentX = AxisAlignment.CENTER
+        escapeUI.alignmentY = AxisAlignment.CENTER
+        escapeUI.isVisible = false
+        add(escapeUI)
+
         // set initial rotation
         rotatePlayer(0f, 0f)
 
         zoom(2f / renderView.radius)
+    }
+
+    override fun draw(x0: Int, y0: Int, x1: Int, y1: Int) {
+        super.draw(x0, y0, x1, y1)
+        // draw crosshair; todo xor colors
+        DrawRectangles.drawRect(x + width / 2, y + height / 2, 2, 2, Color.white)
     }
 
     override fun onMouseMoved(x: Float, y: Float, dx: Float, dy: Float) {
@@ -271,6 +288,7 @@ abstract class MinecraftControls(
             }
             Key.KEY_E -> {
                 inventoryUI.isVisible = !inventoryUI.isVisible
+                if (inventoryUI.isVisible) unlockMouse()
             }
             else -> super.onKeyTyped(x, y, key)
         }
@@ -278,22 +296,44 @@ abstract class MinecraftControls(
 
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
         inventoryUI.isVisible = false
+        escapeUI.isVisible = false
+        lockMouse()
     }
 
     override fun onEscapeKey(x: Float, y: Float) {
-        if (inventoryUI.isVisible) {
-            inventoryUI.isVisible = false
-        } else {
-            unlockMouse()
+        when {
+            escapeUI.isVisible -> escapeUI.isVisible = false
+            inventoryUI.isVisible -> inventoryUI.isVisible = false
+            else -> unlockMouse()
         }
     }
 
     override fun onKeyDown(x: Float, y: Float, key: Key) {
         when (key) {
             Key.KEY_LEFT_SHIFT, Key.KEY_RIGHT_SHIFT -> isRunning = true
+            Key.KEY_F1 -> inventoryBar.isVisible = !inventoryBar.isVisible
+            Key.KEY_F2 -> takeAndStoreScreenshot()
             Key.KEY_F5 -> player.firstPersonMode = !player.firstPersonMode
-            Key.BUTTON_LEFT, Key.BUTTON_RIGHT -> lockMouse()
+            Key.BUTTON_LEFT, Key.BUTTON_RIGHT -> {
+                if (!inventoryUI.isVisible && !escapeUI.isVisible) {
+                    lockMouse()
+                }
+            }
             else -> super.onKeyDown(x, y, key)
+        }
+    }
+
+    fun takeAndStoreScreenshot() {
+        val window = window ?: return
+        val dstFile = Screenshots.getNextScreenshotFile() ?: return
+        addGPUTask("Screenshot", 1) {
+            val image = window.buffer.createImage(flipY = false, withAlpha = false)
+            if (image != null) {
+                image.cropped(x, y, width, height).write(dstFile)
+                image.destroy()
+                // todo show message in chat-messages
+                LOGGER.info("Took screenshot, and saved it to '$dstFile'")
+            }
         }
     }
 
@@ -326,13 +366,15 @@ abstract class MinecraftControls(
         return true
     }
 
+    abstract fun getReachDistance(): Double
+
     fun clickCast(): RayQuery? {
         // find, which block was clicked
         // expensive way, using raycasting:
         val query = RayQuery(
             renderView.cameraPosition,
             renderView.mouseDirection,
-            1e3
+            getReachDistance()
         )
 
         val queryBounds = AABBi()
