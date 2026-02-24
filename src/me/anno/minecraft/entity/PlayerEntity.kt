@@ -6,6 +6,7 @@ import me.anno.minecraft.entity.model.Model
 import me.anno.minecraft.entity.model.PlayerModel
 import me.anno.minecraft.multiplayer.NetworkData
 import me.anno.minecraft.ui.Inventory
+import me.anno.minecraft.ui.ItemSlot
 import me.anno.utils.OS.res
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -42,6 +43,14 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
     var experience = 0
 
     var targetHeadY = 0f
+
+    fun addXp(value: Int) {
+        experience += value
+    }
+
+    override fun addItemFrom(stack: ItemSlot): Boolean {
+        return inventory.addItemFrom(stack)
+    }
 
     override val className: String = "MCPlayer"
 

@@ -7,4 +7,6 @@ open class ItemType(
     val typeUUID: String,
     val texture: FileReference, val texId: Int,
     val nameDesc: NameDesc
-)
+) {
+    var stackingLimit = 100
+}

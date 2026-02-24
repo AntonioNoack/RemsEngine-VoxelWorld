@@ -19,3 +19,11 @@ fun playSetBlockSound(pos: Vector3d, type: BlockType) {
 fun playDropItemSound(pos: Vector3d, type: ItemType) {
     // todo play drop item sound
 }
+
+fun playItemCollectSound(pos: Vector3d, type: ItemType) {
+    // todo play plub sound
+}
+
+fun playXpCollectSound(pos: Vector3d, value: Int) {
+    // todo play bling sound
+}

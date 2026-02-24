@@ -12,7 +12,6 @@ class ItemSlot(
     constructor() : this(BlockRegistry.Air, 0, null)
 
     var type = type
-        private set
 
     fun set(type: ItemType, count: Int, metadata: Metadata?) {
         this.type = type

@@ -67,6 +67,13 @@ abstract class Entity(
             )
         }
 
+    val isRemoved get() = entity?.parent == null
+
+    fun removeFromWorld() {
+        entity?.removeFromParent()
+        removeFromParent()
+    }
+
     private val transforms = ArrayList<Transform>()
     fun getTransform(index: Int): Transform {
         val self = entity!!

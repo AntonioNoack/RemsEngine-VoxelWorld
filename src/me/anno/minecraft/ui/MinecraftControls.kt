@@ -76,7 +76,7 @@ abstract class MinecraftControls(
 
     val inventoryUI = PanelListY(style)
     val escapeUI = PanelListY(style)
-    val inventoryBar = PanelListX(style)
+    val inventoryBar = PanelListY(style)
     val chatMessagesPanel = PanelListY(style)
 
     init {
@@ -92,10 +92,13 @@ abstract class MinecraftControls(
         }
         // todo experience, health and food bar
         // inventoryBar.add(ItemPanel(offHand.slots[0], Int.MAX_VALUE))
-        inventoryBar.add(SpacerPanel(10, 0, style))
+        val inventoryBar1 = PanelListX(style)
+        inventoryBar1.add(SpacerPanel(10, 0, style))
         for (i in 0 until inventorySizeX) {
-            inventoryBar.add(ItemPanel(inventory.slots[i], i))
+            inventoryBar1.add(ItemPanel(inventory.slots[i], i))
         }
+        inventoryBar.add(XpBarPanel(style))
+        inventoryBar.add(inventoryBar1)
         inventoryBar.alignmentX = AxisAlignment.CENTER
         inventoryBar.alignmentY = AxisAlignment.MAX
         add(inventoryBar)

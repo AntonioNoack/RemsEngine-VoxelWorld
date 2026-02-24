@@ -20,7 +20,7 @@ object FindTargets {
         val max = Vector3d(pos).add(maxDistance)
         var bestFind: PlayerEntity? = null
         var bestDistance = sq(maxDistance)
-        CollisionSystem.tree.query(min, max) { target ->
+        CollisionSystem.animals.query(min, max) { target ->
             if (target is PlayerEntity && target !== self) {
                 val distance = target.position.distanceSquared(pos)
                 if (distance < bestDistance) {

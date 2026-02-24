@@ -5,6 +5,7 @@ import me.anno.ecs.Transform
 import me.anno.ecs.systems.OnUpdate
 import me.anno.minecraft.entity.physics.AABBPhysics
 import me.anno.minecraft.rendering.v2.dimension
+import me.anno.minecraft.ui.ItemSlot
 import org.joml.Matrix4x3
 import org.joml.Quaternionf
 import org.joml.Vector3d
@@ -91,4 +92,6 @@ abstract class MovingEntity(halfExtents: Vector3f, texture: Texture) :
         physics.acceleration.y += 7f / dt // dt = 1/60 -> 360?
         physics.actualVelocity.y += 0.001f // mark as already-jumped
     }
+
+    open fun addItemFrom(stack: ItemSlot): Boolean = false
 }

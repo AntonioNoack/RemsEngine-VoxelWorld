@@ -24,7 +24,7 @@ class ArrowEntity : MovingEntity(halfExtents, texture) {
 
         val min = Vector3d(position).sub(0.2)
         val max = Vector3d(position).add(0.2)
-        val collidedWith = CollisionSystem.tree.query(min, max) { other -> other !== this }
+        val collidedWith = CollisionSystem.animals.query(min, max) { other -> other !== this }
         if (collidedWith != null) {
             // todo if is Animal, deal damage
             // todo attach to entity, and stick to it
