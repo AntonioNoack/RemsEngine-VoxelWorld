@@ -6,6 +6,7 @@ import me.anno.ecs.systems.OnUpdate
 import me.anno.minecraft.entity.physics.AABBPhysics
 import me.anno.minecraft.rendering.v2.dimension
 import me.anno.minecraft.ui.ItemSlot
+import me.anno.minecraft.ui.controls.GameMode
 import org.joml.Matrix4x3
 import org.joml.Quaternionf
 import org.joml.Vector3d
@@ -67,7 +68,7 @@ abstract class MovingEntity(halfExtents: Vector3f, texture: Texture) :
 
     open fun stepPhysics(dt: Float) {
         collectForces()
-        if (this is PlayerEntity && spectatorMode) {
+        if (this is PlayerEntity && gameMode == GameMode.SPECTATOR) {
             physics.stepSpectator(dt)
         } else {
             physics.step(dt)

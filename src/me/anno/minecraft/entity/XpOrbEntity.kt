@@ -1,13 +1,17 @@
 package me.anno.minecraft.entity
 
 import me.anno.Time
+import me.anno.io.base.BaseWriter
 import me.anno.minecraft.entity.model.Model
 import me.anno.minecraft.entity.model.PlaneCreator
 import me.anno.minecraft.entity.model.XpModel
 import me.anno.utils.OS.res
+import me.anno.utils.types.AnyToInt.getInt
 import org.joml.Vector3f
 
-class XpOrbEntity(val value: Int) : MovingEntity(halfExtents, blockTexture) {
+class XpOrbEntity(var value: Int) : MovingEntity(halfExtents, blockTexture) {
+    @Suppress("unused")
+    constructor() : this(1)
 
     companion object {
         private val halfExtents = Vector3f(0.2f)
@@ -29,5 +33,15 @@ class XpOrbEntity(val value: Int) : MovingEntity(halfExtents, blockTexture) {
 
     override val model: Model<*>
         get() = models[System.identityHashCode(this) and 3]
+
+    override fun save(writer: BaseWriter) {
+        super.save(writer)
+        writer.writeInt("value", value)
+    }
+
+    override fun setProperty(name: String, value: Any?) {
+        if (name == "value") this.value = getInt(value, 1)
+        else super.setProperty(name, value)
+    }
 
 }

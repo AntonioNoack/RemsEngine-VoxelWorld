@@ -1,6 +1,7 @@
-package me.anno.minecraft.ui
+package me.anno.minecraft.ui.controls
 
 import me.anno.engine.ui.render.RenderView
+import me.anno.engine.ui.render.SceneView
 import me.anno.input.Key
 import me.anno.io.utils.StringMap
 import me.anno.minecraft.block.BlockRegistry
@@ -13,9 +14,9 @@ import me.anno.minecraft.item.RightClickItem
 import me.anno.minecraft.world.Dimension
 
 open class SurvivalControls(
-    player: PlayerEntity, dimension: Dimension, renderer: RenderView,
+    sceneView: SceneView, player: PlayerEntity, dimension: Dimension, renderer: RenderView,
     val allowsBlockPlacing: Boolean = true
-) : MinecraftControls(player, dimension, renderer) {
+) : MinecraftControls(sceneView, player, dimension, renderer) {
 
     override val canFly: Boolean
         get() = false
@@ -59,13 +60,15 @@ open class SurvivalControls(
         when (button) {
             Key.BUTTON_LEFT -> {
                 // todo check for entity-hitboxes
+                //  if an animal is hit, damage it
+                // todo for blocks, gradually mine it, not instantly
                 if (!allowsBlockPlacing || query == null) return
                 // remove block
                 val coords = getCoords(query, +clickDistanceDelta)
                 val dropped = getBlock(coords) ?: BlockRegistry.Air
                 if (dropped != BlockRegistry.Air && !dropped.isFluid) {
                     val droppedMetadata = getBlockMetadata(coords)
-                    setBlock(coords, BlockRegistry.Air, inHandMetadata)
+                    setBlock(coords, BlockRegistry.Air, null)
                     dropped.dropAsItem(coords.x, coords.y, coords.z, droppedMetadata)
                     removeItemDurability()
                 }

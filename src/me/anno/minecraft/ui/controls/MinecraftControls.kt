@@ -1,4 +1,4 @@
-package me.anno.minecraft.ui
+package me.anno.minecraft.ui.controls
 
 import me.anno.Time
 import me.anno.engine.Events.addEvent
@@ -23,6 +23,12 @@ import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.rendering.v2.player
+import me.anno.minecraft.ui.Inventory
+import me.anno.minecraft.ui.components.HeartPanel
+import me.anno.minecraft.ui.components.HungerPanel
+import me.anno.minecraft.ui.components.ItemPanel
+import me.anno.minecraft.ui.components.ItemPanel.Companion.drawDraggedItem
+import me.anno.minecraft.ui.components.XpBarPanel
 import me.anno.minecraft.world.Dimension
 import me.anno.ui.base.SpacerPanel
 import me.anno.ui.base.buttons.TextButton
@@ -46,6 +52,7 @@ import kotlin.math.floor
 import kotlin.math.sin
 
 abstract class MinecraftControls(
+    val sceneView: SceneView,
     val player: PlayerEntity,
     val dimension: Dimension,
     renderer: RenderView
@@ -77,6 +84,7 @@ abstract class MinecraftControls(
     val inventoryUI = PanelListY(style)
     val escapeUI = PanelListY(style)
     val inventoryBar = PanelListY(style)
+    val inventoryBar1 = PanelListX(style)
     val chatMessagesPanel = PanelListY(style)
 
     init {
@@ -88,15 +96,19 @@ abstract class MinecraftControls(
             BlockRegistry.Gravel
         ).withIndex()) {
             val slot = inventory.slots.getOrNull(i) ?: break
-            slot.set(type, 1, null)
+            slot.set(type, 10, null)
         }
-        // todo experience, health and food bar
+
         // inventoryBar.add(ItemPanel(offHand.slots[0], Int.MAX_VALUE))
-        val inventoryBar1 = PanelListX(style)
+
         inventoryBar1.add(SpacerPanel(10, 0, style))
         for (i in 0 until inventorySizeX) {
             inventoryBar1.add(ItemPanel(inventory.slots[i], i))
         }
+        val hungerHealth = PanelListX(style).apply { makeBackgroundTransparent() }
+        hungerHealth.add(HeartPanel(style))
+        hungerHealth.add(HungerPanel(style))
+        inventoryBar.add(hungerHealth)
         inventoryBar.add(XpBarPanel(style))
         inventoryBar.add(inventoryBar1)
         inventoryBar.alignmentX = AxisAlignment.CENTER
@@ -117,7 +129,7 @@ abstract class MinecraftControls(
         inventoryUI.isVisible = false
         add(inventoryUI)
 
-        modeButton.addLeftClickListener { nextMode() }
+        modeButton.addLeftClickListener { changeToNextGameMode() }
         modeButton.alignmentX = AxisAlignment.MAX
         modeButton.alignmentY = AxisAlignment.MIN
         add(modeButton)
@@ -141,6 +153,11 @@ abstract class MinecraftControls(
 
     override fun draw(x0: Int, y0: Int, x1: Int, y1: Int) {
         super.draw(x0, y0, x1, y1)
+        drawCrosshair()
+        drawDraggedItem(window, inventoryBar1.height)
+    }
+
+    fun drawCrosshair() {
         // draw crosshair; todo xor colors
         DrawRectangles.drawRect(x + width / 2, y + height / 2, 2, 2, Color.white)
     }
@@ -247,7 +264,6 @@ abstract class MinecraftControls(
             checkKeys(Key.KEY_S, Key.KEY_ARROW_DOWN) - checkKeys(Key.KEY_W, Key.KEY_ARROW_UP)
         ).rotateY(player.bodyRotationY).mul(moveSpeed, 1f, moveSpeed)
         if (dy == 0f && player.physics.isOnGround && Input.wasKeyPressed(Key.KEY_SPACE)) player.jump()
-        player.spectatorMode = this is SpectatorControls
 
         // if player is flying, add artificial friction
         if (isFlying) {
@@ -264,18 +280,20 @@ abstract class MinecraftControls(
         return (Input.isKeyDown(key1) || Input.isKeyDown(key2)).toFloat()
     }
 
-    lateinit var controlModes: Map<ControlMode, MinecraftControls>
+    lateinit var gameModeUIs: Map<GameMode, MinecraftControls>
 
-    fun nextMode() {
-        val thisEnum = controlModes.entries.first { it.value == this }.key
-        val nextEnum = ControlMode.entries[posMod(thisEnum.ordinal + 1, ControlMode.entries.size)]
-        val nextControls = controlModes[nextEnum] ?: this
-        val sv = uiParent as? SceneView
-        if (sv != null) sv.editControls = nextControls
-        else LOGGER.warn("Cannot change game mode, missing SceneView")
-        modeButton.text = nextEnum.name
+    fun changeToNextGameMode() {
+        val thisEnum = player.gameMode
+        val nextEnum = GameMode.entries[posMod(thisEnum.ordinal + 1, GameMode.entries.size)]
+        val nextControls = gameModeUIs[nextEnum]!!
 
-        renderView.radius
+        println("Changing gameMode from ${javaClass.simpleName} to ${nextControls.javaClass.simpleName}")
+
+        val sv = sceneView
+        renderView.controlScheme = nextControls
+        sv.editControls = nextControls
+        sv.playControls = nextControls
+        player.gameMode = nextEnum
     }
 
     var lastSpaceTime = 0L
@@ -283,7 +301,7 @@ abstract class MinecraftControls(
 
     override fun onKeyTyped(x: Float, y: Float, key: Key) {
         when (key) {
-            Key.KEY_F4 -> nextMode()
+            Key.KEY_F4 -> changeToNextGameMode()
             Key.KEY_SPACE -> {
                 // double space to fly
                 val time = Time.nanoTime
@@ -327,6 +345,7 @@ abstract class MinecraftControls(
             Key.KEY_LEFT_SHIFT, Key.KEY_RIGHT_SHIFT -> isRunning = true
             Key.KEY_F1 -> inventoryBar.isVisible = !inventoryBar.isVisible
             Key.KEY_F2 -> takeAndStoreScreenshot()
+            Key.KEY_F4 -> changeToNextGameMode()
             Key.KEY_F5 -> player.firstPersonMode = !player.firstPersonMode
             Key.BUTTON_LEFT, Key.BUTTON_RIGHT -> {
                 if (!inventoryUI.isVisible && !escapeUI.isVisible) {

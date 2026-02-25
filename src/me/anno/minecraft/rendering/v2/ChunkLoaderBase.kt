@@ -5,6 +5,8 @@ import me.anno.ecs.components.mesh.IMesh
 import me.anno.ecs.components.mesh.material.Material
 import me.anno.ecs.components.mesh.unique.UniqueMeshRendererImpl
 import me.anno.ecs.systems.OnUpdate
+import me.anno.engine.debug.DebugAABB
+import me.anno.engine.debug.DebugShapes
 import me.anno.engine.ui.render.RenderView
 import me.anno.gpu.GPUTasks.addGPUTask
 import me.anno.maths.patterns.SpiralPattern.spiral3d
@@ -14,6 +16,7 @@ import me.anno.minecraft.block.DetailedBlockVisuals
 import me.anno.minecraft.block.builder.DetailedBlockMesh32
 import me.anno.minecraft.rendering.v1.VisualDimension.Companion.chunkGenQueue
 import me.anno.minecraft.world.Chunk
+import me.anno.ui.UIColors
 import me.anno.utils.algorithms.ForLoop.forLoopSafely
 import me.anno.utils.structures.arrays.IntArrayList
 import org.joml.AABBd
@@ -26,6 +29,7 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
 ) : Component(), OnUpdate {
 
     companion object {
+
         fun mapPalette(mapping: (BlockType) -> Int): IntArray {
             val byId = BlockRegistry.byId
             return IntArray(byId.size) { id ->
@@ -108,10 +112,18 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
             val z0 = chunkId.z * csz
             bounds.translate(x0.toDouble(), y0.toDouble(), z0.toDouble())
         }
+
+        // todo a single click often causes two chunks to change... why???
+        // todo there is also the problem, that something only changes one block-change after...
         addGPUTask("ChunkUpload", 1) { // change back to GPU thread
             synchronized(renderer) {
                 renderer.remove(chunkId, true)
-                renderer.add(chunkId, mesh, bounds)
+                if (!renderer.add(chunkId, mesh, bounds)) {
+                    println("Failed to add chunk $chunkId")
+                }
+
+                val bounds = chunkId.toBounds().addMargin(-0.1)
+                DebugShapes.showDebugAABB(DebugAABB(bounds, UIColors.dodgerBlue, 2f))
             }
         }
     }
@@ -119,10 +131,10 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
     val workerLimit = worker.numThreads * 2 + 1
     fun loadChunks(center: Vector3i) {
         if (worker.size >= workerLimit) return
-        for (idx in loadingPattern) {
-            val vec = Vector3i(idx).add(center)
-            if (loadedChunks.add(vec)) {
-                worker += { generateChunk(vec) }
+        for (offset in loadingPattern) {
+            val chunkId = Vector3i(offset).add(center)
+            if (loadedChunks.add(chunkId)) {
+                worker += { generateChunk(chunkId) }
                 if (worker.size >= workerLimit) return
             }
         }
@@ -131,11 +143,11 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
     abstract fun destroyMesh(renderer: ChunkRenderer, vec: Vector3i, destroyMesh: Boolean)
 
     fun unloadChunks(center: Vector3i) {
-        for (idx in unloadingPattern) {
-            val vec = Vector3i(idx).add(center)
-            if (loadedChunks.remove(vec)) {
-                destroyMesh(solidRenderer, vec, true)
-                destroyMesh(fluidRenderer, vec, true)
+        for (offset in unloadingPattern) {
+            val chunkId = Vector3i(offset).add(center)
+            if (loadedChunks.remove(chunkId)) {
+                destroyMesh(solidRenderer, chunkId, true)
+                destroyMesh(fluidRenderer, chunkId, true)
             }
         }
     }
@@ -147,5 +159,20 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
             loadChunks(chunkId)
             unloadChunks(chunkId)
         }
+
+        showChunks()
     }
+
+    fun showChunks() {
+        for (chunkId in loadedChunks) {
+            val isInvalid = chunkId in invalidChunks
+            val color = if (isInvalid) UIColors.fireBrick else UIColors.axisWColor
+            val bounds = chunkId.toBounds()
+            DebugShapes.showDebugAABB(DebugAABB(bounds, color, 0f))
+        }
+    }
+
+    fun Vector3i.toBounds() = AABBd()
+        .setMin(csx * (x + 0.0), csy * (y + 0.0), csz * (z + 0.0))
+        .setMax(csx * (x + 1.0), csy * (y + 1.0), csz * (z + 1.0))
 }

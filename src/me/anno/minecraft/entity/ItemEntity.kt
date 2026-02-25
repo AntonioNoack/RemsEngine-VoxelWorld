@@ -14,6 +14,8 @@ import me.anno.utils.structures.maps.LazyMap
 import org.joml.Vector3f
 
 class ItemEntity(val stack: ItemSlot) : MovingEntity(halfExtents, blockTexture) {
+    @Suppress("unused")
+    constructor() : this(ItemSlot())
 
     companion object {
         private val halfExtents = Vector3f(0.2f)

@@ -1,8 +1,10 @@
 package me.anno.minecraft.ui
 
+import me.anno.io.base.BaseWriter
+import me.anno.io.saveable.Saveable
 import kotlin.math.min
 
-class Inventory(numSlots: Int) {
+class Inventory(numSlots: Int) : Saveable() {
 
     val slots = List(numSlots) {
         ItemSlot()
@@ -24,5 +26,11 @@ class Inventory(numSlots: Int) {
             }
         }
         return stack.count != oldCount
+    }
+
+    override fun save(writer: BaseWriter) {
+        super.save(writer)
+        writer.writeInt("numSlots", slots.size)
+        writer.writeObjectList(this, "slots", slots)
     }
 }

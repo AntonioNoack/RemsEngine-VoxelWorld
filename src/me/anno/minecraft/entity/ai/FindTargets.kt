@@ -14,14 +14,14 @@ import kotlin.math.floor
 
 object FindTargets {
 
-    fun findPlayerTarget(self: Entity, maxDistance: Double): PlayerEntity? {
+    fun findPlayerTarget(self: Entity, maxDistance: Double, toAttack: Boolean): PlayerEntity? {
         val pos = self.position
         val min = Vector3d(pos).sub(maxDistance)
         val max = Vector3d(pos).add(maxDistance)
         var bestFind: PlayerEntity? = null
         var bestDistance = sq(maxDistance)
         CollisionSystem.animals.query(min, max) { target ->
-            if (target is PlayerEntity && target !== self) {
+            if (target is PlayerEntity && target !== self && (!toAttack || target.canBeAttacked())) {
                 val distance = target.position.distanceSquared(pos)
                 if (distance < bestDistance) {
                     bestDistance = distance

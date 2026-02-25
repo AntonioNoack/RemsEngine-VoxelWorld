@@ -1,4 +1,4 @@
-package me.anno.minecraft.ui
+package me.anno.minecraft.ui.components
 
 import me.anno.gpu.Clipping
 import me.anno.gpu.drawing.DefaultFonts.monospaceFont
@@ -6,6 +6,7 @@ import me.anno.gpu.drawing.DrawRectangles.drawRect
 import me.anno.gpu.drawing.DrawTexts.drawText
 import me.anno.maths.Maths.clamp
 import me.anno.minecraft.rendering.v2.player
+import me.anno.minecraft.ui.XpLevels
 import me.anno.ui.Panel
 import me.anno.ui.Style
 import me.anno.ui.UIColors
@@ -16,9 +17,11 @@ import kotlin.math.min
 
 class XpBarPanel(style: Style) : Panel(style) {
 
+    private val font = monospaceFont
+
     override fun calculateSize(w: Int, h: Int) {
         super.calculateSize(w, h)
-        minH = monospaceFont.sizeInt
+        minH = font.sizeInt
     }
 
     init {
@@ -28,17 +31,17 @@ class XpBarPanel(style: Style) : Panel(style) {
 
     override fun draw(x0: Int, y0: Int, x1: Int, y1: Int) {
         val xp = player.experience
-        // todo render level number
         val level = XpLevels.getLevel(xp)
         val progress = 0.9f * calculateProgress(xp, level) + 0.05f
         drawBackground(x0, y0, x1, y1)
         val wi = (width * progress).toInt()
         drawRect(x, y, wi, height, UIColors.greenYellow)
         // left side black, right side yellow
+        val levelStr = level.toString()
         Clipping.clip2(x0, y0, min(x0 + wi, x1), y1) {
             drawText(
                 x + width / 2, y + height / 2, 0,
-                monospaceFont, level.toString(),
+                font, levelStr,
                 background.color.withAlpha(255), UIColors.greenYellow,
                 AxisAlignment.CENTER, AxisAlignment.CENTER
             )
@@ -46,7 +49,7 @@ class XpBarPanel(style: Style) : Panel(style) {
         Clipping.clip2(x0 + wi, y0, x1, y1) {
             drawText(
                 x + width / 2, y + height / 2, 0,
-                monospaceFont, level.toString(),
+                font, levelStr,
                 UIColors.greenYellow, background.color,
                 AxisAlignment.CENTER, AxisAlignment.CENTER
             )

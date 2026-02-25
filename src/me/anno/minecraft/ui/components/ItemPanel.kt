@@ -1,9 +1,12 @@
-package me.anno.minecraft.ui
+package me.anno.minecraft.ui.components
 
 import me.anno.cache.FileCacheList
 import me.anno.config.DefaultConfig.style
 import me.anno.ecs.components.mesh.material.Material
 import me.anno.gpu.GFX
+import me.anno.gpu.drawing.DefaultFonts.monospaceFont
+import me.anno.gpu.drawing.DrawTexts
+import me.anno.gpu.drawing.DrawTexts.drawText
 import me.anno.gpu.drawing.GFXx2D.getSize
 import me.anno.input.Key
 import me.anno.io.files.InvalidRef
@@ -11,20 +14,28 @@ import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.DetailedBlockVisuals
 import me.anno.minecraft.block.builder.BlockBuilder
+import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.entity.model.CuboidCreator
 import me.anno.minecraft.rendering.v2.TextureMaterial
-import me.anno.minecraft.ui.MinecraftControls.Companion.inHandSlot
-import me.anno.minecraft.ui.MinecraftControls.Companion.inventory
+import me.anno.minecraft.rendering.v2.player
+import me.anno.minecraft.ui.ItemSlot
+import me.anno.minecraft.ui.controls.GameMode
+import me.anno.minecraft.ui.controls.MinecraftControls.Companion.inHandSlot
+import me.anno.ui.Window
 import me.anno.ui.base.buttons.TextButton.Companion.drawButtonBorder
+import me.anno.ui.base.components.AxisAlignment
+import me.anno.ui.debug.FrameTimings
 import me.anno.ui.utils.ThumbnailPanel
 import me.anno.utils.Color.black
 import me.anno.utils.Color.mixARGB
 import me.anno.utils.Color.white
+import me.anno.utils.Color.withAlpha
 import me.anno.utils.OS.res
 import me.anno.utils.structures.maps.LazyMap
 import kotlin.math.min
 
-class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef, style) {
+class ItemPanel(val slot: ItemSlot, val index: Int) :
+    ThumbnailPanel(InvalidRef, style) {
 
     companion object {
         val blockMaterial = Material().apply {
@@ -63,6 +74,24 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
         val bottomColor = style.getColor("borderColorBottom", black or 0x111111)
 
         val borderSize = style.getPadding("borderSize", 2)
+
+        private val dragged = player.inventory.slots[PlayerEntity.EDIT_SLOT]
+        private val sample = ItemPanel(dragged, PlayerEntity.EDIT_SLOT)
+
+        fun drawDraggedItem(window: Window?, w: Int) {
+            val dragCount = dragged.count
+            if (dragCount <= 0 || dragged.type == BlockRegistry.Air) return
+            val ws = window?.windowStack ?: return
+
+            val mx = ws.mouseXi
+            val my = ws.mouseYi
+            val dx = w shr 1
+            val x0 = mx - dx
+            val y0 = my - dx
+            sample.setPosSize(x0, y0, w, w)
+            sample.onUpdate()
+            sample.draw(x0, y0, x0 + w, y0 + w)
+        }
     }
 
     val bg0 = backgroundColor
@@ -71,8 +100,8 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
 
     override fun onUpdate() {
         super.onUpdate()
-        source = previewBlocks[slot.type] ?: InvalidRef
-        background.color = if (inHandSlot == index || isPressed) bg1 else bg0
+        source = if (slot.count > 0) previewBlocks[slot.type] ?: InvalidRef else InvalidRef
+        background.color = if (inHandSlot == index || (isPressed && slot.count > 0)) bg1 else bg0
     }
 
     override fun calculateSize(w: Int, h: Int) {
@@ -92,16 +121,48 @@ class ItemPanel(val slot: ItemSlot, val index: Int) : ThumbnailPanel(InvalidRef,
     }
 
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
-        if (index in inventory.slots.indices) {
-            inHandSlot = index
+        if (player.gameMode == GameMode.SPECTATOR) return
+        if (index in 0 until 9) inHandSlot = index
+
+        val rightClick = button == Key.BUTTON_RIGHT || long
+        if (dragged.count > 0) {
+            val moved =
+                if (slot.count == 0 || (dragged.type == slot.type && dragged.metadata == slot.metadata)) {
+                    val wantDropped = if (rightClick) 1 else dragged.count
+                    min(wantDropped, dragged.type.stackingLimit - slot.count)
+                } else 0
+            if (moved == 0) dragged.swap(slot)
+            else slot.moveFrom(dragged, moved)
+        } else if (slot.count > 0) {
+            startDrag(rightClick)
         }
     }
 
+    fun startDrag(split: Boolean) {
+        val count = slot.count
+        val moved = if (split) (count + 1).shr(1) else count
+        dragged.moveFrom(slot, moved)
+    }
+
     override fun draw(x0: Int, y0: Int, x1: Int, y1: Int) {
-        super.draw(x0, y0, x1, y1)
+        val count = slot.count
+        drawBackground(x0, y0, x1, y1)
+        if (count > 0) drawImage()
+
         drawButtonBorder(
             leftColor, topColor, rightColor, bottomColor,
-            true, borderSize, isPressed
+            player.gameMode != GameMode.SPECTATOR,
+            borderSize, count > 0 && isPressed
         )
+
+        if (count > 1) {
+            val pbb = DrawTexts.pushBetterBlending(true)
+            drawText(
+                x + width - 3, y + height, 0, monospaceFont, "${count}x",
+                FrameTimings.textColor, background.originalColor.withAlpha(0),
+                AxisAlignment.MAX, AxisAlignment.MAX
+            )
+            DrawTexts.popBetterBlending(pbb)
+        }
     }
 }

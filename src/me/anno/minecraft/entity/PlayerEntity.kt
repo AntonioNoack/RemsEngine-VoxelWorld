@@ -7,6 +7,7 @@ import me.anno.minecraft.entity.model.PlayerModel
 import me.anno.minecraft.multiplayer.NetworkData
 import me.anno.minecraft.ui.Inventory
 import me.anno.minecraft.ui.ItemSlot
+import me.anno.minecraft.ui.controls.GameMode
 import me.anno.utils.OS.res
 import org.joml.Vector3f
 import org.joml.Vector3i
@@ -19,6 +20,12 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
         private val halfExtents = Vector3f(6f / 16f, 1f, 6f / 16f)
         private val femaleModel = PlayerModel(false)
         private val texture = Texture(res.getChild("textures/players/Reyviee.png"))
+
+        const val MAIN_SLOTS = 0
+        const val CHEST_SLOTS = MAIN_SLOTS + 1 * 9
+        const val ARMOR_SLOTS = CHEST_SLOTS + 6 * 9
+        const val OFF_HAND_SLOT = ARMOR_SLOTS + 4
+        const val EDIT_SLOT = OFF_HAND_SLOT + 1
     }
 
     init {
@@ -29,13 +36,23 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
     override val maxJumpDown: Int get() = 3
     override val maxHealth: Int get() = 20
 
-    val inventory = Inventory(9 * (6 + 1) /* main + chest */ + 4 /* armor */ + 1 /* off-hand */)
+    val maxHunger = 20
+    var hunger = maxHunger.toFloat()
+
+    val inventory = Inventory(
+        9 * (6 + 1) /* main + chest */ +
+                4 /* armor */ +
+                1 /* off-hand */ +
+                1 /* edit-slot, dragged */
+    )
+
+    fun canBeAttacked() = gameMode.canBeAttacked()
 
     // idk what players would be looking for ;)
     override fun findTarget(start: Vector3i, seed: Long): Vector3i? = null
 
     val networkData = NetworkData()
-    var spectatorMode = false
+    var gameMode = GameMode.CREATIVE
     var firstPersonMode = true
 
     var smoothAngle0 = 0f

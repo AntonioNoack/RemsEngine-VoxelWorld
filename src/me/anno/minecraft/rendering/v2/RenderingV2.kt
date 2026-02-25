@@ -13,7 +13,8 @@ import me.anno.minecraft.entity.*
 import me.anno.minecraft.entity.Entity.Companion.spawnEntity
 import me.anno.minecraft.entity.physics.CollisionSystem
 import me.anno.minecraft.rendering.createLighting
-import me.anno.minecraft.ui.*
+import me.anno.minecraft.ui.ItemSlot
+import me.anno.minecraft.ui.controls.*
 import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem
 import me.anno.ui.base.groups.PanelList
@@ -36,20 +37,22 @@ lateinit var chunkLoader: ChunkLoaderBase<*>
 lateinit var entities: Entity
 lateinit var player: PlayerEntity
 
-private val invalidChunks = HashSet<Vector3i>()
+val invalidChunks = HashSet<Vector3i>()
 fun invalidateChunk(coords: Vector3i) {
     val needsWorker = synchronized(invalidChunks) {
         invalidChunks.add(coords)
     }
     if (needsWorker) {
+        println("adding task for chunk validation")
         chunkLoader.worker += {
             val changed = synchronized(invalidChunks) {
                 invalidChunks.remove(coords)
             }
+            println("validating chunk $coords")
             assertTrue(changed)
             chunkLoader.generateChunk(coords)
         }
-    }
+    } else println("chunk already known as invalid")
 }
 
 
@@ -64,8 +67,7 @@ fun invalidateChunk(coords: Vector3i) {
  * done load/save system
  * done block placing
  *
- * todo first person player controller with simple physics
- * todo inventory system
+ * todo usable inventory
  * */
 fun main() {
 
@@ -122,20 +124,20 @@ fun main() {
 
     fun init(sceneView: SceneView) {
         val renderer = sceneView.renderView
-        val creativeControls = CreativeControls(player, dimension, renderer)
-        val spectatorControls = SpectatorControls(player, dimension, renderer)
-        val survivalControls = SurvivalControls(player, dimension, renderer)
-        val adventureControls = AdventureControls(player, dimension, renderer)
+        val creativeControls = CreativeControls(sceneView, player, dimension, renderer)
+        val spectatorControls = SpectatorControls(sceneView, player, dimension, renderer)
+        val survivalControls = SurvivalControls(sceneView, player, dimension, renderer)
+        val adventureControls = AdventureControls(sceneView, player, dimension, renderer)
         val allControls = mapOf(
-            ControlMode.CREATIVE to creativeControls,
-            ControlMode.SURVIVAL to survivalControls,
-            ControlMode.ADVENTURE to adventureControls,
-            ControlMode.SPECTATOR to spectatorControls
+            GameMode.CREATIVE to creativeControls,
+            GameMode.SURVIVAL to survivalControls,
+            GameMode.ADVENTURE to adventureControls,
+            GameMode.SPECTATOR to spectatorControls
         )
         for (control in allControls.values) {
-            control.controlModes = allControls
+            control.gameModeUIs = allControls
         }
-        sceneView.editControls = creativeControls
+        sceneView.editControls = allControls[player.gameMode]!!
     }
 
     if (false) {

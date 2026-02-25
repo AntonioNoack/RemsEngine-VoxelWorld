@@ -6,6 +6,7 @@ import me.anno.maths.Maths
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.rendering.v2.dimension
+import me.anno.minecraft.rendering.v2.player
 import me.anno.utils.hpc.threadLocal
 import org.joml.AABBd
 import org.joml.Vector3d
@@ -21,7 +22,6 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
         val fenceDy = 0.5
         val airFriction = 0.2f
 
-        // todo make these ThreadLocal
         private class Helper {
             val entityBounds = AABBd()
             val blockBounds = AABBd()
@@ -159,12 +159,15 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
             updateActualVelocity(dt)
         }
 
-        DebugShapes.debugAABBs.add(
-            DebugAABB(
-                AABBd().union(position)
-                    .addMargin(halfExtents.x.toDouble(), halfExtents.y.toDouble(), halfExtents.z.toDouble()), -1, 0f
+        // show AABB for all but self in first person mode
+        if (this !== player.physics || !player.firstPersonMode) {
+            DebugShapes.debugAABBs.add(
+                DebugAABB(
+                    AABBd().union(position)
+                        .addMargin(halfExtents.x.toDouble(), halfExtents.y.toDouble(), halfExtents.z.toDouble()), -1, 0f
+                )
             )
-        )
+        }
 
         friction =
             if (isOnGround) bestFloorBlock.friction

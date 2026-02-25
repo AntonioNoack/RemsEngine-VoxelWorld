@@ -26,9 +26,11 @@ class BoarSkeletonEntity : Animal(halfExtents, texture) {
     var playerTarget: PlayerEntity? = null
 
     fun findPlayerTarget(): PlayerEntity? {
-        val old = playerTarget
-        return if (old != null && old.position.distanceSquared(position) < sq(32.0)) old
-        else findPlayerTarget(this, 16.0)
+        val previousTarget = playerTarget
+        return if (previousTarget == null || !previousTarget.canBeAttacked() ||
+            previousTarget.position.distanceSquared(position) >= sq(32.0)
+        ) findPlayerTarget(this, 16.0, true)
+        else previousTarget
     }
 
     override fun findTarget(start: Vector3i, seed: Long): Vector3i? {

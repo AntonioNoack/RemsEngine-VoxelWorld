@@ -1,6 +1,7 @@
-package me.anno.minecraft.ui
+package me.anno.minecraft.ui.controls
 
 import me.anno.engine.ui.render.RenderView
+import me.anno.engine.ui.render.SceneView
 import me.anno.input.Input
 import me.anno.input.Key
 import me.anno.minecraft.block.BlockRegistry
@@ -10,9 +11,8 @@ import me.anno.minecraft.item.RightClickBlock
 import me.anno.minecraft.item.RightClickItem
 import me.anno.minecraft.world.Dimension
 
-open class CreativeControls(
-    player: PlayerEntity, dimension: Dimension, renderer: RenderView
-) : MinecraftControls(player, dimension, renderer) {
+open class CreativeControls(sceneView: SceneView, player: PlayerEntity, dimension: Dimension, renderer: RenderView) :
+    MinecraftControls(sceneView, player, dimension, renderer) {
 
     override val canFly: Boolean
         get() = true

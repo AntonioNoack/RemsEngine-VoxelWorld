@@ -1,6 +1,6 @@
 package me.anno.minecraft.item
 
-import me.anno.minecraft.ui.MinecraftControls
+import me.anno.minecraft.ui.controls.MinecraftControls
 import org.joml.Vector3i
 
 interface RightClickBlock {
