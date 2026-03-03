@@ -12,7 +12,7 @@ import me.anno.gpu.GPUTasks.addGPUTask
 import me.anno.maths.patterns.SpiralPattern.spiral3d
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.DetailedBlockVisuals
+import me.anno.minecraft.block.types.DetailedBlockVisuals
 import me.anno.minecraft.block.builder.DetailedBlockMesh32
 import me.anno.minecraft.rendering.v1.VisualDimension.Companion.chunkGenQueue
 import me.anno.minecraft.world.Chunk
@@ -103,7 +103,7 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
 
     fun <V : IMesh> meshUpload(
         renderer: UniqueMeshRendererImpl<Vector3i, V>, chunkId: Vector3i, mesh: V,
-        translate: Boolean
+        translate: Boolean,
     ) {
         val bounds = AABBd(mesh.getBounds())
         if (translate) {
@@ -118,9 +118,7 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
         addGPUTask("ChunkUpload", 1) { // change back to GPU thread
             synchronized(renderer) {
                 renderer.remove(chunkId, true)
-                if (!renderer.add(chunkId, mesh, bounds)) {
-                    println("Failed to add chunk $chunkId")
-                }
+                renderer.add(chunkId, mesh, bounds)
 
                 val bounds = chunkId.toBounds().addMargin(-0.1)
                 DebugShapes.showDebugAABB(DebugAABB(bounds, UIColors.dodgerBlue, 2f))

@@ -19,7 +19,7 @@ object CollisionSystem : System(), OnUpdate {
     val xpAttractExtents = Vector3f(5f)
     val xpCollectExtents = Vector3f(0.2f)
 
-    val itemCollectExtents = Vector3f(0.2f)
+    val itemCollectExtents = Vector3f(0.7f, 1f, 0.7f)
 
     val animals = EntityTree<MovingEntity>()
     val items = EntityTree<ItemEntity>()

@@ -1,6 +1,6 @@
-package me.anno.minecraft.block
+package me.anno.minecraft.block.types
 
-import me.anno.minecraft.entity.Animal
+import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.effect.Effect
 import me.anno.minecraft.world.Chunk
 

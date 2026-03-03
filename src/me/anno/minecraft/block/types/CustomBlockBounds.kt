@@ -1,4 +1,4 @@
-package me.anno.minecraft.block
+package me.anno.minecraft.block.types
 
 import org.joml.AABBf
 

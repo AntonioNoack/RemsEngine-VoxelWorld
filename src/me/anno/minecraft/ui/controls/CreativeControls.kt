@@ -1,5 +1,6 @@
 package me.anno.minecraft.ui.controls
 
+import me.anno.engine.Events.addEvent
 import me.anno.engine.ui.render.RenderView
 import me.anno.engine.ui.render.SceneView
 import me.anno.input.Input
@@ -24,8 +25,6 @@ open class CreativeControls(sceneView: SceneView, player: PlayerEntity, dimensio
         applyPlayerMovement()
     }
 
-    val dropItems = true
-
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
         if (inventoryUI.isVisible) {
             inventoryUI.isVisible = false
@@ -44,7 +43,7 @@ open class CreativeControls(sceneView: SceneView, player: PlayerEntity, dimensio
                 if (dropped != BlockRegistry.Air) {
                     val droppedMetadata = getBlockMetadata(coords)
                     setBlock(coords, BlockRegistry.Air, null)
-                    if (dropItems) dropped.dropAsItem(coords.x, coords.y, coords.z, droppedMetadata)
+                    dropped.dropAsItem(coords, droppedMetadata)
                 }
             }
             Key.BUTTON_RIGHT -> {

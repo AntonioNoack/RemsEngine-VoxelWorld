@@ -7,4 +7,5 @@ enum class EffectType(val naming: NameDesc) {
     POISON(NameDesc("Poison")),
     HEALING(NameDesc("Healing")),
     BURNING(NameDesc("Burning")),
+    DROWNING(NameDesc("Drowning")),
 }

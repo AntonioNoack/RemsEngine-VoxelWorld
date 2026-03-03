@@ -4,8 +4,8 @@ import me.anno.io.base.BaseWriter
 import me.anno.io.saveable.Saveable
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.ChangingBlock
 import me.anno.minecraft.block.Metadata
+import me.anno.minecraft.block.types.ChangingBlock
 import me.anno.minecraft.entity.Entity
 import me.anno.utils.pooling.JomlPools
 import me.anno.utils.structures.arrays.IntArrayList
@@ -122,7 +122,13 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         return getMetadata(getIndex(localX, localY, localZ))
     }
 
+    fun getOrCreateMetadata(localX: Int, localY: Int, localZ: Int): Metadata {
+        return getOrCreateMetadata(getIndex(localX, localY, localZ))
+    }
+
     fun getMetadata(index: Int): Metadata? = metadata[index]
+
+    fun getOrCreateMetadata(index: Int): Metadata = metadata.getOrPut(index, ::Metadata)
 
     fun setBlock(x: Int, y: Int, z: Int, block: Short): Boolean {
         val key = dimension.getIndex(x, y, z)

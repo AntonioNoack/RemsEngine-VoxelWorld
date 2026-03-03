@@ -5,6 +5,7 @@ import me.anno.language.translation.NameDesc
 import me.anno.maths.Maths
 import me.anno.minecraft.audio.playBreakBlockSound
 import me.anno.minecraft.audio.playStartFallingSound
+import me.anno.minecraft.block.types.CustomBlockBounds
 import me.anno.minecraft.entity.Entity.Companion.spawnEntity
 import me.anno.minecraft.entity.ItemEntity
 import me.anno.minecraft.entity.MovingBlock
@@ -16,6 +17,7 @@ import me.anno.utils.Color.a
 import org.joml.AABBd
 import org.joml.AABBf
 import org.joml.Vector3d
+import org.joml.Vector3i
 
 open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: NameDesc) :
     ItemType(typeUUID, InvalidRef, texId, nameDesc) {
@@ -59,6 +61,10 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
         playStartFallingSound(getDropPosition(x, y, z), this)
         spawnEntity(MovingBlock(toItem(metadata)), getDropPosition(x, y, z))
         return true
+    }
+
+    fun dropAsItem(blockId: Vector3i, metadata: Metadata?): Boolean {
+        return dropAsItem(blockId.x, blockId.y, blockId.z, metadata)
     }
 
     fun dropAsItem(x: Int, y: Int, z: Int, metadata: Metadata?): Boolean {

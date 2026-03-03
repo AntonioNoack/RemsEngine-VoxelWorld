@@ -1,7 +1,10 @@
-package me.anno.minecraft.block
+package me.anno.minecraft.block.impl
 
 import me.anno.language.translation.NameDesc
 import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.Metadata
+import me.anno.minecraft.block.types.ChangingBlock
 import me.anno.minecraft.rendering.v2.dimension
 import me.anno.minecraft.world.Chunk
 import me.anno.utils.pooling.JomlPools

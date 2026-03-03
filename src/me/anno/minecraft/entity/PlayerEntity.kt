@@ -54,6 +54,7 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
     val networkData = NetworkData()
     var gameMode = GameMode.CREATIVE
     var firstPersonMode = true
+    var isSneaking = false
 
     var smoothAngle0 = 0f
 

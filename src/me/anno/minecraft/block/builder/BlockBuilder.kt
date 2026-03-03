@@ -21,7 +21,7 @@ class BlockBuilder {
         px: Int, py: Int, pz: Int,
         sx: Int, sy: Int, sz: Int,
         texId: Int,
-    ) {
+    ): BlockBuilder {
         val baseShape = flatCube
         val pos = baseShape.positions!!
         baseShape.forEachTriangleIndex { ai, bi, ci ->
@@ -30,6 +30,7 @@ class BlockBuilder {
             addVertex(px, py, pz, sx, sy, sz, texId, pos, ci * 3)
             false
         }
+        return this
     }
 
     private fun addVertex(

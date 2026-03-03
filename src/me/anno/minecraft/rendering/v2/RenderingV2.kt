@@ -43,16 +43,14 @@ fun invalidateChunk(coords: Vector3i) {
         invalidChunks.add(coords)
     }
     if (needsWorker) {
-        println("adding task for chunk validation")
         chunkLoader.worker += {
             val changed = synchronized(invalidChunks) {
                 invalidChunks.remove(coords)
             }
-            println("validating chunk $coords")
             assertTrue(changed)
             chunkLoader.generateChunk(coords)
         }
-    } else println("chunk already known as invalid")
+    }
 }
 
 

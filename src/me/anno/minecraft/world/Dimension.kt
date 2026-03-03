@@ -73,9 +73,17 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         return getMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)
     }
 
+    fun getOrCreateMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata {
+        return getOrCreateMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)
+    }
+
     fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): Metadata? {
         return getChunkAt(globalX, globalY, globalZ, stage)
             ?.getMetadata(globalX, globalY, globalZ)
+    }
+
+    fun getOrCreateMetadataAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): Metadata {
+        return getChunkAt(globalX, globalY, globalZ, stage)!!.getOrCreateMetadata(globalX, globalY, globalZ)
     }
 
     fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stage: Int): Chunk? {
@@ -108,6 +116,7 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         val chunkId = coordsToChunkId(x, y, z)
         // todo chunk invalidation is extremely slow
         // todo when setting blocks, we can temporarily place a block until the mesh has been recalculated
+        println("invaliding chunkId $chunkId")
         invalidateChunk(chunkId)
         val localCoords = Vector3i(
             x and maskX,

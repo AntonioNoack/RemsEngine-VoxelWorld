@@ -3,6 +3,7 @@ package me.anno.minecraft.block.builder
 import me.anno.cache.FileCacheList
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.IMesh
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.MeshComponent
 import me.anno.ecs.components.mesh.utils.MeshVertexData
 import me.anno.ecs.prefab.PrefabSaveable
@@ -15,6 +16,7 @@ import me.anno.io.files.FileReference
 import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.minecraft.rendering.v2.VertexFormat.detailsBlockVertexData
 import me.anno.utils.algorithms.ForLoop.forLoopSafely
+import org.joml.AABBd
 import org.joml.AABBf
 
 abstract class DetailedBlockMesh<DataArray> : PrefabSaveable(), IMesh {
@@ -37,6 +39,7 @@ abstract class DetailedBlockMesh<DataArray> : PrefabSaveable(), IMesh {
 
     abstract fun union(data: DataArray, i: Int, dst: AABBf)
     abstract fun getDataSize(data: DataArray): Int
+    abstract fun toMesh(): Mesh
 
     fun calculateBounds() {
         val data = data ?: return
@@ -57,6 +60,10 @@ abstract class DetailedBlockMesh<DataArray> : PrefabSaveable(), IMesh {
     override fun getBounds(): AABBf {
         if (!validBounds) calculateBounds()
         return calcBounds
+    }
+
+    override fun getGlobalBounds(): AABBd? {
+        return AABBd().set(getBounds())
     }
 
     override fun draw(

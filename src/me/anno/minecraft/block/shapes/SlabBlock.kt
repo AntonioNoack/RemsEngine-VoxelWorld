@@ -1,7 +1,10 @@
-package me.anno.minecraft.block
+package me.anno.minecraft.block.shapes
 
 import me.anno.language.translation.NameDesc
 import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.types.CustomBlockBounds
+import me.anno.minecraft.block.types.DetailedBlockVisuals
 import me.anno.minecraft.block.builder.BlockBuilder
 import me.anno.utils.structures.lists.LazyList
 import org.joml.AABBf

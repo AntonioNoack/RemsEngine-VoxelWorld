@@ -30,6 +30,7 @@ import me.anno.minecraft.ui.components.ItemPanel
 import me.anno.minecraft.ui.components.ItemPanel.Companion.drawDraggedItem
 import me.anno.minecraft.ui.components.XpBarPanel
 import me.anno.minecraft.world.Dimension
+import me.anno.ui.Panel
 import me.anno.ui.base.SpacerPanel
 import me.anno.ui.base.buttons.TextButton
 import me.anno.ui.base.components.AxisAlignment
@@ -93,7 +94,8 @@ abstract class MinecraftControls(
             BlockRegistry.byUUID["remcraft.sandstone.fence"]!!,
             BlockRegistry.Dirt, BlockRegistry.Grass, BlockRegistry.Water, BlockRegistry.Lava,
             BlockRegistry.Sand, BlockRegistry.Sandstone, BlockRegistry.Cactus, BlockRegistry.Stone,
-            BlockRegistry.Gravel
+            BlockRegistry.Gravel,
+            BlockRegistry.Chest, BlockRegistry.Furnace, BlockRegistry.Hopper,
         ).withIndex()) {
             val slot = inventory.slots.getOrNull(i) ?: break
             slot.set(type, 10, null)
@@ -192,6 +194,10 @@ abstract class MinecraftControls(
         }
     }
 
+    fun openInventory(inventory: Inventory, ui: Panel) {
+
+    }
+
     fun rotatePlayer(dx: Float, dy: Float) {
         val entity = player.entity!!
         val transform = entity.transform
@@ -228,7 +234,7 @@ abstract class MinecraftControls(
                     val rotY = player.bodyRotationY
                     x -= sin(rotY) * radiusX
                     z -= cos(rotY) * radiusX
-                    y += 0.6f // adding player eye height...
+                    y += if (player.isSneaking) 0.4f else 0.6f // adding player eye height...
                 }
 
         cameraNode.transform.localRotation = renderView.orbitRotation
@@ -250,6 +256,8 @@ abstract class MinecraftControls(
         }
 
         player.gravityFactor = if (isFlying) 0f else 1f
+        player.isSneaking = Input.isShiftDown
+
         if (Input.isShiftDown) isRunning = true
         val moveSpeed = when {
             isFlying -> 100f
@@ -322,6 +330,15 @@ abstract class MinecraftControls(
                 inventoryUI.isVisible = !inventoryUI.isVisible
                 if (inventoryUI.isVisible) unlockMouse()
             }
+            Key.KEY_1, Key.KEY_KP_1 -> inHandSlot = 0
+            Key.KEY_2, Key.KEY_KP_2 -> inHandSlot = 1
+            Key.KEY_3, Key.KEY_KP_3 -> inHandSlot = 2
+            Key.KEY_4, Key.KEY_KP_4 -> inHandSlot = 3
+            Key.KEY_5, Key.KEY_KP_5 -> inHandSlot = 4
+            Key.KEY_6, Key.KEY_KP_6 -> inHandSlot = 5
+            Key.KEY_7, Key.KEY_KP_7 -> inHandSlot = 6
+            Key.KEY_8, Key.KEY_KP_8 -> inHandSlot = 7
+            Key.KEY_9, Key.KEY_KP_9 -> inHandSlot = 8
             else -> super.onKeyTyped(x, y, key)
         }
     }
@@ -410,7 +427,10 @@ abstract class MinecraftControls(
     fun setBlock(coords: Vector3i, type: BlockType, metadata: Metadata?): Boolean {
         val chunk = dimension.getChunkAt(coords.x, coords.y, coords.z) ?: return false
         chunk.setBlock(coords.x, coords.y, coords.z, type, metadata)
-        chunk.afterBlockChange(coords.x, coords.y, coords.z)
+        // chunk.afterBlockChange(coords.x, coords.y, coords.z)
+        addEvent(50) { // todo this should not be needed!!!
+            chunk.afterBlockChange(coords.x, coords.y, coords.z)
+        }
         return true
     }
 

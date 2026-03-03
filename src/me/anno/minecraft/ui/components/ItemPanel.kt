@@ -12,7 +12,7 @@ import me.anno.input.Key
 import me.anno.io.files.InvalidRef
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
-import me.anno.minecraft.block.DetailedBlockVisuals
+import me.anno.minecraft.block.types.DetailedBlockVisuals
 import me.anno.minecraft.block.builder.BlockBuilder
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.entity.model.CuboidCreator
@@ -27,8 +27,6 @@ import me.anno.ui.base.components.AxisAlignment
 import me.anno.ui.debug.FrameTimings
 import me.anno.ui.utils.ThumbnailPanel
 import me.anno.utils.Color.black
-import me.anno.utils.Color.mixARGB
-import me.anno.utils.Color.white
 import me.anno.utils.Color.withAlpha
 import me.anno.utils.OS.res
 import me.anno.utils.structures.maps.LazyMap
@@ -45,7 +43,7 @@ class ItemPanel(val slot: ItemSlot, val index: Int) :
         val previewBlocks = LazyMap { type: BlockType ->
             when (type) {
                 BlockRegistry.Air -> null
-                is DetailedBlockVisuals -> type.getModel()
+                is DetailedBlockVisuals -> type.getModel().toMesh()
                 else -> {
                     if (true) {
                         val mesh = CuboidCreator.createMonoCuboid(
@@ -62,7 +60,7 @@ class ItemPanel(val slot: ItemSlot, val index: Int) :
                         builder.addCube(0, 0, 0, 16, 16, 16, type.texId)
                         val mesh = builder.build()
                         if (type.isFluid) mesh.materials = listOf(TextureMaterial.fluid.ref)
-                        mesh
+                        mesh.toMesh()
                     }
                 }
             }?.ref
@@ -94,15 +92,14 @@ class ItemPanel(val slot: ItemSlot, val index: Int) :
         }
     }
 
-    val bg0 = backgroundColor
-    val bg1 = mixARGB(backgroundColor, white, 0.5f)
     var isPressed = false
 
     override fun onUpdate() {
         super.onUpdate()
         source = if (slot.count > 0) previewBlocks[slot.type] ?: InvalidRef else InvalidRef
-        background.color = if (inHandSlot == index || (isPressed && slot.count > 0)) bg1 else bg0
     }
+
+    val isSelected get() = inHandSlot == index || (isPressed && slot.count > 0)
 
     override fun calculateSize(w: Int, h: Int) {
         val size = min(64, GFX.someWindow.width / 11)
@@ -149,11 +146,19 @@ class ItemPanel(val slot: ItemSlot, val index: Int) :
         drawBackground(x0, y0, x1, y1)
         if (count > 0) drawImage()
 
-        drawButtonBorder(
-            leftColor, topColor, rightColor, bottomColor,
-            player.gameMode != GameMode.SPECTATOR,
-            borderSize, count > 0 && isPressed
-        )
+        if (isSelected) {
+            drawButtonBorder(
+                rightColor, bottomColor, leftColor, topColor,
+                player.gameMode != GameMode.SPECTATOR,
+                borderSize, count > 0 && isPressed
+            )
+        } else {
+            drawButtonBorder(
+                leftColor, topColor, rightColor, bottomColor,
+                player.gameMode != GameMode.SPECTATOR,
+                borderSize, count > 0 && isPressed
+            )
+        }
 
         if (count > 1) {
             val pbb = DrawTexts.pushBetterBlending(true)

@@ -2,6 +2,10 @@ package me.anno.minecraft.block
 
 import me.anno.language.translation.NameDesc
 import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.minecraft.block.impl.*
+import me.anno.minecraft.block.shapes.DoubleSlabBlock
+import me.anno.minecraft.block.shapes.FenceBlock
+import me.anno.minecraft.block.shapes.SlabBlock
 import me.anno.utils.Color.black
 import me.anno.utils.Color.withAlpha
 import kotlin.test.assertTrue
@@ -23,10 +27,13 @@ object BlockRegistry {
     val Sandstone = BlockType("remcraft.sandstone", black or 0x9f946b, 185, NameDesc("Sandstone"))
     val Gravel = SandBlock("remcraft.gravel", black or 0x556060, 7 * 16 + 6, NameDesc("Gravel"))
     val Cactus = CactusBlock("remcraft.cactus", black or 0x77975a, 13 * 16 + 15, NameDesc("Cactus"))
+    val Chest = ChestBlock("remcraft.chest", black or 0x9f946b, 18 * 16 + 12, NameDesc("Chest"))
+    val Furnace = FurnaceBlock("remcraft.furnace", black or 0x333333, 3 * 16 + 11, NameDesc("Furnace"))
+    val Hopper = HopperBlock("remcraft.hopper", black or 0x333339, 3 * 16 + 13, NameDesc("Hopper"))
 
     val initialBlocks = listOf(
         Air, Unknown, Stone, Grass, Dirt, Water, Lava, Log, Leaves, Sand, Sandstone,
-        Gravel, Cactus
+        Gravel, Cactus, Chest, Furnace, Hopper
     )
 
     val masonryBlocks = listOf(
