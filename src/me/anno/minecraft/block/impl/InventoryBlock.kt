@@ -49,7 +49,7 @@ open class InventoryBlock(
     override fun onRightClick(controls: MinecraftControls, coords: Vector3i) {
         val metadata = dimension.getOrCreateMetadataAt(coords.x, coords.y, coords.z)
         val inventory = getOrCreateInventory(metadata)
-        controls.openInventory(inventory, createInventoryUI(inventory))
+        controls.openInventory(createInventoryUI(inventory))
     }
 
 }

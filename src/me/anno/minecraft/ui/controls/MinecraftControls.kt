@@ -23,7 +23,6 @@ import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.rendering.v2.player
-import me.anno.minecraft.ui.Inventory
 import me.anno.minecraft.ui.components.HeartPanel
 import me.anno.minecraft.ui.components.HungerPanel
 import me.anno.minecraft.ui.components.ItemPanel
@@ -73,8 +72,6 @@ abstract class MinecraftControls(
         val inventory get() = player.inventory
 
         val clickDistanceDelta = 0.001
-
-        var lookedAtInventory: Inventory? = null
     }
 
     val modeButton = TextButton(NameDesc("Next Mode"), style)
@@ -87,6 +84,8 @@ abstract class MinecraftControls(
     val inventoryBar = PanelListY(style)
     val inventoryBar1 = PanelListX(style)
     val chatMessagesPanel = PanelListY(style)
+
+    var chestUI: Panel? = null
 
     init {
         for ((i, type) in listOf(
@@ -165,7 +164,7 @@ abstract class MinecraftControls(
     }
 
     override fun onMouseMoved(x: Float, y: Float, dx: Float, dy: Float) {
-        if (lookedAtInventory != null) {
+        if (escapeUI.isVisible || inventoryUI.isVisible) {
             // todo if is in menu (inventory), handle super
             unlockMouse()
             super.onMouseMoved(x, y, dx, dy)
@@ -194,8 +193,19 @@ abstract class MinecraftControls(
         }
     }
 
-    fun openInventory(inventory: Inventory, ui: Panel) {
+    fun openInventory(ui: Panel) {
+        chestUI?.removeFromParent()
+        chestUI = ui
+        inventoryUI.add(ui)
+        inventoryUI.isVisible = true
+        unlockMouse()
+    }
 
+    fun closeInventory() {
+        chestUI?.removeFromParent()
+        chestUI = null
+        inventoryUI.isVisible = false
+        lockMouse()
     }
 
     fun rotatePlayer(dx: Float, dy: Float) {
@@ -344,7 +354,7 @@ abstract class MinecraftControls(
     }
 
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
-        inventoryUI.isVisible = false
+        closeInventory()
         escapeUI.isVisible = false
         lockMouse()
     }
@@ -352,7 +362,7 @@ abstract class MinecraftControls(
     override fun onEscapeKey(x: Float, y: Float) {
         when {
             escapeUI.isVisible -> escapeUI.isVisible = false
-            inventoryUI.isVisible -> inventoryUI.isVisible = false
+            inventoryUI.isVisible -> closeInventory()
             else -> unlockMouse()
         }
     }
@@ -428,7 +438,7 @@ abstract class MinecraftControls(
         val chunk = dimension.getChunkAt(coords.x, coords.y, coords.z) ?: return false
         chunk.setBlock(coords.x, coords.y, coords.z, type, metadata)
         // chunk.afterBlockChange(coords.x, coords.y, coords.z)
-        addEvent(50) { // todo this should not be needed!!!
+        addEvent(50) { // todo this delay should not be needed!!!
             chunk.afterBlockChange(coords.x, coords.y, coords.z)
         }
         return true

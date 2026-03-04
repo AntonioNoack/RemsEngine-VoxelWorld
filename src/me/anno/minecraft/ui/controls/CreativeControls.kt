@@ -1,6 +1,5 @@
 package me.anno.minecraft.ui.controls
 
-import me.anno.engine.Events.addEvent
 import me.anno.engine.ui.render.RenderView
 import me.anno.engine.ui.render.SceneView
 import me.anno.input.Input
@@ -27,7 +26,7 @@ open class CreativeControls(sceneView: SceneView, player: PlayerEntity, dimensio
 
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
         if (inventoryUI.isVisible) {
-            inventoryUI.isVisible = false
+            closeInventory()
             return
         }
 

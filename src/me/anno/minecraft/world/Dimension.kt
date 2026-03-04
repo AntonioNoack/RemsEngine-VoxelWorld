@@ -116,7 +116,6 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         val chunkId = coordsToChunkId(x, y, z)
         // todo chunk invalidation is extremely slow
         // todo when setting blocks, we can temporarily place a block until the mesh has been recalculated
-        println("invaliding chunkId $chunkId")
         invalidateChunk(chunkId)
         val localCoords = Vector3i(
             x and maskX,
