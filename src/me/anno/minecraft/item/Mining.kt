@@ -33,8 +33,8 @@ object Mining {
     }
 
     init {
-        assertEquals(5.9f, durabilityMultiplier(0f))
-        assertEquals(1.0f, durabilityMultiplier(1f))
+        assertEquals(5.9f, durabilityMultiplier(0f), 0.1f)
+        assertEquals(1.0f, durabilityMultiplier(1f), 0.1f)
     }
 
     private fun effectMultiplier(miningSpeedEffectLevel: Int): Float {

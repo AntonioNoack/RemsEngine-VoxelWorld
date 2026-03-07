@@ -60,9 +60,11 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
         actualVelocity.set(targetVelocity)
     }
 
-    private fun tryMove(delta: Float, dim: Int): BlockType {
+    private var bestFloorBlock: BlockType = BlockRegistry.Air
+
+    private fun tryMove(delta: Float, dim: Int): Float {
         val vSign = sign(delta).toDouble()
-        if (vSign == 0.0) return BlockRegistry.Air
+        if (vSign == 0.0) return 0f
 
         val (selfDx, selfDy, selfDz) = halfExtents
         val (px, py, pz) = position
@@ -99,7 +101,7 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
         val z0 = floor(entityBounds.minZ).toInt()
         val z1 = ceil(entityBounds.maxZ).toInt()
 
-        var bestFloorBlock: BlockType = BlockRegistry.Air
+        bestFloorBlock = BlockRegistry.Air
         var bestFloorScore = Double.POSITIVE_INFINITY
 
         val blockBounds = helper.blockBounds
@@ -134,28 +136,29 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
         }
 
         position[dim] = newPosI
-
-        return bestFloorBlock
+        return (newPosI - oldPosI).toFloat()
     }
 
     fun step(dt: Float) {
         updateVelocity(dt)
 
-        val stepX = targetVelocity.x * dt
-        val stepY = targetVelocity.y * dt
-        val stepZ = targetVelocity.z * dt
-
-        var stepHeight = stepHeight
-        if (actualVelocity.x == 0f && actualVelocity.z == 0f) {
-            stepHeight = 0f
-        }
-
-        tryMove(stepHeight, 1)
-        tryMove(stepX, 0)
-        tryMove(stepZ, 2)
-
-        val bestFloorBlock = tryMove(stepY - stepHeight, 1)
         if (dt != 0f) {
+            var dx = targetVelocity.x * dt
+            val dy = targetVelocity.y * dt
+            var dz = targetVelocity.z * dt
+
+            // try walk on our level
+            dx -= tryMove(dx, 0)
+            dz -= tryMove(dz, 2)
+
+            // step up, try walk the remainder,
+            // then step down after
+            val stepHeight = stepHeight
+            tryMove(stepHeight, 1)
+            tryMove(dx, 0)
+            tryMove(dz, 2)
+            tryMove(dy - stepHeight, 1)
+
             updateActualVelocity(dt)
         }
 
@@ -169,9 +172,7 @@ class AABBPhysics(val position: Vector3d, val halfExtents: Vector3f) {
             )
         }
 
-        friction =
-            if (isOnGround) bestFloorBlock.friction
-            else airFriction
+        friction = if (isOnGround) bestFloorBlock.friction else airFriction
     }
 
     fun applyFriction(dt: Float) {

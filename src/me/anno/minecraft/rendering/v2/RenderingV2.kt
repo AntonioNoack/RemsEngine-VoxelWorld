@@ -1,5 +1,7 @@
 package me.anno.minecraft.rendering.v2
 
+import me.anno.Engine
+import me.anno.Time
 import me.anno.ecs.Entity
 import me.anno.ecs.systems.Systems.registerSystem
 import me.anno.engine.OfficialExtensions
@@ -21,8 +23,13 @@ import me.anno.ui.base.groups.PanelList
 import me.anno.ui.debug.TestEngine.Companion.testUI3
 import me.anno.ui.editor.PropertyInspector
 import me.anno.utils.assertions.assertTrue
+import org.apache.logging.log4j.LogManager
 import org.joml.Vector3d
 import org.joml.Vector3i
+import kotlin.concurrent.thread
+import kotlin.system.exitProcess
+
+private val LOGGER = LogManager.getLogger("RenderingV2")
 
 val saveSystem = SaveLoadSystem("Minecraft")
 val dimension = SampleDimensions.perlin2dDim.apply {
@@ -123,6 +130,25 @@ fun main() {
     fun init(sceneView: SceneView) {
         val renderer = sceneView.renderView
         sceneView.editControls = MinecraftControls(sceneView, player, dimension, renderer)
+    }
+
+    thread(name = "WatchDog") {
+        while (Time.frameIndex == 0) Thread.sleep(10)
+        var t0 = Time.nanoTime
+        var f0 = Time.frameIndex
+        while (!Engine.shutdown) {
+            val t1 = Time.nanoTime
+            if (t1 > t0 + 5e9) break
+            val f1 = Time.frameIndex
+            if (f1 > f0) {
+                f0 = f1
+                t0 = t1
+            }
+        }
+        if (!Engine.shutdown) {
+            LOGGER.warn("Got stuck")
+            exitProcess(-1)
+        }
     }
 
     if (false) {
