@@ -30,6 +30,8 @@ open class CreativeControls(sceneView: SceneView, player: PlayerEntity, dimensio
             return
         }
 
+        if (button == Key.BUTTON_LEFT && !canBreakBlocksInstantly()) return
+
         // find, which block was clicked
         // expensive way, using raycasting:
         val query = clickCast()
@@ -68,7 +70,7 @@ open class CreativeControls(sceneView: SceneView, player: PlayerEntity, dimensio
                 // get block
                 query ?: return
                 val coords = getCoords(query, +clickDistanceDelta)
-                val slot = inventory.slots[inHandSlot]
+                val slot = inventory[inHandSlot]
                 val found = getBlock(coords) ?: BlockRegistry.Air
                 if (found != BlockRegistry.Air) {
                     slot.set(found, 1, getBlockMetadata(coords))

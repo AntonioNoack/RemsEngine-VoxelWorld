@@ -39,7 +39,7 @@ open class InventoryBlock(
             for (j in 0 until sx) {
                 val index = i * sx + j
                 if (index >= numSlots) break
-                list.add(ItemPanel(inventory.slots[index], index))
+                list.add(ItemPanel(inventory[index], index))
             }
             inventoryBar.add(list)
         }

@@ -9,4 +9,8 @@ open class ItemType(
     val nameDesc: NameDesc
 ) {
     var stackingLimit = 100
+
+    var miningHardness = 1f
+    var miningType = MiningType.OTHER
+
 }

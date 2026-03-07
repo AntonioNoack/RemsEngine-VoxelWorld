@@ -62,7 +62,14 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         return setBlockAt(globalX, globalY, globalZ, chunk, blockType, metadata)
     }
 
-    fun setBlockAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk, blockType: BlockType, metadata: Metadata?): Boolean =
+    fun setBlockAt(
+        globalX: Int,
+        globalY: Int,
+        globalZ: Int,
+        chunk: Chunk,
+        blockType: BlockType,
+        metadata: Metadata?
+    ): Boolean =
         chunk.setBlock(globalX, globalY, globalZ, blockType, metadata)
 
     fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata? =
@@ -111,11 +118,7 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         // todo chunk invalidation is extremely slow
         // todo when setting blocks, we can temporarily place a block until the mesh has been recalculated
         invalidateChunk(chunkId)
-        val localCoords = Vector3i(
-            x and maskX,
-            y and maskY,
-            z and maskZ
-        )
+        val localCoords = Vector3i(x and maskX, y and maskY, z and maskZ)
         // when we're on the edge, and we remove a block (set a transparent one), we need to invalidate our neighbors, too
         if (!newBlock.isSolid) {
             if (localCoords.x == 0) invalidateChunk(Vector3i(chunkId).sub(1, 0, 0))
@@ -126,7 +129,7 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
             else if (localCoords.z == maskZ) invalidateChunk(Vector3i(chunkId).add(0, 0, 1))
         }
         saveSystem.get(chunkId) { changesInChunk ->
-            changesInChunk[localCoords] = newBlock.id
+            changesInChunk[getIndex(x, y, z)] = newBlock.id
             saveSystem.put(chunkId, changesInChunk)
         }
     }

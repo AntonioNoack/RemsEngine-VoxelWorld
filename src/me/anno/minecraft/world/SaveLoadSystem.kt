@@ -10,6 +10,7 @@ import me.anno.io.Streams.writeBE16
 import me.anno.io.Streams.writeBE32
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.UnknownBlock
+import me.anno.minecraft.rendering.v2.dimension
 import me.anno.utils.OS
 import me.anno.utils.assertions.assertEquals
 import org.joml.Vector3i
@@ -31,7 +32,7 @@ class SaveLoadSystem(name: String) {
         return listOf("${chunkId.x},${chunkId.y},${chunkId.z}")
     }
 
-    fun get(chunkId: Vector3i, callback: (HashMap<Vector3i, Short>) -> Unit) {
+    fun get(chunkId: Vector3i, callback: (HashMap<Int, Short>) -> Unit) {
         db.get(getPath(chunkId), hash) { slice, err ->
             if (slice != null) {
                 slice.stream().use { stream ->
@@ -41,7 +42,7 @@ class SaveLoadSystem(name: String) {
         }
     }
 
-    private fun read(stream: ByteArrayInputStream): HashMap<Vector3i, Short> {
+    private fun read(stream: ByteArrayInputStream): HashMap<Int, Short> {
         // write version ID
         val versionID = stream.readBE16()
         if (versionID != VERSION_1_0) {
@@ -57,24 +58,24 @@ class SaveLoadSystem(name: String) {
 
         // then load all blocks
         val numBlocks = stream.readBE32()
-        val answer = HashMap<Vector3i, Short>(numBlocks)
-        repeat( numBlocks) {
+        val answer = HashMap<Int, Short>(numBlocks)
+        repeat(numBlocks) {
             val x = stream.read()
             val y = stream.read()
             val z = stream.read()
             val b = blockIds[stream.readBE16()]
-            answer[Vector3i(x, y, z)] = b
+            answer[dimension.getIndex(x, y, z)] = b
         }
 
         return answer
     }
 
-    fun put(chunkId: Vector3i, blocks: Map<Vector3i, Short>) {
+    fun put(chunkId: Vector3i, blocks: Map<Int, Short>) {
         val bytes = write(blocks)
         db.put(getPath(chunkId), hash, ByteSlice(bytes))
     }
 
-    private fun write(blocks: Map<Vector3i, Short>): ByteArray {
+    private fun write(blocks: Map<Int, Short>): ByteArray {
 
         val typeUUIDs = blocks.values.map { id ->
             BlockRegistry.byId(id) ?: BlockRegistry.Unknown
@@ -95,9 +96,9 @@ class SaveLoadSystem(name: String) {
 
         stream.writeBE32(blocks.size)
         for ((k, v) in blocks) {
-            stream.write(k.x)
-            stream.write(k.y)
-            stream.write(k.z)
+            stream.write(dimension.indexToX(k))
+            stream.write(dimension.indexToY(k))
+            stream.write(dimension.indexToZ(k))
             stream.writeBE16(idMapping[v]!!)
         }
 

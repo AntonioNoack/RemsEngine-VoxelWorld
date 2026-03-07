@@ -73,7 +73,7 @@ class ItemPanel(val slot: ItemSlot, val index: Int) :
 
         val borderSize = style.getPadding("borderSize", 2)
 
-        private val dragged = player.inventory.slots[PlayerEntity.EDIT_SLOT]
+        private val dragged = player.inventory[PlayerEntity.EDIT_SLOT]
         private val sample = ItemPanel(dragged, PlayerEntity.EDIT_SLOT)
 
         fun drawDraggedItem(window: Window?, w: Int) {

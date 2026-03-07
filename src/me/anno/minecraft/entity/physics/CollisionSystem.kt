@@ -16,10 +16,10 @@ object CollisionSystem : System(), OnUpdate {
     // todo merge items of the same type
     // todo merge nearby xp
 
-    val xpAttractExtents = Vector3f(5f)
+    val xpAttractExtents = Vector3f(8f)
     val xpCollectExtents = Vector3f(0.2f)
 
-    val itemCollectExtents = Vector3f(0.7f, 1f, 0.7f)
+    val itemCollectExtents = Vector3f(1f, 1f, 1f)
 
     val animals = EntityTree<MovingEntity>()
     val items = EntityTree<ItemEntity>()

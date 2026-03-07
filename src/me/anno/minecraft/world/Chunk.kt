@@ -1,5 +1,6 @@
 package me.anno.minecraft.world
 
+import me.anno.engine.Events.addEvent
 import me.anno.io.base.BaseWriter
 import me.anno.io.saveable.Saveable
 import me.anno.minecraft.block.BlockRegistry
@@ -45,14 +46,16 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     val entities = ArrayList<Entity>()
     val blockUpdates = IntArrayList()
 
-    fun afterBlockChange(coords: Vector3i) {
-        afterBlockChange(coords.x, coords.y, coords.z)
-    }
-
     fun afterBlockChange(x: Int, y: Int, z: Int) {
         val index = getIndex(x, y, z)
         blockUpdates.add(index)
         dimension.invalidateAt(x, y, z, getBlock(index))
+    }
+
+    fun afterBlockChangeI(x: Int, y: Int, z: Int) {
+        afterBlockChange(x, y, z)
+        addEvent(50) { afterBlockChange(x, y, z) }
+        addEvent(150) { afterBlockChange(x, y, z) }
     }
 
     fun processBlockUpdates() {
@@ -136,12 +139,16 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     fun getOrCreateMetadata(index: Int): Metadata = metadata.getOrPut(index, ::Metadata)
 
     fun setBlock(x: Int, y: Int, z: Int, block: Short): Boolean {
-        val key = dimension.getIndex(x, y, z)
-        var changed = metadata.remove(key) == null
-        if (!changed && blocks[key] != block) {
+        val index = dimension.getIndex(x, y, z)
+        return setBlock(index, block)
+    }
+
+    fun setBlock(index: Int, block: Short): Boolean {
+        var changed = metadata.remove(index) == null
+        if (!changed && blocks[index] != block) {
             changed = true
         }
-        blocks[key] = block
+        blocks[index] = block
         return changed
     }
 

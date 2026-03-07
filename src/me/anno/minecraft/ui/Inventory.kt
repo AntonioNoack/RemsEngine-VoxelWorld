@@ -6,6 +6,8 @@ import kotlin.math.min
 
 class Inventory(numSlots: Int) : Saveable() {
 
+    operator fun get(index: Int) = slots[index]
+
     val slots = List(numSlots) {
         ItemSlot()
     }

@@ -64,4 +64,6 @@ class ItemSlot(
         }
     }
 
+    fun isNotEmpty(): Boolean = count > 0 && type != BlockRegistry.Air
+
 }

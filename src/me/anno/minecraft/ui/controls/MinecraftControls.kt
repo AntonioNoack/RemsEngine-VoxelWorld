@@ -3,7 +3,6 @@ package me.anno.minecraft.ui.controls
 import me.anno.Time
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.MeshComponent
-import me.anno.engine.DefaultAssets.flatCube
 import me.anno.engine.Events.addEvent
 import me.anno.engine.debug.DebugAABB
 import me.anno.engine.debug.DebugShapes
@@ -21,11 +20,13 @@ import me.anno.input.Key
 import me.anno.jvm.OpenFileExternallyImpl.openInExplorer
 import me.anno.language.translation.NameDesc
 import me.anno.maths.Maths.MILLIS_TO_NANOS
+import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.PlayerEntity
+import me.anno.minecraft.item.Mining.getMiningDuration
 import me.anno.minecraft.rendering.v2.player
 import me.anno.minecraft.ui.BreakModels
 import me.anno.minecraft.ui.components.HeartPanel
@@ -51,10 +52,7 @@ import org.joml.AABBd
 import org.joml.AABBi
 import org.joml.Vector3f
 import org.joml.Vector3i
-import kotlin.math.abs
-import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.sin
+import kotlin.math.*
 
 abstract class MinecraftControls(
     val sceneView: SceneView,
@@ -73,7 +71,7 @@ abstract class MinecraftControls(
                 player.inHandSlot = value
             }
 
-        val inHand get() = inventory.slots[inHandSlot]
+        val inHand get() = inventory[inHandSlot]
         val inHandItem get() = inHand.type
         val inHandMetadata get() = inHand.metadata
 
@@ -113,7 +111,7 @@ abstract class MinecraftControls(
 
         inventoryBar1.add(SpacerPanel(10, 0, style))
         for (i in 0 until inventorySizeX) {
-            inventoryBar1.add(ItemPanel(inventory.slots[i], i))
+            inventoryBar1.add(ItemPanel(inventory[i], i))
         }
         val hungerHealth = PanelListX(style).apply { makeBackgroundTransparent() }
         hungerHealth.add(HeartPanel(style))
@@ -129,7 +127,7 @@ abstract class MinecraftControls(
             val list = PanelListX(style)
             for (j in 0 until inventorySizeX) {
                 val index = (i + 1) * inventorySizeX + j
-                list.add(ItemPanel(inventory.slots[index], index))
+                list.add(ItemPanel(inventory[index], index))
             }
             inventoryUI.add(list)
         }
@@ -197,14 +195,26 @@ abstract class MinecraftControls(
         val query = hoverResult ?: return
         val coords = getCoords(query, +clickDistanceDelta)
         val block = getBlock(coords) ?: return
+
         if (block != BlockRegistry.Air) {
+
             val bounds = AABBd()
-            block.getBounds(coords.x, coords.y, coords.z, bounds)
-                .addMargin(0.001)
-            DebugShapes.showDebugAABB(
-                DebugAABB(bounds, -1, 0f)
-            )
+            block.getBounds(coords.x, coords.y, coords.z, bounds).addMargin(0.001)
+            DebugShapes.showDebugAABB(DebugAABB(bounds, -1, 0f))
+
+            if (!canBreakBlocksInstantly() &&
+                isMining && durationIsMining >= getMiningDuration(block, inHand, 0)
+            ) {
+                resetMiningDuration()
+                // todo if tool is not matching, drop nothing, just set to air
+                val metadata = getBlockMetadata(coords)
+                block.dropAsItem(coords.x, coords.y, coords.z, metadata)
+            }
         }
+    }
+
+    fun resetMiningDuration() {
+        Input.keysDown[Key.BUTTON_LEFT] = Time.nanoTime
     }
 
     fun openInventory(ui: Panel) {
@@ -404,16 +414,32 @@ abstract class MinecraftControls(
 
     override fun fill(pipeline: Pipeline) {
         super.fill(pipeline)
+        drawBlockBreakProgress(pipeline)
+    }
 
-        // todo if is holding down mouse, & not instant-mining, & there is progress,
-        //  show the corresponding texture above it...
+    val isMining get() = Input.isLeftDown
+    val durationIsMining get() = if (isMining) Input.getDownTimeNanos(Key.BUTTON_LEFT) * 1e-9f else 0f
+
+    fun drawBlockBreakProgress(pipeline: Pipeline) {
+        if (canBreakBlocksInstantly()) return
+        if (!isMining) return
+
         val query = hoverResult ?: return
         val coords = getCoords(query, +clickDistanceDelta)
+        val blockType = dimension.getBlockAt(coords.x, coords.y, coords.z) ?: BlockRegistry.Stone
+        val miningDuration = getMiningDuration(blockType, inHand, 0)
+        val progress = clamp(durationIsMining / miningDuration)
+
         breakTransform.localPosition = breakTransform.localPosition.set(coords).add(0.5)
         breakTransform.localScale = breakTransform.localScale.set(0.51f)
-        val material = BreakModels.materials[Time.frameIndex % BreakModels.materials.size]
+        // todo tint material by underlying texture...
+        val stages = BreakModels.materials
+        val numLevels = stages.size
+        val material = stages[min((progress * numLevels).toInt(), numLevels - 1)]
         pipeline.addMesh(BreakModels.cube, renderer, listOf(material.ref), breakTransform)
     }
+
+    open fun canBreakBlocksInstantly(): Boolean = false
 
     fun takeAndStoreScreenshot() {
         val window = window ?: return
@@ -469,7 +495,7 @@ abstract class MinecraftControls(
     fun setBlock(coords: Vector3i, type: BlockType, metadata: Metadata?): Boolean {
         val chunk = dimension.getChunkAt(coords.x, coords.y, coords.z) ?: return false
         chunk.setBlock(coords, type, metadata)
-        addEvent(50) { chunk.afterBlockChange(coords) }
+        chunk.afterBlockChangeI(coords.x, coords.y, coords.z)
         return true
     }
 

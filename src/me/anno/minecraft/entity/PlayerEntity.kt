@@ -17,7 +17,8 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
     constructor() : this(false, "Gustav${(Math.random() * 1e6).toInt()}")
 
     companion object {
-        private val halfExtents = Vector3f(6f / 16f, 1f, 6f / 16f)
+        // todo bug, why can we not enter 2-high caves???
+        private val halfExtents = Vector3f(6f / 16f, 0.9f, 6f / 16f)
         private val femaleModel = PlayerModel(false)
         private val texture = Texture(res.getChild("textures/players/Reyviee.png"))
 

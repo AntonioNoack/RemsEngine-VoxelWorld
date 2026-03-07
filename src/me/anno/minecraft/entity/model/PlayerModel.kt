@@ -114,8 +114,8 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
         pipeline.addMesh(rightLegMesh, self, rightLeg)
         pipeline.addMesh(leftLegMesh, self, leftLeg)
 
-        val leftSlot = self.inventory.slots[OFF_HAND_SLOT]
-        val rightSlot = self.inventory.slots[self.inHandSlot]
+        val leftSlot = self.inventory[OFF_HAND_SLOT]
+        val rightSlot = self.inventory[self.inHandSlot]
 
         // depend them on looking up/down
         // todo animation for mining/hitting
