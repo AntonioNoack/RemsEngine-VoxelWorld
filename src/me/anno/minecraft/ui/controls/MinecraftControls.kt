@@ -27,6 +27,8 @@ import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.item.Mining.getMiningDuration
+import me.anno.minecraft.item.RightClickBlock
+import me.anno.minecraft.item.RightClickItem
 import me.anno.minecraft.rendering.v2.player
 import me.anno.minecraft.ui.BreakModels
 import me.anno.minecraft.ui.components.HeartPanel
@@ -54,7 +56,7 @@ import org.joml.Vector3f
 import org.joml.Vector3i
 import kotlin.math.*
 
-abstract class MinecraftControls(
+class MinecraftControls(
     val sceneView: SceneView,
     val player: PlayerEntity,
     val dimension: Dimension,
@@ -185,6 +187,7 @@ abstract class MinecraftControls(
 
     override fun onUpdate() {
         super.onUpdate()
+        applyPlayerMovement()
         showHoveredBlock()
     }
 
@@ -202,7 +205,7 @@ abstract class MinecraftControls(
             block.getBounds(coords.x, coords.y, coords.z, bounds).addMargin(0.001)
             DebugShapes.showDebugAABB(DebugAABB(bounds, -1, 0f))
 
-            if (!canBreakBlocksInstantly() &&
+            if (!player.gameMode.canInstantlyMine() &&
                 isMining && durationIsMining >= getMiningDuration(block, inHand, 0)
             ) {
                 resetMiningDuration()
@@ -276,13 +279,16 @@ abstract class MinecraftControls(
         cameraNode.validateTransform()
     }
 
-    abstract val canFly: Boolean
+    val canFly: Boolean get() = player.gameMode.canFly()
 
     var isFlying = false
     var isRunning = false
 
     fun applyPlayerMovement() {
-        if (this is SpectatorControls) isFlying = true
+        if (player.gameMode.alwaysFlying()) {
+            isFlying = true
+        }
+
         val dt = Time.deltaTime.toFloat()
         val dy = when {
             canFly && isFlying -> (Input.isKeyDown(Key.KEY_SPACE).toFloat() - Input.isControlDown.toFloat()) * 100f
@@ -324,19 +330,10 @@ abstract class MinecraftControls(
         return (Input.isKeyDown(key1) || Input.isKeyDown(key2)).toFloat()
     }
 
-    lateinit var gameModeUIs: Map<GameMode, MinecraftControls>
-
     fun changeToNextGameMode() {
         val thisEnum = player.gameMode
         val nextEnum = GameMode.entries[posMod(thisEnum.ordinal + 1, GameMode.entries.size)]
-        val nextControls = gameModeUIs[nextEnum]!!
-
-        println("Changing gameMode from ${javaClass.simpleName} to ${nextControls.javaClass.simpleName}")
-
-        val sv = sceneView
-        renderView.controlScheme = nextControls
-        sv.editControls = nextControls
-        sv.playControls = nextControls
+        println("Changed gameMode from $thisEnum to $nextEnum")
         player.gameMode = nextEnum
     }
 
@@ -380,9 +377,63 @@ abstract class MinecraftControls(
     }
 
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
-        closeInventory()
-        escapeUI.isVisible = false
-        lockMouse()
+        if (escapeUI.isVisible) {
+            escapeUI.isVisible = false
+            if (!inventoryUI.isVisible) lockMouse()
+            return
+        } else if (inventoryUI.isVisible) {
+            closeInventory()
+            return
+        }
+
+        // find, which block was clicked
+        // expensive way, using raycasting:
+        val query = hoverResult
+        when (button) {
+            Key.BUTTON_LEFT -> {
+                // remove block
+                query ?: return
+                if (!player.gameMode.canInstantlyMine()) return
+                val coords = getCoords(query, +clickDistanceDelta)
+                val dropped = getBlock(coords) ?: BlockRegistry.Air
+                if (dropped != BlockRegistry.Air) {
+                    val droppedMetadata = getBlockMetadata(coords)
+                    dropped.dropAsItem(coords, droppedMetadata)
+                }
+            }
+            Key.BUTTON_RIGHT -> {
+                // add block
+                val item = inHandItem
+                if (query != null) {
+                    val activeCoords = getCoords(query, +clickDistanceDelta)
+                    val activeBlock = getBlock(activeCoords)
+                    if (activeBlock is RightClickBlock && !Input.isShiftDown) {
+                        activeBlock.onRightClick(this, activeCoords)
+                    } else {
+                        val placeCoords = getCoords(query, -clickDistanceDelta)
+                        if (item is BlockType && item != BlockRegistry.Air) {
+                            setBlock(placeCoords, item, inHandMetadata)
+                        } else if (item is RightClickItem && !Input.isShiftDown) {
+                            item.onRightClick(this, placeCoords)
+                        }
+                    }
+                } else if (item is RightClickItem && !Input.isShiftDown) {
+                    item.onRightClick(this, null)
+                }
+            }
+            Key.BUTTON_MIDDLE -> {
+                // get block
+                query ?: return
+                if (!player.gameMode.canPickBlocks()) return
+                val coords = getCoords(query, +clickDistanceDelta)
+                val slot = inventory[inHandSlot]
+                val found = getBlock(coords) ?: BlockRegistry.Air
+                if (found != BlockRegistry.Air) {
+                    slot.set(found, 1, getBlockMetadata(coords))
+                }
+            }
+            else -> {}
+        }
     }
 
     override fun onEscapeKey(x: Float, y: Float) {
@@ -421,8 +472,7 @@ abstract class MinecraftControls(
     val durationIsMining get() = if (isMining) Input.getDownTimeNanos(Key.BUTTON_LEFT) * 1e-9f else 0f
 
     fun drawBlockBreakProgress(pipeline: Pipeline) {
-        if (canBreakBlocksInstantly()) return
-        if (!isMining) return
+        if (player.gameMode.canInstantlyMine() || !isMining) return
 
         val query = hoverResult ?: return
         val coords = getCoords(query, +clickDistanceDelta)
@@ -438,8 +488,6 @@ abstract class MinecraftControls(
         val material = stages[min((progress * numLevels).toInt(), numLevels - 1)]
         pipeline.addMesh(BreakModels.cube, renderer, listOf(material.ref), breakTransform)
     }
-
-    open fun canBreakBlocksInstantly(): Boolean = false
 
     fun takeAndStoreScreenshot() {
         val window = window ?: return
@@ -499,15 +547,13 @@ abstract class MinecraftControls(
         return true
     }
 
-    abstract fun getReachDistance(): Double
-
     fun clickCast(): RayQuery? {
         // find, which block was clicked
         // expensive way, using raycasting:
         val query = RayQuery(
             renderView.cameraPosition,
             renderView.mouseDirection,
-            getReachDistance()
+            player.gameMode.getReachDistance()
         )
 
         val queryBounds = AABBi()

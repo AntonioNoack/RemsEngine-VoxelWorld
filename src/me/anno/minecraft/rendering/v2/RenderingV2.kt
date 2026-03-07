@@ -14,7 +14,7 @@ import me.anno.minecraft.entity.Entity.Companion.spawnEntity
 import me.anno.minecraft.entity.physics.CollisionSystem
 import me.anno.minecraft.rendering.createLighting
 import me.anno.minecraft.ui.ItemSlot
-import me.anno.minecraft.ui.controls.*
+import me.anno.minecraft.ui.controls.MinecraftControls
 import me.anno.minecraft.world.SampleDimensions
 import me.anno.minecraft.world.SaveLoadSystem
 import me.anno.ui.base.groups.PanelList
@@ -122,20 +122,7 @@ fun main() {
 
     fun init(sceneView: SceneView) {
         val renderer = sceneView.renderView
-        val creativeControls = CreativeControls(sceneView, player, dimension, renderer)
-        val spectatorControls = SpectatorControls(sceneView, player, dimension, renderer)
-        val survivalControls = SurvivalControls(sceneView, player, dimension, renderer)
-        val adventureControls = AdventureControls(sceneView, player, dimension, renderer)
-        val allControls = mapOf(
-            GameMode.CREATIVE to creativeControls,
-            GameMode.SURVIVAL to survivalControls,
-            GameMode.ADVENTURE to adventureControls,
-            GameMode.SPECTATOR to spectatorControls
-        )
-        for (control in allControls.values) {
-            control.gameModeUIs = allControls
-        }
-        sceneView.editControls = allControls[player.gameMode]!!
+        sceneView.editControls = MinecraftControls(sceneView, player, dimension, renderer)
     }
 
     if (false) {

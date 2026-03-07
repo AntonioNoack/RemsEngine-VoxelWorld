@@ -3,6 +3,7 @@ package me.anno.minecraft.item
 import me.anno.maths.Maths.clamp
 import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.ui.ItemSlot
+import me.anno.utils.assertions.assertEquals
 import kotlin.math.pow
 
 object Mining {
@@ -28,7 +29,12 @@ object Mining {
 
     private fun durabilityMultiplier(durability: Float): Float {
         // when low, it becomes harder and harder
-        return 1f / (10f * clamp(durability) + 0.2f) - .1f
+        return 1f / (10f * clamp(durability) + 0.2f) + 0.9f
+    }
+
+    init {
+        assertEquals(5.9f, durabilityMultiplier(0f))
+        assertEquals(1.0f, durabilityMultiplier(1f))
     }
 
     private fun effectMultiplier(miningSpeedEffectLevel: Int): Float {
