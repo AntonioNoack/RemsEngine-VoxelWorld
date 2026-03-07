@@ -62,20 +62,14 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         return setBlockAt(globalX, globalY, globalZ, chunk, blockType, metadata)
     }
 
-    fun setBlockAt(
-        globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk,
-        blockType: BlockType, metadata: Metadata?
-    ): Boolean {
-        return chunk.setBlock(globalX, globalY, globalZ, blockType, metadata)
-    }
+    fun setBlockAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk, blockType: BlockType, metadata: Metadata?): Boolean =
+        chunk.setBlock(globalX, globalY, globalZ, blockType, metadata)
 
-    fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata? {
-        return getMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)
-    }
+    fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata? =
+        getMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)
 
-    fun getOrCreateMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata {
-        return getOrCreateMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)
-    }
+    fun getOrCreateMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata =
+        getOrCreateMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)
 
     fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): Metadata? {
         return getChunkAt(globalX, globalY, globalZ, stage)

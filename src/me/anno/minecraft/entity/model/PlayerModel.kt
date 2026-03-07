@@ -9,11 +9,14 @@ import me.anno.maths.Maths.TAUf
 import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.dtTo01
 import me.anno.maths.Maths.dtTo10
+import me.anno.maths.Maths.mix
 import me.anno.maths.Maths.mixAngle
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.entity.MovingEntity.Companion.place
 import me.anno.minecraft.entity.PlayerEntity
+import me.anno.minecraft.entity.PlayerEntity.Companion.OFF_HAND_SLOT
 import me.anno.minecraft.entity.model.CuboidCreator.createCuboidX2
+import me.anno.utils.types.Booleans.toFloat
 
 class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
 
@@ -88,9 +91,10 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
         val thy = posMod(-angle0 - dr, PIf) - dr
         val sign = if (posMod(thy + angle0 + dr, TAUf) > PIf) -1f else +1f
         self.targetHeadY += (thy - self.targetHeadY) * dtTo01(dt * 3f)
+        val headUpDown = sign * self.headRotationX
         val head = getTransform(1).place(
             0f, 10f, 0f,
-            sign * self.headRotationX, self.targetHeadY,
+            headUpDown, self.targetHeadY,
             0f, torso
         )
         pipeline.addMesh(headMesh, self, head)
@@ -110,17 +114,33 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
         pipeline.addMesh(rightLegMesh, self, rightLeg)
         pipeline.addMesh(leftLegMesh, self, leftLeg)
 
+        val leftSlot = self.inventory.slots[OFF_HAND_SLOT]
+        val rightSlot = self.inventory.slots[self.inHandSlot]
+
+        // depend them on looking up/down
+        // todo animation for mining/hitting
+        // todo turn them slightly left/right with camera, too(?)
+        val upDownDelta = /* -pi/2 to +pi/2 */ -headUpDown * 0.4f + 0.4f
+        val holdingItemLeft = (leftSlot.isNotEmpty().toFloat()) * upDownDelta + self.usingLeftHand.toFloat(0.7f)
+        val holdingItemRight = (rightSlot.isNotEmpty().toFloat() * upDownDelta) + self.usingRightHand.toFloat(0.7f)
+
+        val smoothing = dtTo01(20f * dt)
+        self.smoothLeft = mix(self.smoothLeft, holdingItemLeft, smoothing)
+        self.smoothRight = mix(self.smoothRight, holdingItemRight, smoothing)
+
         val armOffset = if (male) 6f else 5f
         val rightArm = getTransform(4).place(
             -armOffset, 0f, 0f,
-            0f, dy, 0f, -swing, 0f, 0f,
+            0f, dy, 0f, -swing - self.smoothRight, 0f, 0f,
             torso
         )
+
         val leftArm = getTransform(5).place(
             +armOffset, 0f, 0f,
-            0f, dy, 0f, +swing, 0f, 0f,
+            0f, dy, 0f, +swing - self.smoothLeft, 0f, 0f,
             torso
         )
+
         pipeline.addMesh(rightArmMesh, self, rightArm)
         pipeline.addMesh(leftArmMesh, self, leftArm)
     }

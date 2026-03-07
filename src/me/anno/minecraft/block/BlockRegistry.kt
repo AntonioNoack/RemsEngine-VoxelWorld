@@ -18,6 +18,7 @@ object BlockRegistry {
     val Unknown = UnknownBlock
     val Stone = BlockType("remcraft.stone", black or 0x778899, 48, NameDesc("Stone"))
     val Grass = BlockType("remcraft.grass", black or 0x55aa33, 226, NameDesc("Grass"))
+    val TallGrass = TallGrassBlock("remcraft.grass.tall", black or 0x55aa44, NameDesc("Tall Grass"))
     val Dirt = BlockType("remcraft.dirt", black or 0x997755, 112, NameDesc("Dirt"))
     val Water = WaterBlock("remcraft.water", trans or 0x3344ff, 8 * 16 + 2, NameDesc("Water"))
     val Lava = LavaBlock("remcraft.lava", trans or 0xd97520, 9 * 16 + 7, NameDesc("Lava"))
@@ -33,7 +34,7 @@ object BlockRegistry {
 
     val initialBlocks = listOf(
         Air, Unknown, Stone, Grass, Dirt, Water, Lava, Log, Leaves, Sand, Sandstone,
-        Gravel, Cactus, Chest, Furnace, Hopper
+        Gravel, Cactus, Chest, Furnace, Hopper, TallGrass
     )
 
     val masonryBlocks = listOf(

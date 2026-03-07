@@ -1,5 +1,6 @@
 package me.anno.minecraft.block
 
+import me.anno.engine.Events.addEvent
 import me.anno.io.files.InvalidRef
 import me.anno.language.translation.NameDesc
 import me.anno.maths.Maths
@@ -57,7 +58,7 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
     fun startFalling(x: Int, y: Int, z: Int, metadata: Metadata?): Boolean {
         val ownChunk = dimension.getChunkAt(x, y, z) ?: return false
         ownChunk.setBlock(x, y, z, BlockRegistry.Air)
-        ownChunk.afterBlockChange(x, y, z)
+        addEvent(50) { ownChunk.afterBlockChange(x, y, z) }
         playStartFallingSound(getDropPosition(x, y, z), this)
         spawnEntity(MovingBlock(toItem(metadata)), getDropPosition(x, y, z))
         return true
@@ -70,7 +71,7 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
     fun dropAsItem(x: Int, y: Int, z: Int, metadata: Metadata?): Boolean {
         val ownChunk = dimension.getChunkAt(x, y, z) ?: return false
         ownChunk.setBlock(x, y, z, BlockRegistry.Air)
-        ownChunk.afterBlockChange(x, y, z)
+        addEvent(50) { ownChunk.afterBlockChange(x, y, z) }
         playBreakBlockSound(getDropPosition(x, y, z), this)
         val speed = 2f
         spawnEntity(ItemEntity(toItem(metadata)), getDropPosition(x, y, z))

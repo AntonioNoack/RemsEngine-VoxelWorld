@@ -1,6 +1,9 @@
 package me.anno.minecraft.ui.controls
 
 import me.anno.Time
+import me.anno.ecs.Transform
+import me.anno.ecs.components.mesh.MeshComponent
+import me.anno.engine.DefaultAssets.flatCube
 import me.anno.engine.Events.addEvent
 import me.anno.engine.debug.DebugAABB
 import me.anno.engine.debug.DebugShapes
@@ -12,6 +15,7 @@ import me.anno.engine.ui.render.SceneView
 import me.anno.gpu.GPUTasks.addGPUTask
 import me.anno.gpu.drawing.DrawRectangles
 import me.anno.gpu.framebuffer.Screenshots
+import me.anno.gpu.pipeline.Pipeline
 import me.anno.input.Input
 import me.anno.input.Key
 import me.anno.jvm.OpenFileExternallyImpl.openInExplorer
@@ -23,6 +27,7 @@ import me.anno.minecraft.block.BlockType
 import me.anno.minecraft.block.Metadata
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.rendering.v2.player
+import me.anno.minecraft.ui.BreakModels
 import me.anno.minecraft.ui.components.HeartPanel
 import me.anno.minecraft.ui.components.HungerPanel
 import me.anno.minecraft.ui.components.ItemPanel
@@ -62,7 +67,11 @@ abstract class MinecraftControls(
 
         private val LOGGER = LogManager.getLogger(MinecraftControls::class)
 
-        var inHandSlot = 0
+        var inHandSlot: Int
+            get() = player.inHandSlot
+            set(value) {
+                player.inHandSlot = value
+            }
 
         val inHand get() = inventory.slots[inHandSlot]
         val inHandItem get() = inHand.type
@@ -93,7 +102,7 @@ abstract class MinecraftControls(
             BlockRegistry.byUUID["remcraft.sandstone.fence"]!!,
             BlockRegistry.Dirt, BlockRegistry.Grass, BlockRegistry.Water, BlockRegistry.Lava,
             BlockRegistry.Sand, BlockRegistry.Sandstone, BlockRegistry.Cactus, BlockRegistry.Stone,
-            BlockRegistry.Gravel,
+            BlockRegistry.Gravel, BlockRegistry.TallGrass,
             BlockRegistry.Chest, BlockRegistry.Furnace, BlockRegistry.Hopper,
         ).withIndex()) {
             val slot = inventory.slots.getOrNull(i) ?: break
@@ -155,7 +164,9 @@ abstract class MinecraftControls(
     override fun draw(x0: Int, y0: Int, x1: Int, y1: Int) {
         super.draw(x0, y0, x1, y1)
         drawCrosshair()
-        drawDraggedItem(window, inventoryBar1.height)
+        if (inventoryUI.isVisible) {
+            drawDraggedItem(window, inventoryBar1.height)
+        }
     }
 
     fun drawCrosshair() {
@@ -179,8 +190,11 @@ abstract class MinecraftControls(
         showHoveredBlock()
     }
 
+    var hoverResult: RayQuery? = null
+
     fun showHoveredBlock() {
-        val query = clickCast() ?: return
+        hoverResult = clickCast()
+        val query = hoverResult ?: return
         val coords = getCoords(query, +clickDistanceDelta)
         val block = getBlock(coords) ?: return
         if (block != BlockRegistry.Air) {
@@ -267,6 +281,8 @@ abstract class MinecraftControls(
 
         player.gravityFactor = if (isFlying) 0f else 1f
         player.isSneaking = Input.isShiftDown
+        player.usingLeftHand = Input.isRightDown
+        player.usingRightHand = Input.isLeftDown
 
         if (Input.isShiftDown) isRunning = true
         val moveSpeed = when {
@@ -383,6 +399,22 @@ abstract class MinecraftControls(
         }
     }
 
+    private val breakTransform = Transform()
+    private val renderer = MeshComponent()
+
+    override fun fill(pipeline: Pipeline) {
+        super.fill(pipeline)
+
+        // todo if is holding down mouse, & not instant-mining, & there is progress,
+        //  show the corresponding texture above it...
+        val query = hoverResult ?: return
+        val coords = getCoords(query, +clickDistanceDelta)
+        breakTransform.localPosition = breakTransform.localPosition.set(coords).add(0.5)
+        breakTransform.localScale = breakTransform.localScale.set(0.51f)
+        val material = BreakModels.materials[Time.frameIndex % BreakModels.materials.size]
+        pipeline.addMesh(BreakModels.cube, renderer, listOf(material.ref), breakTransform)
+    }
+
     fun takeAndStoreScreenshot() {
         val window = window ?: return
         val dstFile = Screenshots.getNextScreenshotFile() ?: return
@@ -436,11 +468,8 @@ abstract class MinecraftControls(
 
     fun setBlock(coords: Vector3i, type: BlockType, metadata: Metadata?): Boolean {
         val chunk = dimension.getChunkAt(coords.x, coords.y, coords.z) ?: return false
-        chunk.setBlock(coords.x, coords.y, coords.z, type, metadata)
-        // chunk.afterBlockChange(coords.x, coords.y, coords.z)
-        addEvent(50) { // todo this delay should not be needed!!!
-            chunk.afterBlockChange(coords.x, coords.y, coords.z)
-        }
+        chunk.setBlock(coords, type, metadata)
+        addEvent(50) { chunk.afterBlockChange(coords) }
         return true
     }
 

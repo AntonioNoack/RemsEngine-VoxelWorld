@@ -39,6 +39,13 @@ class PlayerEntity(var isPrimary: Boolean, name: String) : Animal(halfExtents, t
     val maxHunger = 20
     var hunger = maxHunger.toFloat()
 
+    var usingLeftHand = false
+    var usingRightHand = false
+
+    var smoothLeft = 0f
+    var smoothRight = 0f
+
+    var inHandSlot = 0
     val inventory = Inventory(
         9 * (6 + 1) /* main + chest */ +
                 4 /* armor */ +

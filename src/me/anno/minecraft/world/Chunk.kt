@@ -9,6 +9,7 @@ import me.anno.minecraft.block.types.ChangingBlock
 import me.anno.minecraft.entity.Entity
 import me.anno.utils.pooling.JomlPools
 import me.anno.utils.structures.arrays.IntArrayList
+import org.joml.Vector3i
 
 class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
 
@@ -43,6 +44,10 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
 
     val entities = ArrayList<Entity>()
     val blockUpdates = IntArrayList()
+
+    fun afterBlockChange(coords: Vector3i) {
+        afterBlockChange(coords.x, coords.y, coords.z)
+    }
 
     fun afterBlockChange(x: Int, y: Int, z: Int) {
         val index = getIndex(x, y, z)
@@ -142,6 +147,10 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
 
     fun setBlock(x: Int, y: Int, z: Int, block: BlockType): Boolean {
         return setBlock(x, y, z, block.id)
+    }
+
+    fun setBlock(v: Vector3i, block: BlockType, metadata: Metadata?): Boolean {
+        return setBlock(v.x, v.y, v.z, block, metadata)
     }
 
     fun setBlock(x: Int, y: Int, z: Int, block: BlockType, metadata: Metadata?): Boolean {

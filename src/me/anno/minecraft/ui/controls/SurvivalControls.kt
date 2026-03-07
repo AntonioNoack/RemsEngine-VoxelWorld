@@ -68,7 +68,6 @@ open class SurvivalControls(
                 val dropped = getBlock(coords) ?: BlockRegistry.Air
                 if (dropped != BlockRegistry.Air && !dropped.isFluid) {
                     val droppedMetadata = getBlockMetadata(coords)
-                    setBlock(coords, BlockRegistry.Air, null)
                     dropped.dropAsItem(coords, droppedMetadata)
                     removeItemDurability()
                 }

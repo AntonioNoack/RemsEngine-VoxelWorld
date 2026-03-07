@@ -41,7 +41,6 @@ open class CreativeControls(sceneView: SceneView, player: PlayerEntity, dimensio
                 val dropped = getBlock(coords) ?: BlockRegistry.Air
                 if (dropped != BlockRegistry.Air) {
                     val droppedMetadata = getBlockMetadata(coords)
-                    setBlock(coords, BlockRegistry.Air, null)
                     dropped.dropAsItem(coords, droppedMetadata)
                 }
             }
