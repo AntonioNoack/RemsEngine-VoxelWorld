@@ -76,9 +76,6 @@ fun invalidateChunk(coords: Vector3i) {
  * */
 fun main() {
 
-    // todo hold items in hand
-    // todo collect items into player inventory
-    // todo collect xp into player
     // todo block-break shader based on WorleyBreak texture for UV offset or carving black lines
 
     // todo check dropped items
@@ -129,7 +126,7 @@ fun main() {
 
     fun init(sceneView: SceneView) {
         val renderer = sceneView.renderView
-        sceneView.editControls = MinecraftControls(sceneView, player, dimension, renderer)
+        sceneView.editControls = MinecraftControls(player, dimension, renderer)
     }
 
     thread(name = "WatchDog") {

@@ -10,7 +10,7 @@ import org.joml.AABBf
 // todo four different rotations
 // todo sticking two chests together
 class ChestBlock(typeUUID: String, color: Int, texId: Int, nameDesc: NameDesc) :
-    InventoryBlock(typeUUID, color, texId, nameDesc, 9 * 3), CustomBlockBounds, DetailedBlockVisuals {
+    BlockWithInventory(typeUUID, color, texId, nameDesc, 9 * 3), CustomBlockBounds, DetailedBlockVisuals {
 
     companion object {
         private val bounds = AABBf(1f / 16f, 0f, 1f / 16, 15f / 16f, 14f / 16f, 15f / 16f)

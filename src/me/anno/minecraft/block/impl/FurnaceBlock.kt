@@ -3,7 +3,7 @@ package me.anno.minecraft.block.impl
 import me.anno.language.translation.NameDesc
 
 class FurnaceBlock(typeUUID: String, color: Int, texId: Int, nameDesc: NameDesc) :
-    InventoryBlock(typeUUID, color, texId, nameDesc, 3) {
+    BlockWithInventory(typeUUID, color, texId, nameDesc, 3) {
 
     companion object {
         const val INPUT_SLOT = 0

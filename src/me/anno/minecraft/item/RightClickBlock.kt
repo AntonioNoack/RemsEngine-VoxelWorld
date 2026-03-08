@@ -4,5 +4,5 @@ import me.anno.minecraft.ui.controls.MinecraftControls
 import org.joml.Vector3i
 
 interface RightClickBlock {
-    fun onRightClick(controls: MinecraftControls, coords: Vector3i)
+    fun onRightClickBlock(controls: MinecraftControls, coords: Vector3i)
 }

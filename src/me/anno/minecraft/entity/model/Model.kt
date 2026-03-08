@@ -2,7 +2,7 @@ package me.anno.minecraft.entity.model
 
 import me.anno.Time
 import me.anno.ecs.Transform
-import me.anno.gpu.pipeline.Pipeline
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.maths.Maths.TAU
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.entity.Entity
@@ -23,6 +23,6 @@ abstract class Model<Self : Entity> {
         return sin(speed * time) * 0.5f * amplitude
     }
 
-    abstract fun fill(pipeline: Pipeline, transform: Transform)
+    abstract fun fill(transform: Transform, callback: (Mesh, Transform) -> Unit)
 
 }

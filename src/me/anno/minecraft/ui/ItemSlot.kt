@@ -66,4 +66,14 @@ class ItemSlot(
 
     fun isNotEmpty(): Boolean = count > 0 && type != BlockRegistry.Air
 
+    fun removeOne() {
+        if (count < 2) {
+            type = BlockRegistry.Air
+            count = 0
+            metadata = null
+        } else {
+            count--
+        }
+    }
+
 }

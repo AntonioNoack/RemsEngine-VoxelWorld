@@ -1,15 +1,13 @@
 package me.anno.minecraft.entity.model
 
 import me.anno.ecs.Transform
-import me.anno.ecs.components.light.LightComponent
 import me.anno.ecs.components.mesh.Mesh
 import me.anno.engine.ui.render.RenderState
-import me.anno.gpu.pipeline.Pipeline
 import me.anno.minecraft.entity.PlayerEntity
 
 class XpModel(private val mesh: Mesh) : Model<PlayerEntity>() {
-    override fun fill(pipeline: Pipeline, transform: Transform) {
-        if (pipeline == LightComponent.pipeline) return // no shadow
+    override fun fill(transform: Transform, callback: (Mesh, Transform) -> Unit) {
+        // if (pipeline == LightComponent.pipeline) return // no shadow
 
         val pos = physics.position
         val cam = RenderState.cameraPosition
@@ -23,6 +21,6 @@ class XpModel(private val mesh: Mesh) : Model<PlayerEntity>() {
                 (pos.z - cam.z).toFloat(),
             )
 
-        pipeline.addMesh(mesh, self, transform)
+        callback(mesh, transform)
     }
 }

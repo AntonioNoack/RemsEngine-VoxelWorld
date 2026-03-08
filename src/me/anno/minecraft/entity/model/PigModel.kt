@@ -1,8 +1,8 @@
 package me.anno.minecraft.entity.model
 
 import me.anno.ecs.Transform
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.gpu.drawing.GFXx2D.getSize
-import me.anno.gpu.pipeline.Pipeline
 import me.anno.minecraft.entity.MovingEntity.Companion.place
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.entity.model.CuboidCreator.createCuboid
@@ -35,7 +35,7 @@ object PigModel : Model<PlayerEntity>() {
         texSize
     )
 
-    override fun fill(pipeline: Pipeline, transform: Transform) {
+    override fun fill(transform: Transform, callback: (Mesh, Transform) -> Unit) {
 
         val swing = getWalkingSwing(12f)
 
@@ -49,13 +49,13 @@ object PigModel : Model<PlayerEntity>() {
         val leftArm = getTransform(5).place(+dx, -7f, +5f, 0f, 3f, 0f, -swing, 0f, 0f, body)
         val rightArm = getTransform(6).place(-dx, -7f, +5f, 0f, 3f, 0f, +swing, 0f, 0f, body)
 
-        pipeline.addMesh(bodyMesh, self, body)
-        pipeline.addMesh(headMesh, self, head)
-        pipeline.addMesh(snotMesh, self, snot)
-        pipeline.addMesh(legMesh, self, leftLeg)
-        pipeline.addMesh(legMesh, self, rightLeg)
-        pipeline.addMesh(legMesh, self, leftArm)
-        pipeline.addMesh(legMesh, self, rightArm)
+        callback(bodyMesh, body)
+        callback(headMesh, head)
+        callback(snotMesh, snot)
+        callback(legMesh, leftLeg)
+        callback(legMesh, rightLeg)
+        callback(legMesh, leftArm)
+        callback(legMesh, rightArm)
     }
 
 }

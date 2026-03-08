@@ -40,7 +40,9 @@ abstract class Entity(
     override fun fill(pipeline: Pipeline, transform: Transform) {
         @Suppress("UNCHECKED_CAST")
         (model as Model<Entity>).self = this
-        model.fill(pipeline, transform)
+        model.fill(transform) { mesh, transform ->
+            pipeline.addMesh(mesh, this, transform)
+        }
     }
 
     override val materials: List<FileReference>

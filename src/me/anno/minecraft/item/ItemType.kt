@@ -8,6 +8,7 @@ open class ItemType(
     val texture: FileReference, val texId: Int,
     val nameDesc: NameDesc
 ) {
+
     var stackingLimit = 100
 
     var miningHardness = 1f

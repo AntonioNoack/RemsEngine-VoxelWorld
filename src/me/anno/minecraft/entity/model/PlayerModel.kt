@@ -2,8 +2,8 @@ package me.anno.minecraft.entity.model
 
 import me.anno.Time
 import me.anno.ecs.Transform
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.gpu.drawing.GFXx2D.getSize
-import me.anno.gpu.pipeline.Pipeline
 import me.anno.maths.Maths.PIf
 import me.anno.maths.Maths.TAUf
 import me.anno.maths.Maths.clamp
@@ -60,7 +60,7 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
         texSize
     )
 
-    override fun fill(pipeline: Pipeline, transform: Transform) {
+    override fun fill(transform: Transform, callback: (Mesh, Transform) -> Unit) {
         // todo swim/fly
         // todo crouch
         // todo mine/break/touch
@@ -85,7 +85,7 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
         self.smoothAngle0 = angle0
 
         val torso = getTransform(0).place(0f, 2f, 0f, 0f, angle0, 0f, null)
-        pipeline.addMesh(torsoMesh, self, torso)
+        callback(torsoMesh, torso)
 
         val dr = PIf * 0.5f
         val thy = posMod(-angle0 - dr, PIf) - dr
@@ -97,7 +97,7 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
             headUpDown, self.targetHeadY,
             0f, torso
         )
-        pipeline.addMesh(headMesh, self, head)
+        callback(headMesh, head)
 
         val dy = 6f
 
@@ -111,8 +111,8 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
             0f, dy, 0f, +swing, 0f, 0f,
             torso
         )
-        pipeline.addMesh(rightLegMesh, self, rightLeg)
-        pipeline.addMesh(leftLegMesh, self, leftLeg)
+        callback(rightLegMesh, rightLeg)
+        callback(leftLegMesh, leftLeg)
 
         val leftSlot = self.inventory[OFF_HAND_SLOT]
         val rightSlot = self.inventory[self.inHandSlot]
@@ -141,8 +141,8 @@ class PlayerModel(val male: Boolean) : Model<PlayerEntity>() {
             torso
         )
 
-        pipeline.addMesh(rightArmMesh, self, rightArm)
-        pipeline.addMesh(leftArmMesh, self, leftArm)
+        callback(rightArmMesh, rightArm)
+        callback(leftArmMesh, leftArm)
     }
 
 }

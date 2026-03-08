@@ -16,7 +16,7 @@ import me.anno.ui.base.groups.PanelListX
 import me.anno.ui.base.groups.PanelListY
 import org.joml.Vector3i
 
-open class InventoryBlock(
+open class BlockWithInventory(
     typeUUID: String, color: Int,
     texId: Int, nameDesc: NameDesc,
     val numSlots: Int
@@ -46,7 +46,7 @@ open class InventoryBlock(
         return inventoryBar
     }
 
-    override fun onRightClick(controls: MinecraftControls, coords: Vector3i) {
+    override fun onRightClickBlock(controls: MinecraftControls, coords: Vector3i) {
         val metadata = dimension.getOrCreateMetadataAt(coords.x, coords.y, coords.z)
         val inventory = getOrCreateInventory(metadata)
         controls.openInventory(createInventoryUI(inventory))

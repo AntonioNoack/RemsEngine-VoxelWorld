@@ -19,4 +19,7 @@ object GlobalIllumination {
     //  - 1st degree & 2nd degree compute shaders
     //  - using light data in rendering (each storing face index & neighbors)
 
+    // todo lights can be explicitly modelled as a cpu-computed list
+    //  light-level (flicker for flame) * transmission * faceList
+
 }

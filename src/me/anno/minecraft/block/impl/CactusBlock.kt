@@ -40,7 +40,7 @@ class CactusBlock(typeUUID: String, color: Int, texId: Int, nameDesc: NameDesc) 
     override fun onBlockUpdate(x: Int, y: Int, z: Int, metadata: Metadata?, chunk: Chunk) {
         // todo jump away from breaking block?
         if (collidesWithAnyNeighbor(x, y, z)) {
-            dropAsItem(x, y, z, metadata)
+            dropAsItem(x, y, z, metadata, null)
         }
     }
 }

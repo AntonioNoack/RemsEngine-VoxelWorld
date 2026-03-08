@@ -10,7 +10,6 @@ import me.anno.engine.raycast.BlockTracing
 import me.anno.engine.raycast.RayQuery
 import me.anno.engine.ui.control.ControlScheme
 import me.anno.engine.ui.render.RenderView
-import me.anno.engine.ui.render.SceneView
 import me.anno.gpu.GPUTasks.addGPUTask
 import me.anno.gpu.drawing.DrawRectangles
 import me.anno.gpu.framebuffer.Screenshots
@@ -24,13 +23,20 @@ import me.anno.maths.Maths.clamp
 import me.anno.maths.Maths.posMod
 import me.anno.minecraft.block.BlockRegistry
 import me.anno.minecraft.block.BlockType
+import me.anno.minecraft.block.BlockType.Companion.dropItem
+import me.anno.minecraft.block.BlockType.Companion.getDropPosition
 import me.anno.minecraft.block.Metadata
+import me.anno.minecraft.block.impl.BlockWithInventory
+import me.anno.minecraft.entity.Animal
 import me.anno.minecraft.entity.PlayerEntity
+import me.anno.minecraft.entity.RightClickAnimal
+import me.anno.minecraft.entity.physics.CollisionSystem
 import me.anno.minecraft.item.Mining.getMiningDuration
 import me.anno.minecraft.item.RightClickBlock
 import me.anno.minecraft.item.RightClickItem
 import me.anno.minecraft.rendering.v2.player
 import me.anno.minecraft.ui.BreakModels
+import me.anno.minecraft.ui.ItemSlot
 import me.anno.minecraft.ui.components.HeartPanel
 import me.anno.minecraft.ui.components.HungerPanel
 import me.anno.minecraft.ui.components.ItemPanel
@@ -45,19 +51,16 @@ import me.anno.ui.base.groups.PanelListX
 import me.anno.ui.base.groups.PanelListY
 import me.anno.ui.base.text.TextPanel
 import me.anno.utils.Color
+import me.anno.utils.Color.toVecRGBA
 import me.anno.utils.Color.withAlpha
 import me.anno.utils.pooling.JomlPools
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
 import org.apache.logging.log4j.LogManager
-import org.joml.AABBd
-import org.joml.AABBi
-import org.joml.Vector3f
-import org.joml.Vector3i
+import org.joml.*
 import kotlin.math.*
 
 class MinecraftControls(
-    val sceneView: SceneView,
     val player: PlayerEntity,
     val dimension: Dimension,
     renderer: RenderView
@@ -196,22 +199,25 @@ class MinecraftControls(
     fun showHoveredBlock() {
         hoverResult = clickCast()
         val query = hoverResult ?: return
+
         val coords = getCoords(query, +clickDistanceDelta)
         val block = getBlock(coords) ?: return
 
         if (block != BlockRegistry.Air) {
-
             val bounds = AABBd()
             block.getBounds(coords.x, coords.y, coords.z, bounds).addMargin(0.001)
             DebugShapes.showDebugAABB(DebugAABB(bounds, -1, 0f))
 
-            if (!player.gameMode.canInstantlyMine() &&
+            if (player.gameMode.canSlowlyMine() &&
                 isMining && durationIsMining >= getMiningDuration(block, inHand, 0)
             ) {
                 resetMiningDuration()
                 // todo if tool is not matching, drop nothing, just set to air
                 val metadata = getBlockMetadata(coords)
-                block.dropAsItem(coords.x, coords.y, coords.z, metadata)
+                if (block is BlockWithInventory) {
+                    dropInventory(coords, block)
+                }
+                block.dropAsItem(coords.x, coords.y, coords.z, metadata, inHand)
             }
         }
     }
@@ -376,6 +382,16 @@ class MinecraftControls(
         }
     }
 
+    fun dropInventory(coords: Vector3i, dropped: BlockWithInventory) {
+        // if it has an inventory, drop all contents
+        val metadata = dimension.getOrCreateMetadataAt(coords.x, coords.y, coords.z)
+        val inventory = dropped.getOrCreateInventory(metadata)
+        val dropPosition = getDropPosition(coords.x, coords.y, coords.z)
+        for (slot in inventory.slots) {
+            if (slot.isNotEmpty()) dropItem(dropPosition, slot)
+        }
+    }
+
     override fun onMouseClicked(x: Float, y: Float, button: Key, long: Boolean) {
         if (escapeUI.isVisible) {
             escapeUI.isVisible = false
@@ -392,48 +408,83 @@ class MinecraftControls(
         when (button) {
             Key.BUTTON_LEFT -> {
                 // remove block
-                query ?: return
-                if (!player.gameMode.canInstantlyMine()) return
-                val coords = getCoords(query, +clickDistanceDelta)
-                val dropped = getBlock(coords) ?: BlockRegistry.Air
-                if (dropped != BlockRegistry.Air) {
-                    val droppedMetadata = getBlockMetadata(coords)
-                    dropped.dropAsItem(coords, droppedMetadata)
+                val animal = query?.result?.component as? Animal
+                if (animal != null) {
+                    attackAnimal(animal, inHand)
+                } else if (query != null && player.gameMode.canInstantlyMine()) {
+                    // dropping not necessary
+                    val coords = getCoords(query, +clickDistanceDelta)
+                    val dropped = getBlock(coords)
+                    if (dropped is BlockWithInventory) {
+                        dropInventory(coords, dropped)
+                    }
+
+                    setBlock(coords, BlockRegistry.Air, null)
                 }
             }
             Key.BUTTON_RIGHT -> {
                 // add block
-                val item = inHandItem
+                val inHand = inHand
+                val inHandType = inHand.type
                 if (query != null) {
-                    val activeCoords = getCoords(query, +clickDistanceDelta)
-                    val activeBlock = getBlock(activeCoords)
-                    if (activeBlock is RightClickBlock && !Input.isShiftDown) {
-                        activeBlock.onRightClick(this, activeCoords)
+                    val animal = query.result.component as? Animal
+                    if (animal is RightClickAnimal) {
+                        animal.onRightClick(this, inHand)
                     } else {
-                        val placeCoords = getCoords(query, -clickDistanceDelta)
-                        if (item is BlockType && item != BlockRegistry.Air) {
-                            setBlock(placeCoords, item, inHandMetadata)
-                        } else if (item is RightClickItem && !Input.isShiftDown) {
-                            item.onRightClick(this, placeCoords)
+                        val activeCoords = getCoords(query, +clickDistanceDelta)
+                        val activeBlock = getBlock(activeCoords)
+                        if (activeBlock is RightClickBlock && !Input.isShiftDown) {
+                            activeBlock.onRightClickBlock(this, activeCoords)
+                        } else {
+                            val placeCoords = getCoords(query, -clickDistanceDelta)
+                            if (player.gameMode.canPlaceBlocks() &&
+                                inHandType is BlockType &&
+                                getBlock(placeCoords) == BlockRegistry.Air &&
+                                inHandType != BlockRegistry.Air
+                            ) {
+                                if (player.gameMode.finiteInventory()) inHand.removeOne()
+                                setBlock(placeCoords, inHandType, inHandMetadata)
+                            } else if (inHandType is RightClickItem) {
+                                inHandType.onRightClickItem(player, inHand, placeCoords)
+                            }
                         }
                     }
-                } else if (item is RightClickItem && !Input.isShiftDown) {
-                    item.onRightClick(this, null)
+                } else if (inHandType is RightClickItem) {
+                    inHandType.onRightClickItem(player, inHand, null)
                 }
             }
             Key.BUTTON_MIDDLE -> {
                 // get block
                 query ?: return
                 if (!player.gameMode.canPickBlocks()) return
-                val coords = getCoords(query, +clickDistanceDelta)
-                val slot = inventory[inHandSlot]
-                val found = getBlock(coords) ?: BlockRegistry.Air
-                if (found != BlockRegistry.Air) {
-                    slot.set(found, 1, getBlockMetadata(coords))
+
+                val animal = query.result.component as? Animal
+                if (animal != null) {
+                    // todo pick spawn egg for animal
+                } else {
+                    val coords = getCoords(query, +clickDistanceDelta)
+                    val slot = inventory[inHandSlot]
+                    val found = getBlock(coords) ?: BlockRegistry.Air
+                    if (found != BlockRegistry.Air) {
+                        slot.set(found, 1, getBlockMetadata(coords))
+                    }
                 }
             }
             else -> {}
         }
+    }
+
+    fun attackAnimal(animal: Animal, inHand: ItemSlot) {
+        // todo calculate damage
+        // todo if animal is passive, run away
+        // todo if animal is passive-aggressive, make aggressive & target player
+        // todo if animal is aggressive, target player
+        // todo play hurt sound
+        // todo major damage was blocked, play blocking sound
+        animal.damage(5f)
+
+        // todo if animal is hovered, display its health
+        println("new health: ${animal.health}")
     }
 
     override fun onEscapeKey(x: Float, y: Float) {
@@ -472,7 +523,7 @@ class MinecraftControls(
     val durationIsMining get() = if (isMining) Input.getDownTimeNanos(Key.BUTTON_LEFT) * 1e-9f else 0f
 
     fun drawBlockBreakProgress(pipeline: Pipeline) {
-        if (player.gameMode.canInstantlyMine() || !isMining) return
+        if (!isMining || !player.gameMode.canSlowlyMine() || hoversAnimal()) return
 
         val query = hoverResult ?: return
         val coords = getCoords(query, +clickDistanceDelta)
@@ -482,10 +533,15 @@ class MinecraftControls(
 
         breakTransform.localPosition = breakTransform.localPosition.set(coords).add(0.5)
         breakTransform.localScale = breakTransform.localScale.set(0.51f)
-        // todo tint material by underlying texture...
+
+        // todo preload all textures...
+        //  or preload the next one...
+
         val stages = BreakModels.materials
         val numLevels = stages.size
         val material = stages[min((progress * numLevels).toInt(), numLevels - 1)]
+        // tint material by underlying texture...
+        blockType.color.toVecRGBA(material.diffuseBase).apply { w = 1f }
         pipeline.addMesh(BreakModels.cube, renderer, listOf(material.ref), breakTransform)
     }
 
@@ -547,6 +603,8 @@ class MinecraftControls(
         return true
     }
 
+    fun hoversAnimal() = hoverResult?.result?.component is Animal
+
     fun clickCast(): RayQuery? {
         // find, which block was clicked
         // expensive way, using raycasting:
@@ -556,14 +614,60 @@ class MinecraftControls(
             player.gameMode.getReachDistance()
         )
 
-        val queryBounds = AABBi()
-        // todo these bounds aren't working correctly... why???
-        // queryBounds.union(query.start.x.toInt(), query.start.y.toInt(), query.start.z.toInt())
-        // queryBounds.addMargin(ceil(query.result.distance + 1.0).toInt())
-        queryBounds.all()
+        val start = query.start
+        val end = query.end
+        val min = start.min(end, Vector3d())
+        val max = start.max(end, Vector3d())
+        val dir = query.direction
+
+        val localPos = Vector3f()
+        val localDir = Vector3f()
+        val tmpM = Matrix4x3()
+        CollisionSystem.animals.query(min, max) { target ->
+            if (target != player && (target !is PlayerEntity || !target.gameMode.isGhost())) {
+
+                target.model.fill(target.transform!!) { mesh, transform ->
+                    transform.validate()
+
+                    val gt = transform.globalTransform
+                    localPos.set(start)
+
+                    val gti = gt.invert(tmpM)
+                    gti.transformDirection(dir, localDir)
+                    gti.transformPosition(localPos)
+
+                    val distance = mesh.getBounds()
+                        .whereIsRayIntersecting(
+                            localPos.x, localPos.y, localPos.z,
+                            1f / localDir.x, 1f / localDir.y, 1f / localDir.z,
+                            0f
+                        ).toDouble()
+
+                    if (distance < query.result.distance) {
+                        query.result.distance = distance
+                        query.result.shadingNormalWS.set(dir)
+                        query.result.geometryNormalWS.set(dir)
+                        query.result.component = target
+                    }
+                }
+            }
+
+            false
+        }
+
+        val queryBounds = AABBi(
+            floor(min(start.x, end.x)).toInt(),
+            floor(min(start.x, end.y)).toInt(),
+            floor(min(start.x, end.z)).toInt(),
+
+            ceil(max(start.x, end.x)).toInt(),
+            ceil(max(start.x, end.y)).toInt(),
+            ceil(max(start.x, end.z)).toInt(),
+        )
 
         val hitSomething =
             BlockTracing.blockTrace(query, (query.result.distance * 3).toInt(), queryBounds) { xi, yi, zi ->
+                // todo trace details, if present
                 val chunk = dimension.getChunk(
                     xi shr dimension.bitsX,
                     yi shr dimension.bitsY,
@@ -575,7 +679,11 @@ class MinecraftControls(
                 else BlockTracing.AIR_BLOCK
             }
 
-        return if (hitSomething) query else null
+        if (hitSomething) {
+            query.result.component = null
+        }
+
+        return if (hitSomething || query.result.component != null) query else null
     }
 
 }

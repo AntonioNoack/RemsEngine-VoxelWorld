@@ -16,7 +16,11 @@ object BlockRegistry {
 
     val Air = AirBlock
     val Unknown = UnknownBlock
-    val Stone = BlockType("remcraft.stone", black or 0x778899, 48, NameDesc("Stone"))
+    val Stone = BlockType("remcraft.stone", black or 0x778899, 3 * 16 + 0, NameDesc("Stone"))
+
+    val DiamondOre = BlockType("remcraft.diamond.ore", black or 0x77ffff, 3 * 16 + 1, NameDesc("Diamond Ore"))
+        .apply { droppedXpOrbs = 3 }
+
     val Grass = BlockType("remcraft.grass", black or 0x55aa33, 226, NameDesc("Grass"))
     val TallGrass = TallGrassBlock("remcraft.grass.tall", black or 0x55aa44, NameDesc("Tall Grass"))
     val Dirt = BlockType("remcraft.dirt", black or 0x997755, 112, NameDesc("Dirt"))
@@ -34,7 +38,7 @@ object BlockRegistry {
 
     val initialBlocks = listOf(
         Air, Unknown, Stone, Grass, Dirt, Water, Lava, Log, Leaves, Sand, Sandstone,
-        Gravel, Cactus, Chest, Furnace, Hopper, TallGrass
+        Gravel, Cactus, Chest, Furnace, Hopper, TallGrass, DiamondOre
     )
 
     val masonryBlocks = listOf(

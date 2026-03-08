@@ -6,7 +6,7 @@ import me.anno.minecraft.block.builder.DetailedBlockMesh16
 import me.anno.minecraft.block.types.DetailedBlockVisuals
 
 class HopperBlock(typeUUID: String, color: Int, texId: Int, nameDesc: NameDesc) :
-    InventoryBlock(typeUUID, color, texId, nameDesc, 5), DetailedBlockVisuals {
+    BlockWithInventory(typeUUID, color, texId, nameDesc, 5), DetailedBlockVisuals {
 
     companion object {
         private val texId = 3 * 16 + 13

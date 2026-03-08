@@ -51,6 +51,21 @@ abstract class Animal(halfExtents: Vector3f, texture: Texture) : MovingEntity(ha
     val pathFinding = PathFinding(halfExtents)
 
     abstract fun findTarget(start: Vector3i, seed: Long): Vector3i?
+
+    fun damage(deltaHealth: Float) {
+        health -= deltaHealth
+        if (health <= 0f) {
+            health = 0f
+            onDeath()
+        }
+    }
+
+    open fun onDeath() {
+        // todo if is player, respawn somehow & show death screen
+        // todo drop loot
+        removeFromWorld()
+    }
+
     abstract val maxJumpDown: Int
     abstract val maxHealth: Int
 

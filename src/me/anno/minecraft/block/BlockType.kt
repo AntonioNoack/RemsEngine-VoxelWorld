@@ -24,6 +24,37 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
 
     companion object {
         private val defaultBlockSize = AABBf(0f, 0f, 0f, 1f, 1f, 1f)
+
+        fun getDropPosition(x: Int, y: Int, z: Int): Vector3d {
+            val center = 0.5
+            return Vector3d(x + center, y + center, z + center)
+        }
+
+        fun dropXpOrb(x: Int, y: Int, z: Int) {
+            val spread = 0.7f
+            spawnEntity(
+                XpOrbEntity(1),
+                getDropPosition(x, y, z).add(
+                    (Maths.random().toFloat() - 0.5f) * spread,
+                    (Maths.random().toFloat() - 0.5f) * spread,
+                    (Maths.random().toFloat() - 0.5f) * spread
+                )
+            )
+        }
+
+        fun dropItem(x: Int, y: Int, z: Int, itemStack: ItemSlot) {
+            dropItem(getDropPosition(x, y, z), itemStack)
+        }
+
+        fun dropItem(position: Vector3d, itemStack: ItemSlot) {
+            val speed = 2f
+            spawnEntity(ItemEntity(itemStack), position)
+                .physics.setVelocity(
+                    (Maths.random().toFloat() - 0.5f) * speed,
+                    (Maths.random().toFloat() - 0.5f) * speed,
+                    (Maths.random().toFloat() - 0.5f) * speed
+                )
+        }
     }
 
     var id: Short = -1
@@ -34,6 +65,9 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
     val isGrassy = "grass" in typeUUID
 
     var friction = 5f
+
+    var droppedType: ItemType = this
+    var droppedXpOrbs = 0
 
     override fun toString(): String {
         return nameDesc.name
@@ -49,11 +83,6 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
 
     fun toItem(metadata: Metadata?) = ItemSlot(this, 1, metadata)
 
-    fun getDropPosition(x: Int, y: Int, z: Int): Vector3d {
-        val center = 0.5
-        return Vector3d(x + center, y + center, z + center)
-    }
-
     fun startFalling(x: Int, y: Int, z: Int, metadata: Metadata?): Boolean {
         val ownChunk = dimension.getChunkAt(x, y, z) ?: return false
         ownChunk.setBlock(x, y, z, BlockRegistry.Air)
@@ -63,33 +92,18 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
         return true
     }
 
-    fun dropAsItem(blockId: Vector3i, metadata: Metadata?): Boolean {
-        return dropAsItem(blockId.x, blockId.y, blockId.z, metadata)
+    fun dropAsItem(blockId: Vector3i, metadata: Metadata?, inHand: ItemSlot?): Boolean {
+        return dropAsItem(blockId.x, blockId.y, blockId.z, metadata, inHand)
     }
 
-    fun dropAsItem(x: Int, y: Int, z: Int, metadata: Metadata?): Boolean {
+    fun dropAsItem(x: Int, y: Int, z: Int, metadata: Metadata?, inHand: ItemSlot?): Boolean {
         val ownChunk = dimension.getChunkAt(x, y, z) ?: return false
         ownChunk.setBlock(x, y, z, BlockRegistry.Air)
         ownChunk.afterBlockChangeI(x, y, z)
         playBreakBlockSound(getDropPosition(x, y, z), this)
-        val speed = 2f
-        spawnEntity(ItemEntity(toItem(metadata)), getDropPosition(x, y, z))
-            .physics.setVelocity(
-                (Maths.random().toFloat() - 0.5f) * speed,
-                (Maths.random().toFloat() - 0.5f) * speed,
-                (Maths.random().toFloat() - 0.5f) * speed
-            )
-        repeat(3) {
-            val spread = 0.7f
-            spawnEntity(
-                XpOrbEntity(1),
-                getDropPosition(x, y, z).add(
-                    (Maths.random().toFloat() - 0.5f) * spread,
-                    (Maths.random().toFloat() - 0.5f) * spread,
-                    (Maths.random().toFloat() - 0.5f) * spread
-                )
-            )
-        }
+        // todo if tool has silktouch, drop this and no xp
+        dropItem(x, y, z, toItem(metadata))
+        repeat(droppedXpOrbs) { dropXpOrb(x, y, z) }
         return true
     }
 

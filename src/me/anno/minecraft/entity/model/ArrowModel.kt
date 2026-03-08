@@ -1,12 +1,12 @@
 package me.anno.minecraft.entity.model
 
 import me.anno.ecs.Transform
-import me.anno.gpu.pipeline.Pipeline
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.minecraft.entity.PlayerEntity
 
 object ArrowModel : Model<PlayerEntity>() {
     private val mesh = PlaneCreator.createPlane(0f, 0f, 1f, 1f)
-    override fun fill(pipeline: Pipeline, transform: Transform) {
+    override fun fill(transform: Transform, callback: (Mesh, Transform) -> Unit) {
         val velocity = physics.actualVelocity
         if (velocity.lengthSquared() > 0.01f) {
             transform.localRotation =
@@ -16,6 +16,6 @@ object ArrowModel : Model<PlayerEntity>() {
                 )
         }
 
-        pipeline.addMesh(mesh, self, transform)
+        callback(mesh, transform)
     }
 }
