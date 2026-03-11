@@ -14,7 +14,7 @@ abstract class NNNDecorator(
     seed: Long = 5123L
 ) : Decorator() {
 
-    private val random = FullNoise(seed)
+    val random = FullNoise(seed)
 
     abstract fun decorate(chunk: Chunk, lx: Int, ly: Int, lz: Int)
 

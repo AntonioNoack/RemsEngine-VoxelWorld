@@ -7,7 +7,7 @@ import org.joml.Vector3i
 
 abstract class N1NDecorator(val density: Float, val maxExtends: Vector3i, seed: Long = 5123L) : Decorator() {
 
-    private val random = FullNoise(seed)
+    val random = FullNoise(seed)
 
     abstract fun decorate(chunk: Chunk, lx: Int, lz: Int)
 

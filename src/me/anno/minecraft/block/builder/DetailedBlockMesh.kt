@@ -18,13 +18,21 @@ import me.anno.minecraft.rendering.v2.VertexFormat.detailsBlockVertexData
 import me.anno.utils.algorithms.ForLoop.forLoopSafely
 import org.joml.AABBd
 import org.joml.AABBf
+import java.util.*
 
 abstract class DetailedBlockMesh<DataArray> : PrefabSaveable(), IMesh {
 
     companion object {
-        const val SCALE = 1f / 16
+        const val DETAIL_SIZE = 16
+        const val SCALE = 1f / DETAIL_SIZE
         val pseudoComponent = MeshComponent()
         val materialsI = FileCacheList.of(TextureMaterial.solid)
+
+        fun getDetailIndex(x: Int, y: Int, z: Int): Int {
+            return if (x in 0 until DETAIL_SIZE && y in 0 until DETAIL_SIZE && z in 0 until DETAIL_SIZE) {
+                x + y.shl(4) + z.shl(8)
+            } else -1
+        }
     }
 
     // x,y,z,texId
@@ -34,6 +42,12 @@ abstract class DetailedBlockMesh<DataArray> : PrefabSaveable(), IMesh {
     val calcBounds = AABBf()
 
     var buffer: StaticBuffer? = null
+
+    val voxels = BitSet(DETAIL_SIZE * DETAIL_SIZE * DETAIL_SIZE)
+    fun getVoxel(x: Int, y: Int, z: Int): Boolean {
+        val index = getDetailIndex(x, y, z)
+        return index >= 0 && voxels[index]
+    }
 
     override var materials: List<FileReference> = materialsI
 

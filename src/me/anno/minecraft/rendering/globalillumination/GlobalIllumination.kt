@@ -22,4 +22,7 @@ object GlobalIllumination {
     // todo lights can be explicitly modelled as a cpu-computed list
     //  light-level (flicker for flame) * transmission * faceList
 
+    // todo according to sb on Reddit, we only need ~20 random faces per face, and 7 iterations for it to get stable
+    // todo this is called Radiosity
+
 }

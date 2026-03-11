@@ -6,8 +6,12 @@ import me.anno.ecs.components.mesh.MeshIterators.forEachTriangleIndex
 import me.anno.engine.DefaultAssets.flatCube
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.minecraft.block.builder.DetailedBlockMesh.Companion.DETAIL_SIZE
 import me.anno.minecraft.rendering.v2.TextureMaterial
 import me.anno.utils.structures.arrays.ShortArrayList
+import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * add cuboids, sample from the texture using texId,
@@ -16,6 +20,7 @@ import me.anno.utils.structures.arrays.ShortArrayList
 class BlockBuilder {
 
     private val data = ShortArrayList(64)
+    private val voxels = BitSet(16 * 16 * 16)
 
     fun addCube(
         px: Int, py: Int, pz: Int,
@@ -30,7 +35,21 @@ class BlockBuilder {
             addVertex(px, py, pz, sx, sy, sz, texId, pos, ci * 3)
             false
         }
+        fill(px, py, pz, sx, sy, sz)
         return this
+    }
+
+    fun fill(
+        px: Int, py: Int, pz: Int,
+        sx: Int, sy: Int, sz: Int,
+    ) {
+        for (z in max(pz, 0) until min(pz + sz, DETAIL_SIZE)) {
+            for (y in max(py, 0) until min(py + sy, DETAIL_SIZE)) {
+                for (x in max(px, 0) until min(px + sx, DETAIL_SIZE)) {
+                    voxels.set(DetailedBlockMesh.getDetailIndex(x, y, z))
+                }
+            }
+        }
     }
 
     private fun addVertex(
@@ -54,6 +73,7 @@ class BlockBuilder {
     fun build(): DetailedBlockMesh16 {
         val result = DetailedBlockMesh16()
         result.data = data.toShortArray()
+        result.voxels.or(voxels)
         val material = TextureMaterial.solid
         result.materials = listOf(material.ref)
         return result

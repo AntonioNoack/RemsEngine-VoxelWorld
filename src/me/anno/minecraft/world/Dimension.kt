@@ -59,18 +59,11 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         blockType: BlockType, metadata: Metadata?
     ): Boolean {
         val chunk = getChunkAt(globalX, globalY, globalZ, Int.MAX_VALUE) ?: return false
-        return setBlockAt(globalX, globalY, globalZ, chunk, blockType, metadata)
+        return if (chunk.setBlock(globalX, globalY, globalZ, blockType, metadata)) {
+            chunk.afterBlockChange(globalX, globalY, globalZ)
+            true
+        } else false
     }
-
-    fun setBlockAt(
-        globalX: Int,
-        globalY: Int,
-        globalZ: Int,
-        chunk: Chunk,
-        blockType: BlockType,
-        metadata: Metadata?
-    ): Boolean =
-        chunk.setBlock(globalX, globalY, globalZ, blockType, metadata)
 
     fun getMetadataAt(globalX: Int, globalY: Int, globalZ: Int): Metadata? =
         getMetadataAt(globalX, globalY, globalZ, Int.MAX_VALUE)

@@ -6,7 +6,6 @@ import me.anno.ecs.components.mesh.MeshComponent
 import me.anno.engine.Events.addEvent
 import me.anno.engine.debug.DebugAABB
 import me.anno.engine.debug.DebugShapes
-import me.anno.engine.raycast.BlockTracing
 import me.anno.engine.raycast.RayQuery
 import me.anno.engine.ui.control.ControlScheme
 import me.anno.engine.ui.render.RenderView
@@ -30,7 +29,6 @@ import me.anno.minecraft.block.impl.BlockWithInventory
 import me.anno.minecraft.entity.Animal
 import me.anno.minecraft.entity.PlayerEntity
 import me.anno.minecraft.entity.RightClickAnimal
-import me.anno.minecraft.entity.physics.CollisionSystem
 import me.anno.minecraft.item.Mining.getMiningDuration
 import me.anno.minecraft.item.RightClickBlock
 import me.anno.minecraft.item.RightClickItem
@@ -42,6 +40,7 @@ import me.anno.minecraft.ui.components.HungerPanel
 import me.anno.minecraft.ui.components.ItemPanel
 import me.anno.minecraft.ui.components.ItemPanel.Companion.drawDraggedItem
 import me.anno.minecraft.ui.components.XpBarPanel
+import me.anno.minecraft.ui.controls.Raycast.clickCast
 import me.anno.minecraft.world.Dimension
 import me.anno.ui.Panel
 import me.anno.ui.base.SpacerPanel
@@ -57,7 +56,9 @@ import me.anno.utils.pooling.JomlPools
 import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
 import org.apache.logging.log4j.LogManager
-import org.joml.*
+import org.joml.AABBd
+import org.joml.Vector3f
+import org.joml.Vector3i
 import kotlin.math.*
 
 class MinecraftControls(
@@ -197,8 +198,12 @@ class MinecraftControls(
     var hoverResult: RayQuery? = null
 
     fun showHoveredBlock() {
-        hoverResult = clickCast()
+        hoverResult = clickCast(prepareQuery(), player, dimension)
         val query = hoverResult ?: return
+        if (hoversAnimal()) {
+            // todo draw animal AABB(s)
+            return
+        }
 
         val coords = getCoords(query, +clickDistanceDelta)
         val block = getBlock(coords) ?: return
@@ -605,85 +610,12 @@ class MinecraftControls(
 
     fun hoversAnimal() = hoverResult?.result?.component is Animal
 
-    fun clickCast(): RayQuery? {
-        // find, which block was clicked
-        // expensive way, using raycasting:
-        val query = RayQuery(
+    fun prepareQuery(): RayQuery {
+        return RayQuery(
             renderView.cameraPosition,
             renderView.mouseDirection,
             player.gameMode.getReachDistance()
         )
-
-        val start = query.start
-        val end = query.end
-        val min = start.min(end, Vector3d())
-        val max = start.max(end, Vector3d())
-        val dir = query.direction
-
-        val localPos = Vector3f()
-        val localDir = Vector3f()
-        val tmpM = Matrix4x3()
-        CollisionSystem.animals.query(min, max) { target ->
-            if (target != player && (target !is PlayerEntity || !target.gameMode.isGhost())) {
-
-                target.model.fill(target.transform!!) { mesh, transform ->
-                    transform.validate()
-
-                    val gt = transform.globalTransform
-                    localPos.set(start)
-
-                    val gti = gt.invert(tmpM)
-                    gti.transformDirection(dir, localDir)
-                    gti.transformPosition(localPos)
-
-                    val distance = mesh.getBounds()
-                        .whereIsRayIntersecting(
-                            localPos.x, localPos.y, localPos.z,
-                            1f / localDir.x, 1f / localDir.y, 1f / localDir.z,
-                            0f
-                        ).toDouble()
-
-                    if (distance < query.result.distance) {
-                        query.result.distance = distance
-                        query.result.shadingNormalWS.set(dir)
-                        query.result.geometryNormalWS.set(dir)
-                        query.result.component = target
-                    }
-                }
-            }
-
-            false
-        }
-
-        val queryBounds = AABBi(
-            floor(min(start.x, end.x)).toInt(),
-            floor(min(start.x, end.y)).toInt(),
-            floor(min(start.x, end.z)).toInt(),
-
-            ceil(max(start.x, end.x)).toInt(),
-            ceil(max(start.x, end.y)).toInt(),
-            ceil(max(start.x, end.z)).toInt(),
-        )
-
-        val hitSomething =
-            BlockTracing.blockTrace(query, (query.result.distance * 3).toInt(), queryBounds) { xi, yi, zi ->
-                // todo trace details, if present
-                val chunk = dimension.getChunk(
-                    xi shr dimension.bitsX,
-                    yi shr dimension.bitsY,
-                    zi shr dimension.bitsZ,
-                    false
-                )?.value
-                val block = chunk?.getBlock(xi, yi, zi) ?: BlockRegistry.Air
-                if (block.isSolid) BlockTracing.SOLID_BLOCK
-                else BlockTracing.AIR_BLOCK
-            }
-
-        if (hitSomething) {
-            query.result.component = null
-        }
-
-        return if (hitSomething || query.result.component != null) query else null
     }
 
 }

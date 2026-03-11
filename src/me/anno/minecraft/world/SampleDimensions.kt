@@ -2,7 +2,9 @@ package me.anno.minecraft.world
 
 import me.anno.minecraft.block.BlockRegistry.DiamondOre
 import me.anno.minecraft.block.BlockRegistry.Dirt
+import me.anno.minecraft.block.BlockRegistry.GoldOre
 import me.anno.minecraft.block.BlockRegistry.Grass
+import me.anno.minecraft.block.BlockRegistry.IronOre
 import me.anno.minecraft.block.BlockRegistry.Sand
 import me.anno.minecraft.block.BlockRegistry.Sandstone
 import me.anno.minecraft.block.BlockRegistry.Stone
@@ -22,7 +24,10 @@ object SampleDimensions {
         PyramidDecorator(Sandstone, 20, Sand, 0.00001f / 3f, 19651L),
         PyramidDecorator(Sandstone, 27, Sand, 0.00001f / 9f, 29651L),
         CactiDecorator(0.001f, 97845L),
-        OreDecorator(0.01f, DiamondOre)
+        OreDecorator(0.0001f)
+            .addOreType(IronOre, 10f)
+            .addOreType(GoldOre, 3f)
+            .addOreType(DiamondOre, 1f)
     )
 
     val perlin2dDim = Dimension(

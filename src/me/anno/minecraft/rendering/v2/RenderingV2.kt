@@ -71,17 +71,9 @@ fun invalidateChunk(coords: Vector3i) {
  * done dynamic chunk unloading
  * done load/save system
  * done block placing
- *
- * todo usable inventory
+ * done usable inventory
  * */
 fun main() {
-
-    // todo block-break shader based on WorleyBreak texture for UV offset or carving black lines
-
-    // todo check dropped items
-    // todo player lives -> health bar, or list of player heads
-
-    // todo remove side panels, lock mouse
 
     OfficialExtensions.initForTests()
     val scene = Entity("Scene")
@@ -97,15 +89,15 @@ fun main() {
     player.physics.position.y = 77.0
 
     // place a few special blocks for testing
-    // todo why are all these blocks invisible???
+    // todo why are some sides invisible???
     for (dz in -3..3) {
         for (dx in -3..3) {
-            dimension.setElementAt(dx, 75, dz, true, BlockRegistry.Sandstone)
+            dimension.setBlockAt(dx, 75, dz, BlockRegistry.Sandstone, null)
         }
     }
-    dimension.setElementAt(1, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.slab[2]"]!!)
-    dimension.setElementAt(2, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.slab[3]"]!!)
-    dimension.setElementAt(3, 76, 0, true, BlockRegistry.byUUID["remcraft.sandstone.fence"]!!)
+    dimension.setBlockAt(1, 76, 0, BlockRegistry.byUUID["remcraft.sandstone.slab[2]"]!!, null)
+    dimension.setBlockAt(2, 76, 0, BlockRegistry.byUUID["remcraft.sandstone.slab[3]"]!!, null)
+    dimension.setBlockAt(3, 76, 0, BlockRegistry.byUUID["remcraft.sandstone.fence"]!!, null)
 
     entities = Entity("Entities", scene)
     spawnEntity(player)
