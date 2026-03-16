@@ -1,11 +1,9 @@
 package me.anno.remcraft.coasters
 
-import me.anno.maths.Maths
+import me.anno.maths.Maths.INV_PHI
 import kotlin.math.abs
 
 object GoldenSectionSearch {
-
-    const val INV_PHI = 1.0 / Maths.PHI
 
     fun interface ObjectiveFunction {
         fun map(x: Double): Double

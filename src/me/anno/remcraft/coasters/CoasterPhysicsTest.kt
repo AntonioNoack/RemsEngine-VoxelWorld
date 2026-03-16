@@ -17,9 +17,9 @@ fun main() {
     val scene = Entity("Scene")
     registerSystem(CollisionSystem)
 
-    val a = CoasterRailBase(Vector3d(-10.0, 0.0, -16.0), Quaternionf().rotationY(90f.toRadians()))
-    val b = CoasterRailBase(Vector3d(0.0, -1.0, -10.0), Quaternionf())
-    val c = CoasterRailBase(Vector3d(0.0, +1.0, +10.0), Quaternionf())
+    val a = CoasterRailBase(Vector3d(-10.0, 3.0, -16.0), Quaternionf().rotationY(90f.toRadians()))
+    val b = CoasterRailBase(Vector3d(0.0, -3.0, -10.0), Quaternionf())
+    val c = CoasterRailBase(Vector3d(0.0, +3.0, +10.0), Quaternionf())
 
     fun addStrip(strip: CoasterRail) {
         Entity("Strip", scene)
