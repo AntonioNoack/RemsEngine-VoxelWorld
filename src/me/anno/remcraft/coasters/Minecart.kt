@@ -5,6 +5,7 @@ import me.anno.remcraft.entity.*
 import me.anno.remcraft.entity.model.Model
 import me.anno.remcraft.ui.ItemSlot
 import me.anno.remcraft.ui.controls.RemcraftControls
+import org.joml.Quaternionf
 import org.joml.Vector3f
 
 // todo rideable
@@ -18,6 +19,8 @@ class Minecart : MovingEntity(Vector3f(0.5f), Texture(InvalidRef)), RideableEnti
 
     var animPosition = 0f
     var steering = 0f
+
+    val extraRotation = Quaternionf()
 
     override var rider: MovingEntity? = null
 

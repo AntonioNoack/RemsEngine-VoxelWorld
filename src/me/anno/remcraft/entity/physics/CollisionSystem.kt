@@ -173,9 +173,10 @@ object CollisionSystem : System(), OnUpdate {
             val vy = railSpace.transformPosition(Vector3d().apply { y = 1.0 })
             val vz = railSpace.transformPosition(Vector3d().apply { z = 1.0 })
 
-            DebugShapes.showDebugArrow(DebugLine(v0, vx, UIColors.axisXColor, 0f))
-            DebugShapes.showDebugArrow(DebugLine(v0, vy, UIColors.axisYColor, 0f))
-            DebugShapes.showDebugArrow(DebugLine(v0, vz, UIColors.axisZColor, 0f))
+            val dt = 0f
+            DebugShapes.showDebugArrow(DebugLine(v0, vx, UIColors.axisXColor, dt))
+            DebugShapes.showDebugArrow(DebugLine(v0, vy, UIColors.axisYColor, dt))
+            DebugShapes.showDebugArrow(DebugLine(v0, vz, UIColors.axisZColor, dt))
         }
 
         val railSpaceInv = railSpace.invert(Matrix4x3())
@@ -208,8 +209,8 @@ object CollisionSystem : System(), OnUpdate {
             localVel.safeNormalize(v)
 
             val at = moving.transform!!
-            // todo is an x-z-swap the solution???
-            at.localRotation = railSpace.getNormalizedRotation(at.localRotation).normalize()
+            at.localRotation = railSpace.getUnnormalizedRotation(at.localRotation)
+
             val animWheelSpeed = 7f
             moving.animPosition = posMod(moving.animPosition + animWheelSpeed * localVel.z * dt, TAUf)
         }

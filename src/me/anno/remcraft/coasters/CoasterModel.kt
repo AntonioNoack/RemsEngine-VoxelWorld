@@ -110,31 +110,31 @@ class CoasterModel(strip: CoasterRail) : Model<CoasterRail>() {
                         val pj0 = profile[j]
                         val pj1 = profile[j1]
                         put(pj0, t0)
-                        put(pj0, t1)
                         put(pj1, t1)
+                        put(pj0, t1)
 
                         put(pj0, t0)
-                        put(pj1, t1)
                         put(pj1, t0)
+                        put(pj1, t1)
                     }
                 }
 
                 // put end-pieces
                 val t0 = transforms.first()
                 put(profile[0], t0)
+                put(profile[2], t0)
                 put(profile[1], t0)
-                put(profile[2], t0)
                 put(profile[0], t0)
-                put(profile[2], t0)
                 put(profile[3], t0)
+                put(profile[2], t0)
 
                 val t1 = transforms.last()
                 put(profile[0], t1)
-                put(profile[2], t1)
                 put(profile[1], t1)
-                put(profile[0], t1)
-                put(profile[3], t1)
                 put(profile[2], t1)
+                put(profile[0], t1)
+                put(profile[2], t1)
+                put(profile[3], t1)
             }
             assertEquals((numRailQuads + numEndQuads) * 2 * 9, k)
 

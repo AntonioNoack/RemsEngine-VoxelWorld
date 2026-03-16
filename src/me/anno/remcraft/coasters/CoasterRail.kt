@@ -86,7 +86,7 @@ class CoasterRail(val from: CoasterRailBase, val to: CoasterRailBase) :
         y.fma(-z.dot(y), z)
         // todo y may have become 0, again...
         y.normalize()
-        z.cross(y, x)
+        y.cross(z, x)
 
         val pos = getPointAt(t, Vector3d())
         return dst.set(

@@ -17,7 +17,7 @@ fun main() {
     val scene = Entity("Scene")
     registerSystem(CollisionSystem)
 
-    val a = CoasterRailBase(Vector3d(-10.0, 3.0, -16.0), Quaternionf().rotationY(90f.toRadians()))
+    val a = CoasterRailBase(Vector3d(-10.0, -3.0, -16.0), Quaternionf().rotationY(90f.toRadians()))
     val b = CoasterRailBase(Vector3d(0.0, -3.0, -10.0), Quaternionf())
     val c = CoasterRailBase(Vector3d(0.0, +3.0, +10.0), Quaternionf())
 

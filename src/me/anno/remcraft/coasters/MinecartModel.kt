@@ -46,9 +46,9 @@ object MinecartModel : Model<Minecart>() {
         val s = self.steering
         val x = self.animPosition
         val q = 6.2f + 1.5f * abs(s)
-        callback(wheelMesh, getTransform(0).place(+q, -3f, +3f, -x, -s + PIf, 0f, null))
-        callback(wheelMesh, getTransform(1).place(-q, -3f, +3f, +x, -s, 0f, null))
-        callback(wheelMesh, getTransform(2).place(+q, -3f, -3f, -x, +s + PIf, 0f, null))
-        callback(wheelMesh, getTransform(3).place(-q, -3f, -3f, +x, +s, 0f, null))
+        callback(wheelMesh, getTransform(1).place(+q, -3f, +3f, -x, -s + PIf, 0f, null))
+        callback(wheelMesh, getTransform(2).place(-q, -3f, +3f, +x, -s, 0f, null))
+        callback(wheelMesh, getTransform(3).place(+q, -3f, -3f, -x, +s + PIf, 0f, null))
+        callback(wheelMesh, getTransform(4).place(-q, -3f, -3f, +x, +s, 0f, null))
     }
 }
