@@ -1,7 +1,7 @@
 package me.anno.remcraft.coasters
 
 import me.anno.io.files.InvalidRef
-import me.anno.remcraft.coasters.GoldenSectionSearch.goldenSectionSearch
+import me.anno.maths.optimization.GoldenSectionSearch.minimizeFunction
 import me.anno.remcraft.entity.RemcraftEntity
 import me.anno.remcraft.entity.Texture
 import me.anno.remcraft.entity.model.Model
@@ -104,7 +104,7 @@ class CoasterRail(val from: CoasterRailBase, val to: CoasterRailBase) :
         val tmp = Vector3d()
         val minT = max((closestI - 0.67) / EquiSpline.n, -0.01)
         val maxT = min((closestI + 0.67) / EquiSpline.n, +1.01)
-        return goldenSectionSearch(minT, maxT, 1e-5) { t -> getPointAt(t, tmp).distanceSquared(pos) }
+        return minimizeFunction(minT, maxT, 1e-5) { t -> getPointAt(t, tmp).distanceSquared(pos) }
     }
 
     override val model: Model<*> = CoasterModel(this)
