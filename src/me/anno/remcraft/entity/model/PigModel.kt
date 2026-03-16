@@ -1,0 +1,61 @@
+package me.anno.remcraft.entity.model
+
+import me.anno.ecs.Transform
+import me.anno.ecs.components.mesh.IMesh
+import me.anno.gpu.drawing.GFXx2D.getSize
+import me.anno.remcraft.entity.MovingEntity.Companion.place
+import me.anno.remcraft.entity.PlayerEntity
+import me.anno.remcraft.entity.model.CuboidCreator.createCuboid
+
+object PigModel : Model<PlayerEntity>() {
+
+    private val texSize = getSize(64, 32)
+
+    private val headMesh = createCuboid(
+        8, 8, 8,
+        0, 0,
+        texSize
+    )
+
+    private val snotMesh = createCuboid(
+        4, 3, 1,
+        16, 16,
+        texSize
+    )
+
+    private val bodyMesh = createCuboid(
+        10, 16, 8,
+        28, 8,
+        texSize
+    ).apply { rotateX90Degrees() }
+
+    private val legMesh = createCuboid(
+        4, 6, 4,
+        0, 16,
+        texSize
+    )
+
+    override fun fill(transform: Transform, callback: (IMesh, Transform) -> Unit) {
+
+        val swing = getWalkingSwing(12f)
+
+        val body = getTransform(0).place(0f, 3f, 0f, 0f, 0f, 0f, null)
+        val head = getTransform(1).place(0f, 4f, 10f, 0f, 0f, 0f, body)
+        val snot = getTransform(2).place(0f, -1.5f, 4.5f, 0f, 0f, 0f, head)
+
+        val dx = 2.9f
+        val leftLeg = getTransform(3).place(+dx, -7f, -7f, 0f, 3f, 0f, +swing, 0f, 0f, body)
+        val rightLeg = getTransform(4).place(-dx, -7f, -7f, 0f, 3f, 0f, -swing, 0f, 0f, body)
+        val leftArm = getTransform(5).place(+dx, -7f, +5f, 0f, 3f, 0f, -swing, 0f, 0f, body)
+        val rightArm = getTransform(6).place(-dx, -7f, +5f, 0f, 3f, 0f, +swing, 0f, 0f, body)
+
+        callback(bodyMesh, body)
+        callback(headMesh, head)
+        callback(snotMesh, snot)
+        callback(legMesh, leftLeg)
+        callback(legMesh, rightLeg)
+        callback(legMesh, leftArm)
+        callback(legMesh, rightArm)
+    }
+
+}

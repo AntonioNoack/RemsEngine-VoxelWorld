@@ -1,0 +1,42 @@
+package me.anno.remcraft.entity
+
+import me.anno.maths.Maths.sq
+import me.anno.remcraft.entity.ai.FindTargets.findGrassyBlock
+import me.anno.remcraft.entity.ai.FindTargets.findPlayerTarget
+import me.anno.remcraft.entity.model.Model
+import me.anno.remcraft.entity.model.PigModel
+import me.anno.utils.OS.res
+import org.joml.Vector3f
+import org.joml.Vector3i
+
+class BoarSkeletonEntity : Animal(halfExtents, texture) {
+
+    companion object {
+        private val halfExtents = Vector3f(7f / 16f)
+        private val texture = Texture(res.getChild("textures/animals/BoarSkeleton.png"))
+    }
+
+    override val model: Model<*> get() = PigModel
+    override val maxJumpDown: Int get() = 2
+    override val maxHealth: Int get() = 12
+
+    // todo when player is no longer on path, calculate a new path
+    // todo abstract this into general hostile AI
+
+    var playerTarget: PlayerEntity? = null
+
+    fun findPlayerTarget(): PlayerEntity? {
+        val previousTarget = playerTarget
+        return if (previousTarget == null || !previousTarget.canBeAttacked() ||
+            previousTarget.position.distanceSquared(position) >= sq(32.0)
+        ) findPlayerTarget(this, 16.0, true)
+        else previousTarget
+    }
+
+    override fun findTarget(start: Vector3i, seed: Long): Vector3i? {
+        val playerTarget = findPlayerTarget()
+        this.playerTarget = playerTarget
+        return playerTarget?.blockPosition?.apply { y-- }
+            ?: findGrassyBlock(start, 16.0, 16, 1, true, seed)
+    }
+}

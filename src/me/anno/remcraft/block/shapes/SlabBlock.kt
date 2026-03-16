@@ -1,0 +1,37 @@
+package me.anno.remcraft.block.shapes
+
+import me.anno.language.translation.NameDesc
+import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.remcraft.block.BlockType
+import me.anno.remcraft.block.types.CustomBlockBounds
+import me.anno.remcraft.block.types.DetailedBlockVisuals
+import me.anno.remcraft.block.builder.BlockBuilder
+import me.anno.utils.structures.lists.LazyList
+import org.joml.AABBf
+
+class SlabBlock(val blockType: BlockType, val side: BlockSide) : BlockType(
+    "${blockType.typeUUID}.slab[${side.id}]", blockType.color,
+    blockType.texId, NameDesc("${blockType.nameDesc.name} Slab")
+), CustomBlockBounds, DetailedBlockVisuals {
+
+    override val customSize: AABBf = slabSizes[side]!!
+    override fun getModel() = slabModels[blockType.texId * 6 + side.ordinal]
+
+    companion object {
+
+        val slabSizes = mapOf(
+            BlockSide.NX to AABBf(0f, 0f, 0f, 0.5f, 1f, 1f),
+            BlockSide.PX to AABBf(0.5f, 0f, 0f, 1f, 1f, 1f),
+            BlockSide.NY to AABBf(0f, 0f, 0f, 1f, 0.5f, 1f),
+            BlockSide.PY to AABBf(0f, 0.5f, 0f, 1f, 1f, 1f),
+            BlockSide.NZ to AABBf(0f, 0f, 0f, 1f, 0.5f, 1f),
+            BlockSide.PZ to AABBf(0f, 0f, 0.5f, 1f, 1f, 1f),
+        )
+
+        val slabModels = LazyList(6 * 65536) { id: Int ->
+            val texId = id / 6
+            val side = BlockSide.entries[id % 6]
+            BlockBuilder.slab(texId, side)
+        }
+    }
+}

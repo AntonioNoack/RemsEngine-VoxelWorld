@@ -1,0 +1,101 @@
+package me.anno.remcraft.entity
+
+import me.anno.ecs.Component
+import me.anno.ecs.Transform
+import me.anno.ecs.components.FillSpace
+import me.anno.ecs.components.mesh.material.MaterialOverride
+import me.anno.ecs.interfaces.Renderable
+import me.anno.gpu.pipeline.Pipeline
+import me.anno.io.files.FileReference
+import me.anno.remcraft.entity.model.Model
+import me.anno.remcraft.rendering.v2.entities
+import org.joml.*
+import kotlin.math.floor
+
+abstract class RemcraftEntity(
+    val halfExtents: Vector3f,
+    val texture: Texture
+) : Component(), FillSpace, Renderable, MaterialOverride {
+
+    companion object {
+        fun spawnEntity(entity: MovingEntity, pos: Vector3d): MovingEntity {
+            entity.physics.position.set(pos)
+            spawnEntity(entity)
+            return entity
+        }
+
+        fun spawnEntity(entity: RemcraftEntity): RemcraftEntity {
+            val childEntity = me.anno.ecs.Entity(entities).add(entity)
+            if (entity is MovingEntity) {
+                childEntity.setPosition(entity.physics.position)
+            }
+            return entity
+        }
+    }
+
+    // todo animations, behaviour, ...
+
+    abstract val model: Model<*>
+
+    override fun fill(pipeline: Pipeline, transform: Transform) {
+        @Suppress("UNCHECKED_CAST")
+        (model as Model<RemcraftEntity>).self = this
+        model.fill(transform) { mesh, transform ->
+            pipeline.addMesh(mesh, this, transform)
+        }
+    }
+
+    override val materials: List<FileReference>
+        get() = texture.materials
+
+    fun destroyEntity() {
+        val entity = entity ?: return
+        entity.destroy()
+    }
+
+    val position: Vector3d
+        get() = transform!!.localPosition
+
+    val minPosition = Vector3d()
+    val maxPosition = Vector3d()
+
+    val rotation: Quaternionf
+        get() = transform!!.localRotation
+
+    val blockPosition: Vector3i
+        get() {
+            val pos = position
+            return Vector3i(
+                floor(pos.x).toInt(),
+                floor(pos.y).toInt(),
+                floor(pos.z).toInt()
+            )
+        }
+
+    val isRemoved get() = entity?.parent == null
+
+    fun removeFromWorld() {
+        entity?.removeFromParent()
+        removeFromParent()
+    }
+
+    private val transforms = ArrayList<Transform>()
+    fun getTransform(index: Int): Transform {
+        val self = entity!!
+        while (index >= transforms.size) {
+            val tr = Transform()
+            tr.parentEntity = self
+            transforms.add(tr)
+        }
+        return transforms[index]
+    }
+
+    override fun fillSpace(globalTransform: Matrix4x3, dstUnion: AABBd) {
+        val dx = halfExtents.x
+        val dy = halfExtents.y
+        val dz = halfExtents.z
+        dstUnion
+            .union(globalTransform.m30 - dx, globalTransform.m31 - dy, globalTransform.m32 - dz)
+            .union(globalTransform.m30 + dx, globalTransform.m31 + dy, globalTransform.m32 + dz)
+    }
+}
