@@ -5,7 +5,7 @@ import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.block.Metadata
 import me.anno.remcraft.block.types.EffectBlock
 import me.anno.remcraft.block.types.FluidBlock
-import me.anno.remcraft.entity.effect.Effect
+import me.anno.remcraft.entity.effect.StatusEffect
 import me.anno.remcraft.entity.effect.EffectType
 import me.anno.remcraft.world.Chunk
 
@@ -13,7 +13,7 @@ class LavaBlock(typeUUID: String, color: Int, texId: Int, nameDesc: NameDesc) :
     BlockType(typeUUID, color, texId, nameDesc), FluidBlock, EffectBlock {
 
     companion object {
-        private val effects = listOf(Effect(EffectType.BURNING, 3, 10f))
+        private val effects = listOf(StatusEffect(EffectType.BURNING, 3, 10f))
     }
 
     // todo show effects in UI

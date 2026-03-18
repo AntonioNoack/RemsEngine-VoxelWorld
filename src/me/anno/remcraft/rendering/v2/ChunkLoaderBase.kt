@@ -21,6 +21,7 @@ import me.anno.utils.algorithms.ForLoop.forLoopSafely
 import me.anno.utils.structures.arrays.IntArrayList
 import org.joml.AABBd
 import org.joml.Vector3i
+import kotlin.math.floor
 
 abstract class ChunkLoaderBase<ChunkRenderer>(
     solidMaterial: Material,
@@ -42,7 +43,7 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
             val ci = RenderView.currentInstance
             if (ci != null) {
                 val pos = ci.orbitCenter // around where the camera orbits
-                delta.set((pos.x / csx).toInt(), 0, (pos.z / csz).toInt())
+                delta.set(floor(pos.x / csx).toInt(), floor(pos.y / csy).toInt(), floor(pos.z / csz).toInt())
             }
             return delta
         }

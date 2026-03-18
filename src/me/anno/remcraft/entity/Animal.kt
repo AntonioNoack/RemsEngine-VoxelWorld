@@ -5,14 +5,14 @@ import me.anno.ecs.prefab.PrefabSaveable
 import me.anno.ecs.systems.OnUpdate
 import me.anno.remcraft.entity.ai.AnimalAI.executeAI
 import me.anno.remcraft.entity.ai.PathFinding
-import me.anno.remcraft.entity.effect.Effect
+import me.anno.remcraft.entity.effect.StatusEffect
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import org.joml.Vector3i
 
 abstract class Animal(halfExtents: Vector3f, texture: Texture) : MovingEntity(halfExtents, texture), OnUpdate {
 
-    val effects = ArrayList<Effect>()
+    val effects = ArrayList<StatusEffect>()
 
     val bodyRotation: Quaternionf get() = transform!!.localRotation
     val headRotation = Quaternionf()
@@ -41,7 +41,7 @@ abstract class Animal(halfExtents: Vector3f, texture: Texture) : MovingEntity(ha
         effects.removeIf { it.remainingDuration <= 0f }
     }
 
-    fun processEffect(effect: Effect) {
+    fun processEffect(effect: StatusEffect) {
         // todo implement this
     }
 

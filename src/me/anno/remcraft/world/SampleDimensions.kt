@@ -9,10 +9,12 @@ import me.anno.remcraft.block.BlockRegistry.Sand
 import me.anno.remcraft.block.BlockRegistry.Sandstone
 import me.anno.remcraft.block.BlockRegistry.Stone
 import me.anno.remcraft.block.BlockRegistry.Water
-import me.anno.remcraft.world.decorator.CactiDecorator
-import me.anno.remcraft.world.decorator.OreDecorator
-import me.anno.remcraft.world.decorator.PyramidDecorator
-import me.anno.remcraft.world.decorator.TreeDecorator
+import me.anno.remcraft.world.decorator.surface.CactiDecorator
+import me.anno.remcraft.world.decorator.surface.PyramidDecorator
+import me.anno.remcraft.world.decorator.surface.TreeDecorator
+import me.anno.remcraft.world.decorator.underground.CaveDecorator
+import me.anno.remcraft.world.decorator.underground.OreDecorator
+import me.anno.remcraft.world.decorator.underground.RavineDecorator
 import me.anno.remcraft.world.generator.Perlin3dWorldGenerator
 import me.anno.remcraft.world.generator.PerlinWorldGenerator
 
@@ -23,11 +25,13 @@ object SampleDimensions {
         PyramidDecorator(Sandstone, 10, Sand, 0.00001f, 49651L),
         PyramidDecorator(Sandstone, 20, Sand, 0.00001f / 3f, 19651L),
         PyramidDecorator(Sandstone, 27, Sand, 0.00001f / 9f, 29651L),
-        CactiDecorator(0.001f, 97845L),
-        OreDecorator(0.0001f)
+        CactiDecorator(1e-3f, 97845L),
+        OreDecorator(1e-4f)
             .addOreType(IronOre, 10f)
             .addOreType(GoldOre, 3f)
-            .addOreType(DiamondOre, 1f)
+            .addOreType(DiamondOre, 1f),
+        CaveDecorator(1e-4f, 16545L),
+        RavineDecorator(1e-6f, 87215L)
     )
 
     val perlin2dDim = Dimension(

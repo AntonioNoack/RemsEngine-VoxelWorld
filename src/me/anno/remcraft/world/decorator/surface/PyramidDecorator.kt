@@ -1,4 +1,4 @@
-package me.anno.remcraft.world.decorator
+package me.anno.remcraft.world.decorator.surface
 
 import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.world.Chunk

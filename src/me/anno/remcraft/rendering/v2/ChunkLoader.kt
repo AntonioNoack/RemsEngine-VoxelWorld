@@ -1,7 +1,6 @@
 package me.anno.remcraft.rendering.v2
 
 import me.anno.remcraft.world.Dimension
-import me.anno.utils.Clock
 import org.joml.Vector3i
 
 class ChunkLoader(
@@ -14,7 +13,7 @@ class ChunkLoader(
 ) {
     override fun generateChunk(chunkId: Vector3i) {
 
-        val clock = Clock("ChunkLoader")
+        // val clock = Clock("ChunkLoader")
         // 9s vs 27s, so 3x faster to use a clone 🤯
         // todo fix that... we cannot be THAT slow just to synchronize stuff...
         val dimension = Dimension(dimension.generator, dimension.stages)
@@ -24,7 +23,7 @@ class ChunkLoader(
         val fluidMesh = model.createMesh(palette, fluidFilter)
         val detailMesh = createDetailMesh(chunk)
 
-        clock.stop("CreateMesh")
+        // clock.stop("CreateMesh")
         dimension.destroy()
 
         meshUpload(solidRenderer, chunkId, solidMesh, true)
