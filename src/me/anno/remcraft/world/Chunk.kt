@@ -1,6 +1,9 @@
 package me.anno.remcraft.world
 
+import me.anno.cache.ICacheData
 import me.anno.engine.Events.addEvent
+import me.anno.engine.debug.DebugAABB
+import me.anno.engine.debug.DebugShapes
 import me.anno.io.base.BaseWriter
 import me.anno.io.saveable.Saveable
 import me.anno.remcraft.block.BlockRegistry
@@ -8,6 +11,9 @@ import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.block.Metadata
 import me.anno.remcraft.block.types.ChangingBlock
 import me.anno.remcraft.entity.RemcraftEntity
+import me.anno.remcraft.rendering.v2.ChunkIndex.encodeChunkIndex
+import me.anno.remcraft.rendering.v2.chunkLoader
+import me.anno.remcraft.world.Dimension.Companion.chunkPool
 import me.anno.remcraft.world.Index.bitsX
 import me.anno.remcraft.world.Index.bitsY
 import me.anno.remcraft.world.Index.bitsZ
@@ -19,31 +25,39 @@ import me.anno.remcraft.world.Index.sizeX
 import me.anno.remcraft.world.Index.sizeY
 import me.anno.remcraft.world.Index.sizeZ
 import me.anno.remcraft.world.Index.totalSize
+import me.anno.ui.UIColors
 import me.anno.utils.structures.arrays.IntArrayList
+import org.joml.AABBd
 import org.joml.Vector3i
 import speiger.primitivecollections.IntToObjectHashMap
 
-class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
+class Chunk(val dimension: Dimension) : Saveable(), ICacheData {
 
-    var x0 = x0
+    companion object {
+        var numCreated = 0
+        var numRecycled = 0
+        var numUsed = 0
+    }
+
+    var x0 = 0
         private set
-    var y0 = y0
+    var y0 = 0
         private set
-    var z0 = z0
+    var z0 = 0
         private set
 
-    var xi = x0 shr bitsX
+    var xi = 0
         private set
-    var yi = y0 shr bitsY
+    var yi = 0
         private set
-    var zi = z0 shr bitsZ
+    var zi = 0
         private set
 
-    var x1 = x0 + sizeX
+    var x1 = sizeX
         private set
-    var y1 = y0 + sizeY
+    var y1 = sizeY
         private set
-    var z1 = z0 + sizeZ
+    var z1 = sizeZ
         private set
 
     var stage = 0
@@ -67,6 +81,12 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         afterBlockChange(x, y, z)
         addEvent(50) { afterBlockChange(x, y, z) }
         addEvent(150) { afterBlockChange(x, y, z) }
+
+        val bounds = AABBd(
+            x - 0.05, y - 0.05, z - 0.05,
+            x + 1.05, y + 1.05, z + 1.05
+        )
+        DebugShapes.showDebugAABB(DebugAABB(bounds, UIColors.fireBrick, 0.1f))
     }
 
     fun processBlockUpdates() {
@@ -102,12 +122,20 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     }
 
     fun set(xi: Int, yi: Int, zi: Int, stage: Int) {
+        if (++numUsed % 1000 == 0) {
+            // todo this should not be called that often!!!
+            println(
+                "Chunk stats: $numCreated created, $numUsed used, $numRecycled destroyed, " +
+                        "($xi,$yi,$zi) $stage), ${chunkLoader.loadedChunks.size} chunks loaded, ${chunkLoader.loadingPattern.size} pattern size"
+            )
+        }
+
         x0 = xi shl bitsX
         y0 = yi shl bitsY
         z0 = zi shl bitsZ
-        this@Chunk.xi = xi
-        this@Chunk.yi = yi
-        this@Chunk.zi = zi
+        this.xi = xi
+        this.yi = yi
+        this.zi = zi
         x1 = x0 + sizeX
         y1 = y0 + sizeY
         z1 = z0 + sizeZ
@@ -232,5 +260,14 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     }
 
     override val className = "Chunk"
+
+    init {
+        numCreated++
+    }
+
+    override fun destroy() {
+        chunkPool.destroy(this)
+        numRecycled++
+    }
 
 }

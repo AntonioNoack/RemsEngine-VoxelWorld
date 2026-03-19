@@ -39,7 +39,7 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents, texture), OnU
         get() = blockModel[stack.type]
 
     override fun onUpdate() {
-        if (physics.isOnGround) {
+        if (physics.isOnGround && stack.count > 0) {
             // remove this, set a block
             setHere(physics.position)
         }
@@ -54,23 +54,19 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents, texture), OnU
         val center = 0.5
         val soundPos = Vector3d(gx + center, gy + center, gz + center)
         val stackType = stack.type
-        var count = stack.count
         if (here == BlockRegistry.Air && dst != null && stackType is BlockType) {
             // set block -> destroy entity
             playSetBlockSound(soundPos, stackType)
             dst.setBlock(gx, gy, gz, stackType, stack.metadata)
             dst.afterBlockChange(gx, gy, gz)
-            count--
+            stack.count--
         }
-        if (count > 0) {
+        if (stack.count > 0) {
             // drop item -> replace component
             playDropItemSound(soundPos, stackType)
             val entity = entity ?: return
             removeFromParent()
-            val newStack =
-                if (count == stack.count) stack
-                else ItemSlot(stack.type, count, stack.metadata)
-            entity.add(ItemEntity(newStack))
+            entity.add(ItemEntity(stack))
         } else {
             // finished :)
             destroyEntity()

@@ -9,24 +9,29 @@ import me.anno.engine.ui.ECSTreeView
 import me.anno.engine.ui.render.SceneView
 import me.anno.engine.ui.render.SceneView.Companion.createSceneUI
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
+import me.anno.gpu.GFX
+import me.anno.gpu.GFX.INVALID_POINTER64
+import me.anno.gpu.WindowManagement
+import me.anno.input.MouseLock.unlockMouse
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.BlockUpdateSystem
 import me.anno.remcraft.entity.*
 import me.anno.remcraft.entity.RemcraftEntity.Companion.spawnEntity
 import me.anno.remcraft.entity.physics.CollisionSystem
 import me.anno.remcraft.rendering.createLighting
+import me.anno.remcraft.rendering.v2.ChunkIndex.encodeChunkIndex
 import me.anno.remcraft.ui.ItemSlot
 import me.anno.remcraft.ui.controls.RemcraftControls
-import me.anno.remcraft.world.Index
 import me.anno.remcraft.world.SampleDimensions
 import me.anno.remcraft.world.SaveLoadSystem
 import me.anno.ui.base.groups.PanelList
 import me.anno.ui.debug.TestEngine.Companion.testUI3
 import me.anno.ui.editor.PropertyInspector
-import me.anno.utils.assertions.assertTrue
 import org.apache.logging.log4j.LogManager
 import org.joml.Vector3d
 import org.joml.Vector3i
+import org.lwjgl.glfw.GLFW
+import speiger.primitivecollections.LongHashSet
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
@@ -41,17 +46,18 @@ lateinit var chunkLoader: ChunkLoaderBase<*>
 lateinit var entities: Entity
 lateinit var player: PlayerEntity
 
-val invalidChunks = HashSet<Vector3i>()
+val invalidChunks = LongHashSet()
 fun invalidateChunk(coords: Vector3i) {
+    val encoded = encodeChunkIndex(coords.x, coords.y, coords.z)
     val needsWorker = synchronized(invalidChunks) {
-        invalidChunks.add(coords)
+        invalidChunks.add(encoded)
     }
     if (needsWorker) {
         chunkLoader.worker += {
-            val changed = synchronized(invalidChunks) {
-                invalidChunks.remove(coords)
+            synchronized(invalidChunks) {
+                invalidChunks.remove(encoded)
             }
-            assertTrue(changed)
+            println("calling generateChunk($coords)")
             chunkLoader.generateChunk(coords)
         }
     }
@@ -101,7 +107,7 @@ fun main() {
 
     spawnEntity(BoarEntity(), Vector3d(-2.0, 77.0, 0.0))
     spawnEntity(BoarSkeletonEntity(), Vector3d(2.0, 77.0, 0.0))
-    spawnEntity(
+    if (false) spawnEntity(
         MovingBlock(ItemSlot(BlockRegistry.Sand, 1, null)),
         Vector3d(0.5, 90.5, 0.5)
     )
@@ -133,6 +139,22 @@ fun main() {
         }
         if (!Engine.shutdown) {
             LOGGER.warn("Got stuck")
+            unlockMouse()
+            try {
+                WindowManagement.updateWindows()
+            } catch (e: Exception) {
+            }
+            try {
+                for (window in GFX.windows) {
+                    val pointer = window.pointer
+                    if (pointer == INVALID_POINTER64) continue
+                    GLFW.glfwMakeContextCurrent(pointer)
+                    GLFW.glfwSetWindowShouldClose(pointer, true)
+                    GLFW.glfwDestroyWindow(pointer)
+                    window.pointer = 0L
+                }
+            } catch (e: Exception) {
+            }
             exitProcess(-1)
         }
     }

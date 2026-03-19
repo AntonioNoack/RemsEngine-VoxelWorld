@@ -6,6 +6,7 @@ import me.anno.maths.Maths.clamp
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.block.Metadata
+import me.anno.remcraft.rendering.v2.dimension
 import me.anno.remcraft.rendering.v2.invalidateChunk
 import me.anno.remcraft.rendering.v2.saveSystem
 import me.anno.remcraft.world.Index.bitsX
@@ -23,6 +24,16 @@ import org.joml.Vector4i
 
 class Dimension(val stages: List<Decorator>) {
 
+    companion object {
+        val chunkPool = ObjectPool(4096) { Chunk(dimension) }
+    }
+
+    init {
+        check(stages.isNotEmpty()) {
+            "At least one stage must be defined"
+        }
+    }
+
     val gravity = Vector3f(0f, -9.81f, 0f)
 
     var timeoutMillis = 5000L
@@ -35,18 +46,20 @@ class Dimension(val stages: List<Decorator>) {
                 val chunk = chunkPool.create()
                 chunk.set(key.x, key.y, key.z, key.w - 1)
                 prevChunk!!.copyInto(chunk)
-                stages[key.w].decorate(chunk)
-                chunk.stage = key.w
-                result.value = chunk
+                prepareChunk(key, chunk, result)
             }
         } else {
             val chunk = chunkPool.create()
             chunk.set(key.x, key.y, key.z, key.w - 1)
             chunk.clear()
-            stages[key.w].decorate(chunk)
-            chunk.stage = key.w
-            result.value = chunk
+            prepareChunk(key, chunk, result)
         }
+    }
+
+    private fun prepareChunk(key: Vector4i, chunk: Chunk, result: Promise<Chunk>) {
+        stages[key.w].decorate(chunk)
+        chunk.stage = key.w
+        result.value = chunk
     }
 
     fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stageId: Int): Promise<Chunk> {
@@ -56,10 +69,13 @@ class Dimension(val stages: List<Decorator>) {
         return chunks.getEntry(key, timeoutMillis, generatorImpl)
     }
 
-    fun getChunkOrNull(chunkX: Int, chunkY: Int, chunkZ: Int, stageId: Int): Promise<Chunk>? {
+    fun getChunkIfLoaded(chunkX: Int, chunkY: Int, chunkZ: Int, stageId: Int): Promise<Chunk>? {
         if (stageId < 0) throw IllegalArgumentException("Invalid StageID $stageId")
         val stageId = clamp(stageId, 0, stages.size - 1)
-        val key = Vector4i(chunkX, chunkY, chunkZ, stageId)
+        return getChunkIfLoaded(Vector4i(chunkX, chunkY, chunkZ, stageId))
+    }
+
+    fun getChunkIfLoaded(key: Vector4i): Promise<Chunk>? {
         return chunks.getEntryWithoutGenerator(key)
     }
 
@@ -106,11 +122,10 @@ class Dimension(val stages: List<Decorator>) {
         getChunk(globalX shr bitsX, globalY shr bitsY, globalZ shr bitsZ, stage).waitFor()
 
     fun unload(chunk: Chunk) {
-        for (stageId in 0 until stages.size) {
-            // todo add chunks to pool...
+        /*for (stageId in 0 until stages.size) {
             chunks.getEntryWithoutGenerator(Vector4i(chunk.xi, chunk.yi, chunk.zi, stageId))
                 ?.destroy()
-        }
+        }*/
     }
 
     fun invalidateAt(x: Int, y: Int, z: Int, newBlock: BlockType) {
@@ -141,7 +156,5 @@ class Dimension(val stages: List<Decorator>) {
     fun destroy() {
         chunks.clear()
     }
-
-    private val chunkPool = ObjectPool { Chunk(this, 0, 0, 0) }
 
 }

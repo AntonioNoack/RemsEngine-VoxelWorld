@@ -12,9 +12,11 @@ import me.anno.gpu.GPUTasks.addGPUTask
 import me.anno.maths.patterns.SpiralPattern.spiral3d
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.BlockType
-import me.anno.remcraft.block.types.DetailedBlockVisuals
 import me.anno.remcraft.block.builder.DetailedBlockMesh32
+import me.anno.remcraft.block.types.DetailedBlockVisuals
 import me.anno.remcraft.rendering.v1.VisualDimension.Companion.chunkGenQueue
+import me.anno.remcraft.rendering.v2.ChunkIndex.decodeChunkIndex
+import me.anno.remcraft.rendering.v2.ChunkIndex.encodeChunkIndex
 import me.anno.remcraft.world.Chunk
 import me.anno.remcraft.world.Index.sizeX
 import me.anno.remcraft.world.Index.sizeY
@@ -24,6 +26,7 @@ import me.anno.utils.algorithms.ForLoop.forLoopSafely
 import me.anno.utils.structures.arrays.IntArrayList
 import org.joml.AABBd
 import org.joml.Vector3i
+import speiger.primitivecollections.LongHashSet
 import kotlin.math.floor
 
 abstract class ChunkLoaderBase<ChunkRenderer>(
@@ -57,6 +60,7 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
 
         val solidFilter: BlockFilter = { a, b -> isSolid(a) && !isSolid(b) }
         val fluidFilter: BlockFilter = { a, b -> a.isFluid && b == BlockRegistry.Air }
+
     }
 
     val worker = chunkGenQueue
@@ -67,7 +71,7 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
     val loadingPattern = spiralPattern.filter { it.length() < loadingRadius - 0.5f }
     val unloadingPattern = spiralPattern.filter { it.length() > loadingRadius + 1.5f }
 
-    val loadedChunks = HashSet<Vector3i>()
+    val loadedChunks = LongHashSet()
 
     val palette = if (solidMaterial is TextureMaterial) {
         mapPalette { it.texId + 1 }
@@ -133,9 +137,13 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
     val workerLimit = worker.numThreads * 2 + 1
     fun loadChunks(center: Vector3i) {
         if (worker.size >= workerLimit) return
-        for (offset in loadingPattern) {
-            val chunkId = Vector3i(offset).add(center)
-            if (loadedChunks.add(chunkId)) {
+        for (li in loadingPattern.indices) {
+            val offset = loadingPattern[li]
+            val cx = offset.x + center.x
+            val cy = offset.y + center.y
+            val cz = offset.z + center.z
+            if (loadedChunks.add(encodeChunkIndex(cx, cy, cz))) {
+                val chunkId = Vector3i(cx, cy, cz)
                 worker += { generateChunk(chunkId) }
                 if (worker.size >= workerLimit) return
             }
@@ -145,9 +153,13 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
     abstract fun destroyMesh(renderer: ChunkRenderer, vec: Vector3i, destroyMesh: Boolean)
 
     fun unloadChunks(center: Vector3i) {
-        for (offset in unloadingPattern) {
-            val chunkId = Vector3i(offset).add(center)
-            if (loadedChunks.remove(chunkId)) {
+        for (li in unloadingPattern.indices) {
+            val offset = unloadingPattern[li]
+            val cx = offset.x + center.x
+            val cy = offset.y + center.y
+            val cz = offset.z + center.z
+            if (loadedChunks.remove(encodeChunkIndex(cx, cy, cz))) {
+                val chunkId = Vector3i(cx, cy, cz)
                 destroyMesh(solidRenderer, chunkId, true)
                 destroyMesh(fluidRenderer, chunkId, true)
             }
@@ -166,10 +178,11 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
     }
 
     fun showChunks() {
-        for (chunkId in loadedChunks) {
+        val tmp = Vector3i()
+        loadedChunks.forEach { chunkId ->
             val isInvalid = chunkId in invalidChunks
             val color = if (isInvalid) UIColors.fireBrick else UIColors.axisWColor
-            val bounds = chunkId.toBounds()
+            val bounds = decodeChunkIndex(chunkId, tmp).toBounds()
             DebugShapes.showDebugAABB(DebugAABB(bounds, color, 0f))
         }
     }

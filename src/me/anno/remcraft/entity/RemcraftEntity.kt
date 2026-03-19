@@ -51,6 +51,7 @@ abstract class RemcraftEntity(
     fun destroyEntity() {
         val entity = entity ?: return
         entity.destroy()
+        removeFromParent()
     }
 
     val position: Vector3d
