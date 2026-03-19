@@ -19,7 +19,7 @@ class CaveDecorator(density: Float, seed: Long) :
 
         val sx = lx + chunk.x0
         val sy = ly + chunk.y0
-        val sz = lz + chunk.x0
+        val sz = lz + chunk.z0
         var rnd = 0
 
         // initial direction
@@ -28,7 +28,7 @@ class CaveDecorator(density: Float, seed: Long) :
 
         // cave length
         val length = (random[sx, sy, sz, rnd++] * 76 + 40).toInt()
-        val radius = random[sx, sy, sz, rnd++] * 2.0 + 1.5
+        val radius = random[sx, sy, sz, rnd++] * 2.0 + 1.0
         for (i in 0 until length) {
 
             val dx = cos(pitch) * cos(yaw)

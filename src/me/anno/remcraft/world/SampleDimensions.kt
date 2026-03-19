@@ -23,17 +23,20 @@ import me.anno.utils.structures.lists.Lists.wrap
 object SampleDimensions {
 
     val decorators = listOf(
-        TreeDecorator(0.03f, 5123L),
-        PyramidDecorator(Sandstone, 10, Sand, 0.00001f, 49651L),
-        PyramidDecorator(Sandstone, 20, Sand, 0.00001f / 3f, 19651L),
-        PyramidDecorator(Sandstone, 27, Sand, 0.00001f / 9f, 29651L),
-        CactiDecorator(1e-3f, 97845L),
         OreDecorator(1e-4f)
             .addOreType(IronOre, 10f)
             .addOreType(GoldOre, 3f)
             .addOreType(DiamondOre, 1f),
-        CaveDecorator(1e-4f, 16545L),
-        RavineDecorator(1e-6f, 87215L),
+
+        CaveDecorator(1e-5f, 16545L),
+        RavineDecorator(1e-7f, 87215L),
+
+        PyramidDecorator(Sandstone, 10, Sand, 0.00001f, 49651L),
+        PyramidDecorator(Sandstone, 20, Sand, 0.00001f / 3f, 19651L),
+        PyramidDecorator(Sandstone, 27, Sand, 0.00001f / 9f, 29651L),
+        CactiDecorator(1e-3f, 97845L),
+        TreeDecorator(0.03f, 5123L),
+
         SaveSystemDecorator()
     )
 

@@ -19,10 +19,8 @@ class RavineDecorator(density: Float, seed: Long) :
 
         val sx = lx + chunk.x0
         val sy = ly + chunk.y0
-        val sz = lz + chunk.x0
+        val sz = lz + chunk.z0
         var rnd = 20
-
-        println("Generating ravine at $sx,$sy,$sz for ${chunk.x0},${chunk.z0}")
 
         var yaw = random[sx, sy, sz, rnd++] * PI * 2.0
         var pitch = (random[sx, sy, sz, rnd++] - 0.5) * 0.2

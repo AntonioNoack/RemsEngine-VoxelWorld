@@ -18,9 +18,8 @@ fun main() {
     val dimension = Dimension(
         listOf(
             generator,
-            // CaveDecorator(1e-3f, 51311L),
-             RavineDecorator(0.3f * 1e-6f, 87215L),
-            // todo why/how is it finding 19 as the base height??? on top another pyramid...
+             CaveDecorator(1e-5f, 51311L),
+            // RavineDecorator(1e-6f, 87215L),
            /* PyramidDecorator(
                 BlockRegistry.Sandstone, 15,
                 BlockRegistry.Stone, 0.3f * 1e-4f, 54654L
