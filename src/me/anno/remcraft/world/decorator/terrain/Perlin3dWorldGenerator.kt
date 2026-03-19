@@ -1,11 +1,19 @@
-package me.anno.remcraft.world.generator
+package me.anno.remcraft.world.decorator.terrain
 
 import me.anno.maths.Maths.mix
 import me.anno.maths.noise.PerlinNoise
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.BlockType
-import me.anno.remcraft.rendering.v2.dimension
 import me.anno.remcraft.world.Chunk
+import me.anno.remcraft.world.Index.getIndex
+import me.anno.remcraft.world.Index.maskX
+import me.anno.remcraft.world.Index.maskY
+import me.anno.remcraft.world.Index.maskZ
+import me.anno.remcraft.world.Index.sizeX
+import me.anno.remcraft.world.Index.sizeY
+import me.anno.remcraft.world.Index.sizeZ
+import me.anno.remcraft.world.Index.totalSize
+import me.anno.remcraft.world.decorator.Decorator
 import me.anno.utils.hpc.threadLocal
 import org.joml.Vector4f
 import kotlin.math.log2
@@ -17,12 +25,10 @@ class Perlin3dWorldGenerator(
     grassBlocks: List<BlockType>,
     sandBlocks: List<BlockType>,
     seed: Long
-) : Generator() {
+) : Decorator() {
 
     companion object {
-        val densities = threadLocal {
-            FloatArray(dimension.sizeX * dimension.sizeY * dimension.sizeZ)
-        }
+        val densities = threadLocal { FloatArray(totalSize) }
     }
 
     val grassBlocks = grassBlocks.map { it.id }.toShortArray()
@@ -57,10 +63,9 @@ class Perlin3dWorldGenerator(
     }
 
     fun sampleDensities(chunk: Chunk): FloatArray {
-        val dim = chunk.dimension
-        val sx = dim.sizeX
-        val sy = dim.sizeY
-        val sz = dim.sizeZ
+        val sx = sizeX
+        val sy = sizeY
+        val sz = sizeZ
         val res = densities.get()
         val s = 4
         val m = s - 1
@@ -74,7 +79,7 @@ class Perlin3dWorldGenerator(
                 for (lz0 in 0..sz step s) {
                     val lz = min(lz0, sz - 1)
                     val gz = lz + chunk.z0
-                    val idx = chunk.getIndex(lx, ly, lz)
+                    val idx = getIndex(lx, ly, lz)
                     res[idx] = getDensityAt(gx, gy, gz)
                 }
             }
@@ -90,27 +95,27 @@ class Perlin3dWorldGenerator(
                 val x1 = min(x0 + s, sx - 1)
                 val tx = ls[lx and m]
                 for (lz in 0 until sz) {
-                    val idx = chunk.getIndex(lx, ly, lz)
+                    val idx = getIndex(lx, ly, lz)
                     val z0 = lz - (lz and m)
                     val z1 = min(z0 + s, sz - 1)
                     val tz = ls[lz and m]
                     res[idx] = mix(
                         mix(
                             mix(
-                                res[chunk.getIndex(x0, y0, z0)],
-                                res[chunk.getIndex(x0, y1, z0)], ty
+                                res[getIndex(x0, y0, z0)],
+                                res[getIndex(x0, y1, z0)], ty
                             ), mix(
-                                res[chunk.getIndex(x1, y0, z0)],
-                                res[chunk.getIndex(x1, y1, z0)], ty
+                                res[getIndex(x1, y0, z0)],
+                                res[getIndex(x1, y1, z0)], ty
                             ), tx
                         ),
                         mix(
                             mix(
-                                res[chunk.getIndex(x0, y0, z1)],
-                                res[chunk.getIndex(x0, y1, z1)], ty
+                                res[getIndex(x0, y0, z1)],
+                                res[getIndex(x0, y1, z1)], ty
                             ), mix(
-                                res[chunk.getIndex(x1, y0, z1)],
-                                res[chunk.getIndex(x1, y1, z1)], ty
+                                res[getIndex(x1, y0, z1)],
+                                res[getIndex(x1, y1, z1)], ty
                             ), tx
                         ),
                         tz
@@ -122,19 +127,15 @@ class Perlin3dWorldGenerator(
     }
 
     fun fillStone(chunk: Chunk) {
-        val dim = chunk.dimension
         val block = BlockRegistry.Stone
-        val sx = dim.sizeX
-        val sy = dim.sizeY
-        val sz = dim.sizeZ
         val densities = sampleDensities(chunk)
-        for (ly in 0 until sy) {
-            for (lx in 0 until sx) {
-                for (lz in 0 until sz) {
+        for (ly in 0 until sizeY) {
+            for (lx in 0 until sizeX) {
+                for (lz in 0 until sizeZ) {
                     if (
                     // 3ms -> 0.3ms
                     //  isSolid(chunk.x0 + lx, chunk.y0 + ly, chunk.z0 + lz)
-                        densities[chunk.getIndex(lx, ly, lz)] > threshold
+                        densities[getIndex(lx, ly, lz)] > threshold
                     ) {
                         chunk.setBlockQuickly(lx, ly, lz, block)
                     }
@@ -152,15 +153,14 @@ class Perlin3dWorldGenerator(
     }
 
     fun decorateSurface(chunk: Chunk) {
-        val dim = chunk.dimension
         val x0 = chunk.x0
         val y0 = chunk.y0
         val z0 = chunk.z0
         val water = BlockRegistry.Water.id
-        val sx = dim.sizeX
-        val sy = dim.sizeY
-        val sz = dim.sizeZ
-        val dy = chunk.getIndex(0, 1, 0) - chunk.getIndex(0, 0, 0)
+        val sx = sizeX
+        val sy = sizeY
+        val sz = sizeZ
+        val dy = getIndex(0, 1, 0) - getIndex(0, 0, 0)
         for (lx in 0 until sx) {
             val gx = lx + x0
             for (lz in 0 until sz) {
@@ -195,21 +195,18 @@ class Perlin3dWorldGenerator(
         }
     }
 
-    override fun generate(chunk: Chunk) {
+    override fun decorate(chunk: Chunk) {
         // val t0 = System.nanoTime()
         fillStone(chunk) // 81%
         // val t1 = System.nanoTime()
         decorateSurface(chunk) // 19%
         // val t2 = System.nanoTime()
-        loadSaveData(chunk) // 0%
-        // val t3 = System.nanoTime()
         // val total = 1f / (t3 - t0)
         // println("Generate: ${((t1 - t0) * total).f3()}, ${((t2 - t1) * total).f3()}, ${((t3 - t2) * total).f3()}, ${(1e-6f / total).f3()}ms")
     }
 
     fun getHeightAt(chunk: Chunk, xi: Int, yi: Int, zi: Int, dy: Int, maxHeight: Int): Int {
-        val dim = chunk.dimension
-        var index = chunk.getIndex(xi and dim.maskX, yi and dim.maskY, zi and dim.maskZ)
+        var index = getIndex(xi and maskX, yi and maskY, zi and maskZ)
         // this block is guaranteed to be solid
         for (height in 1 until maxHeight) {
             index += dy

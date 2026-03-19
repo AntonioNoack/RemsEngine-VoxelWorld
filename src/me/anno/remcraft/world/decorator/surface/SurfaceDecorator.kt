@@ -3,6 +3,7 @@ package me.anno.remcraft.world.decorator.surface
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.world.Chunk
+import me.anno.remcraft.world.Index.sizeY
 import me.anno.remcraft.world.decorator.N1NDecorator
 import org.joml.Vector3i
 
@@ -18,10 +19,13 @@ abstract class SurfaceDecorator(
         val y0 = chunk.y0
         val gx = chunk.x0 + lx
         val gz = chunk.z0 + lz
-        if (dim.getBlockAt(gx, y0 + 2 * dim.sizeY, gz, chunk) == BlockRegistry.Air) {
+
+        val maxDy = maxExtends.y + sizeY
+
+        if (dim.getBlockAt(gx, y0 + maxDy, gz, chunk.stage) == BlockRegistry.Air) {
             // there is sky -> we can generate something
-            for (y in y0 + 2 * dim.sizeY - 1 downTo y0 - dim.sizeY) {
-                val block = dim.getBlockAt(gx, y, gz, chunk)
+            for (y in y0 + maxDy downTo y0 - maxExtends.y) {
+                val block = dim.getBlockAt(gx, y, gz, chunk.stage)
                 if (block != BlockRegistry.Air) {
                     if (block == surfaceBlock) {
                         // we found the start

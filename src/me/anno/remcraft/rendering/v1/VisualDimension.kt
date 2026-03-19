@@ -14,11 +14,12 @@ import me.anno.gpu.pipeline.PipelineStage
 import me.anno.maths.patterns.SpiralPattern
 import me.anno.remcraft.entity.PlayerEntity
 import me.anno.remcraft.multiplayer.MCProtocol
+import me.anno.remcraft.world.Index.sizeX
+import me.anno.remcraft.world.Index.sizeY
+import me.anno.remcraft.world.Index.sizeZ
 import me.anno.remcraft.world.SampleDimensions.perlin2dDim
 import me.anno.remcraft.world.SampleDimensions.perlin3dDim
 import me.anno.remcraft.world.SampleDimensions.sandDim
-import me.anno.remcraft.world.generator.Generator
-import me.anno.remcraft.world.generator.PerlinWorldGenerator
 import me.anno.utils.hpc.ProcessingGroup
 import me.anno.utils.structures.lists.Lists.createArrayList
 import me.anno.utils.structures.maps.Maps.removeIf
@@ -31,7 +32,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
         set(value) {
             if (field != value) {
                 field = value
-                generationOrder = createViewOrder(dimension.generator, viewDistance)
+                generationOrder = createViewOrder(viewDistance)
             }
         }
 
@@ -40,7 +41,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
             if (field != value) {
                 field = value
                 reset()
-                generationOrder = createViewOrder(dimension.generator, viewDistance)
+                generationOrder = createViewOrder(viewDistance)
             }
         }
 
@@ -48,7 +49,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
         set(value) {
             if (field != value) {
                 field = value
-                generationOrder = createViewOrder(dimension.generator, viewDistance)
+                generationOrder = createViewOrder(viewDistance)
             }
         }
 
@@ -66,7 +67,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
     private val visualChunks = HashMap<Vector3i, VisualChunk>()
 
     @NotSerializedProperty
-    private var generationOrder = createViewOrder(dimension.generator, viewDistance)
+    private var generationOrder = createViewOrder(viewDistance)
 
     @DebugAction
     fun reset() {
@@ -83,9 +84,9 @@ class VisualDimension : MeshSpawner(), OnUpdate {
 
     private fun updateAnchor() {
         val position = RenderView.currentInstance?.orbitCenter ?: RenderState.cameraPosition
-        val px = floor(position.x / dimension.sizeX).toInt()
-        val py = if (dimension.generator is PerlinWorldGenerator) 0 else floor(position.y / dimension.sizeY).toInt()
-        val pz = floor(position.z / dimension.sizeZ).toInt()
+        val px = floor(position.x / sizeX).toInt()
+        val py = floor(position.y / sizeY).toInt()
+        val pz = floor(position.z / sizeZ).toInt()
         anchor.set(px, py, pz)
     }
 
@@ -128,7 +129,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
                 val safeV = Vector3i(tmpV)
                 visualChunks[safeV] = visualChunk
                 chunkGenQueue += {
-                    visualChunk.chunk = dimension.getChunk(safeV.x, safeV.y, safeV.z, Int.MAX_VALUE)
+                    visualChunk.chunk = dimension.getChunk(safeV.x, safeV.y, safeV.z, Int.MAX_VALUE).waitFor()
                     visualChunk.generateMesh()
                 }
             }
@@ -153,9 +154,9 @@ class VisualDimension : MeshSpawner(), OnUpdate {
             if (visualChunk.hasMesh) {
                 val transform = getTransform(i++)
                 transform.setLocalPosition(
-                    v.x * dimension.sizeX.toDouble(),
-                    v.y * dimension.sizeY.toDouble(),
-                    v.z * dimension.sizeZ.toDouble()
+                    v.x * sizeX.toDouble(),
+                    v.y * sizeY.toDouble(),
+                    v.z * sizeZ.toDouble()
                 )
                 callback(visualChunk.solidMesh, solidMaterial, transform)
                 callback(visualChunk.fluidMesh, fluidMaterial, transform)
@@ -176,13 +177,10 @@ class VisualDimension : MeshSpawner(), OnUpdate {
         val fluidMaterial = Material().apply { pipelineStage = PipelineStage.TRANSPARENT }
 
         val chunkGenQueue = ProcessingGroup("ChunkGen", 1f)
-        fun createViewOrder(generator: Generator, viewDistance: Int): MutableList<Vector3i> {
-            return if (generator is PerlinWorldGenerator) {
-                SpiralPattern.roundSpiral2d(viewDistance, 0, false)
-                    .flatMap { xz -> createArrayList(4) { y -> Vector3i(xz.x, y, xz.z) } }
-            } else {
-                SpiralPattern.spiral3d(viewDistance, false)
-            }.toMutableList()
+        fun createViewOrder(viewDistance: Int): MutableList<Vector3i> {
+            return SpiralPattern.roundSpiral2d(viewDistance, 0, false)
+                .flatMap { xz -> createArrayList(4) { y -> Vector3i(xz.x, y, xz.z) } }
+                .toMutableList()
         }
     }
 

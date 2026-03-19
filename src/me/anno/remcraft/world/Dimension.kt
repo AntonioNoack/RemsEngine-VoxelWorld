@@ -1,40 +1,66 @@
 package me.anno.remcraft.world
 
+import me.anno.cache.CacheSection
 import me.anno.cache.Promise
-import me.anno.maths.chunks.cartesian.ChunkSystem
+import me.anno.maths.Maths.clamp
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.block.Metadata
 import me.anno.remcraft.rendering.v2.invalidateChunk
 import me.anno.remcraft.rendering.v2.saveSystem
+import me.anno.remcraft.world.Index.bitsX
+import me.anno.remcraft.world.Index.bitsY
+import me.anno.remcraft.world.Index.bitsZ
+import me.anno.remcraft.world.Index.getIndex
+import me.anno.remcraft.world.Index.maskX
+import me.anno.remcraft.world.Index.maskY
+import me.anno.remcraft.world.Index.maskZ
 import me.anno.remcraft.world.decorator.Decorator
-import me.anno.remcraft.world.generator.Generator
 import me.anno.utils.pooling.ObjectPool
-import me.anno.utils.types.Floats.f3
-import org.apache.logging.log4j.LogManager
 import org.joml.Vector3f
 import org.joml.Vector3i
-import kotlin.math.min
+import org.joml.Vector4i
 
-class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSystem<Chunk, BlockType>(5, 5, 5) {
+class Dimension(val stages: List<Decorator>) {
 
     val gravity = Vector3f(0f, -9.81f, 0f)
 
-    override fun createChunk(chunkX: Int, chunkY: Int, chunkZ: Int, size: Int, result: Promise<Chunk>) {
-        val t0 = System.nanoTime()
-        val chunk = chunkPool.create()
-        chunk.set(chunkX * sizeX, chunkY * sizeY, chunkZ * sizeZ)
-        chunk.clear()
-        generator.generate(chunk)
-        val t1 = System.nanoTime()
-        // 27ms -> 7ms by using faster noise on Ryzen 5 2600
-        // 3.0-3.5ms on Ryzen 9 7950x3D
-        if (printTimes) LOGGER.info("gen ${((t1 - t0) * 1e-6).f3()}ms/c")
-        result.value = chunk
+    var timeoutMillis = 5000L
+
+    private val chunks = CacheSection<Vector4i, Chunk>("Chunks")
+    private val generatorImpl = { key: Vector4i, result: Promise<Chunk> ->
+        if (key.w > 0) {
+            // load previous stage, then decorate
+            getChunk(key.x, key.y, key.z, key.w - 1).waitFor { prevChunk ->
+                val chunk = chunkPool.create()
+                chunk.set(key.x, key.y, key.z, key.w - 1)
+                prevChunk!!.copyInto(chunk)
+                stages[key.w].decorate(chunk)
+                chunk.stage = key.w
+                result.value = chunk
+            }
+        } else {
+            val chunk = chunkPool.create()
+            chunk.set(key.x, key.y, key.z, key.w - 1)
+            chunk.clear()
+            stages[key.w].decorate(chunk)
+            chunk.stage = key.w
+            result.value = chunk
+        }
     }
 
-    override fun getElement(container: Chunk, localX: Int, localY: Int, localZ: Int, index: Int): BlockType {
-        return container.getBlock(localX, localY, localZ)
+    fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stageId: Int): Promise<Chunk> {
+        if (stageId < 0) throw IllegalArgumentException("Invalid StageID $stageId")
+        val stageId = clamp(stageId, 0, stages.size - 1)
+        val key = Vector4i(chunkX, chunkY, chunkZ, stageId)
+        return chunks.getEntry(key, timeoutMillis, generatorImpl)
+    }
+
+    fun getChunkOrNull(chunkX: Int, chunkY: Int, chunkZ: Int, stageId: Int): Promise<Chunk>? {
+        if (stageId < 0) throw IllegalArgumentException("Invalid StageID $stageId")
+        val stageId = clamp(stageId, 0, stages.size - 1)
+        val key = Vector4i(chunkX, chunkY, chunkZ, stageId)
+        return chunks.getEntryWithoutGenerator(key)
     }
 
     fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int): BlockType? {
@@ -48,10 +74,6 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
     fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int): BlockType? {
         return getChunkAt(globalX, globalY, globalZ, stage)
             ?.getBlock(globalX, globalY, globalZ)
-    }
-
-    fun getBlockAt(globalX: Int, globalY: Int, globalZ: Int, chunk: Chunk): BlockType? {
-        return getBlockAt(globalX, globalY, globalZ, chunk.stage)
     }
 
     fun setBlockAt(
@@ -80,29 +102,14 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         return getChunkAt(globalX, globalY, globalZ, stage)!!.getOrCreateMetadata(globalX, globalY, globalZ)
     }
 
-    fun getChunk(chunkX: Int, chunkY: Int, chunkZ: Int, stage: Int): Chunk? {
-        val chunk = getChunk(chunkX, chunkY, chunkZ, true)?.waitFor(stage >= 0) ?: return null
-        for (stage2 in chunk.stage until min(stage, stages.size)) {
-            stages[stage2].decorate(chunk)
-            chunk.stage = stage2 + 1
-        }
-        return chunk
-    }
-
     fun getChunkAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int = Int.MAX_VALUE): Chunk? =
-        getChunk(globalX shr bitsX, globalY shr bitsY, globalZ shr bitsZ, stage)
-
-    override fun setElement(
-        container: Chunk,
-        localX: Int, localY: Int, localZ: Int,
-        index: Int, element: BlockType
-    ): Boolean {
-        return container.setBlock(localX, localY, localZ, element)
-    }
+        getChunk(globalX shr bitsX, globalY shr bitsY, globalZ shr bitsZ, stage).waitFor()
 
     fun unload(chunk: Chunk) {
-        removeChunk(chunk.chunkX, chunk.chunkY, chunk.chunkZ)?.waitFor { value ->
-            if (value != null) chunkPool.destroy(value)
+        for (stageId in 0 until stages.size) {
+            // todo add chunks to pool...
+            chunks.getEntryWithoutGenerator(Vector4i(chunk.xi, chunk.yi, chunk.zi, stageId))
+                ?.destroy()
         }
     }
 
@@ -131,10 +138,10 @@ class Dimension(val generator: Generator, val stages: List<Decorator>) : ChunkSy
         return Vector3i(x shr bitsX, y shr bitsY, z shr bitsZ)
     }
 
+    fun destroy() {
+        chunks.clear()
+    }
+
     private val chunkPool = ObjectPool { Chunk(this, 0, 0, 0) }
 
-    companion object {
-        private val LOGGER = LogManager.getLogger(Dimension::class)
-        var printTimes = false
-    }
 }

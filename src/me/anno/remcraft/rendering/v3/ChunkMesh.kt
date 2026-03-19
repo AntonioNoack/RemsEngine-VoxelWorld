@@ -5,9 +5,14 @@ import me.anno.ecs.components.mesh.IMesh
 import me.anno.gpu.buffer.Buffer
 import me.anno.gpu.pipeline.Pipeline
 import me.anno.gpu.shader.Shader
-import me.anno.remcraft.rendering.v2.*
+import me.anno.remcraft.rendering.v2.BlockFilter
 import me.anno.remcraft.rendering.v2.ChunkLoaderBase.Companion.mapPalette
+import me.anno.remcraft.rendering.v2.ChunkLoaderModel
+import me.anno.remcraft.rendering.v2.TextureMaterial
 import me.anno.remcraft.world.Chunk
+import me.anno.remcraft.world.Index.sizeX
+import me.anno.remcraft.world.Index.sizeY
+import me.anno.remcraft.world.Index.sizeZ
 import me.anno.utils.types.Ranges.size
 import org.joml.AABBf
 
@@ -22,9 +27,9 @@ class ChunkMesh(
         val emptyRange = 0 until 0
         val chunkBounds = AABBf(
             0f, 0f, 0f,
-            dimension.sizeX.toFloat(),
-            dimension.sizeY.toFloat(),
-            dimension.sizeZ.toFloat()
+            sizeX.toFloat(),
+            sizeY.toFloat(),
+            sizeZ.toFloat()
         )
     }
 

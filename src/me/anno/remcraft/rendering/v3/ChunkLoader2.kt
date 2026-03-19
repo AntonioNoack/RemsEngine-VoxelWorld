@@ -20,8 +20,8 @@ class ChunkLoader2(
         // val clock = Clock("ChunkLoader")
         // 9s vs 27s, so 3x faster to use a clone 🤯
         // todo fix that... we cannot be THAT slow just to synchronize stuff...
-        val dimension = Dimension(dimension.generator, dimension.stages)
-        val chunk = dimension.getChunk(chunkId.x, chunkId.y, chunkId.z, Int.MAX_VALUE)!!
+        val dimension = Dimension(dimension.stages)
+        val chunk = dimension.getChunk(chunkId.x, chunkId.y, chunkId.z, Int.MAX_VALUE).waitFor()!!
         // val model = ChunkLoaderModel(chunk)
         val solidMesh = ChunkMesh(chunk, solidRenderer, solidFilter) // model.createMesh(palette, solidFilter)
         val fluidMesh = ChunkMesh(chunk, solidRenderer, fluidFilter) // model.createMesh(palette, fluidFilter)

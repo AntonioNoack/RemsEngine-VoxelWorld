@@ -16,6 +16,9 @@ import me.anno.remcraft.block.types.DetailedBlockVisuals
 import me.anno.remcraft.block.builder.DetailedBlockMesh32
 import me.anno.remcraft.rendering.v1.VisualDimension.Companion.chunkGenQueue
 import me.anno.remcraft.world.Chunk
+import me.anno.remcraft.world.Index.sizeX
+import me.anno.remcraft.world.Index.sizeY
+import me.anno.remcraft.world.Index.sizeZ
 import me.anno.ui.UIColors
 import me.anno.utils.algorithms.ForLoop.forLoopSafely
 import me.anno.utils.structures.arrays.IntArrayList
@@ -43,7 +46,7 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
             val ci = RenderView.currentInstance
             if (ci != null) {
                 val pos = ci.orbitCenter // around where the camera orbits
-                delta.set(floor(pos.x / csx).toInt(), floor(pos.y / csy).toInt(), floor(pos.z / csz).toInt())
+                delta.set(floor(pos.x / sizeX).toInt(), floor(pos.y / sizeY).toInt(), floor(pos.z / sizeZ).toInt())
             }
             return delta
         }
@@ -76,9 +79,9 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
 
     fun createDetailMesh(chunk: Chunk): DetailedBlockMesh32? {
         val joinedData = IntArrayList(64)
-        for (z in 0 until dimension.sizeZ) {
-            for (y in 0 until dimension.sizeY) {
-                for (x in 0 until dimension.sizeX) {
+        for (z in 0 until sizeZ) {
+            for (y in 0 until sizeY) {
+                for (x in 0 until sizeX) {
                     val block = chunk.getBlock(x, y, z)
                     if (block.isSolid && block is DetailedBlockVisuals) {
                         val dx = (chunk.x0 + x) * 16
@@ -108,9 +111,9 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
     ) {
         val bounds = AABBd(mesh.getBounds())
         if (translate) {
-            val x0 = chunkId.x * csx
-            val y0 = chunkId.y * csy
-            val z0 = chunkId.z * csz
+            val x0 = chunkId.x * sizeX
+            val y0 = chunkId.y * sizeY
+            val z0 = chunkId.z * sizeZ
             bounds.translate(x0.toDouble(), y0.toDouble(), z0.toDouble())
         }
 
@@ -172,6 +175,6 @@ abstract class ChunkLoaderBase<ChunkRenderer>(
     }
 
     fun Vector3i.toBounds() = AABBd()
-        .setMin(csx * (x + 0.0), csy * (y + 0.0), csz * (z + 0.0))
-        .setMax(csx * (x + 1.0), csy * (y + 1.0), csz * (z + 1.0))
+        .setMin(sizeX * (x + 0.0), sizeY * (y + 0.0), sizeZ * (z + 0.0))
+        .setMax(sizeX * (x + 1.0), sizeY * (y + 1.0), sizeZ * (z + 1.0))
 }

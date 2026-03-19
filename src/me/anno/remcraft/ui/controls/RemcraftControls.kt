@@ -5,6 +5,8 @@ import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.MeshComponent
 import me.anno.engine.Events.addEvent
 import me.anno.engine.debug.DebugAABB
+import me.anno.engine.debug.DebugLine
+import me.anno.engine.debug.DebugRay
 import me.anno.engine.debug.DebugShapes
 import me.anno.engine.raycast.RayQuery
 import me.anno.engine.ui.control.ControlScheme
@@ -57,6 +59,7 @@ import me.anno.utils.types.Booleans.toFloat
 import me.anno.utils.types.Floats.toDegrees
 import org.apache.logging.log4j.LogManager
 import org.joml.AABBd
+import org.joml.Vector3d
 import org.joml.Vector3f
 import org.joml.Vector3i
 import kotlin.math.*
@@ -198,8 +201,27 @@ class RemcraftControls(
     var hoverResult: RayQuery? = null
 
     fun showHoveredBlock() {
-        hoverResult = clickCast(prepareQuery(), player, dimension)
+        val q = prepareQuery()
+        hoverResult = clickCast(q, player, dimension)
+
+        if (false && hoverResult == null) {
+            DebugShapes.showDebugRay(
+                DebugRay(
+                    Vector3d(q.start).fma(3f, q.direction),
+                    Vector3d(q.direction), -1, 5f
+                )
+            )
+        }
+
         val query = hoverResult ?: return
+
+        if (false) DebugShapes.showDebugArrow(
+            DebugLine(
+                Vector3d(q.start),
+                Vector3d(q.result.positionWS), -1, 5f
+            )
+        )
+
         if (hoversAnimal()) {
             // todo draw animal AABB(s)
             return

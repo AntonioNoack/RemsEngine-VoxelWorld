@@ -10,6 +10,9 @@ import me.anno.gpu.buffer.StaticBuffer
 import me.anno.io.files.FileReference
 import me.anno.remcraft.rendering.v2.VertexFormat.blockAttributes16Bit
 import me.anno.remcraft.rendering.v2.VertexFormat.blockVertexData
+import me.anno.remcraft.world.Index.sizeX
+import me.anno.remcraft.world.Index.sizeY
+import me.anno.remcraft.world.Index.sizeZ
 import org.joml.AABBd
 import org.joml.Matrix4x3
 import org.joml.Vector3i
@@ -31,9 +34,9 @@ class ChunkRenderer(val material: Material) :
      * */
     override fun getTransformAndMaterial(key: Vector3i, transform: Transform): Material {
         transform.setLocalPosition(
-            (key.x * csx).toDouble(),
-            (key.y * csy).toDouble(),
-            (key.z * csz).toDouble(),
+            (key.x * sizeX).toDouble(),
+            (key.y * sizeY).toDouble(),
+            (key.z * sizeZ).toDouble(),
         )
         transform.teleportUpdate()
         return material
@@ -43,7 +46,7 @@ class ChunkRenderer(val material: Material) :
         if (mesh.numPrimitives == 0L) return null
         val pos = mesh.positions ?: return null
         val buffer = StaticBuffer("chunk$key", attributes, pos.size / 3)
-        val nio = ChunkLoaderModel.createBuffer(key.x * csx, key.y * csy, key.z * csz, mesh)
+        val nio = ChunkLoaderModel.createBuffer(key.x * sizeX, key.y * sizeY, key.z * sizeZ, mesh)
         buffer.nioBuffer = nio
         buffer.cpuSideChanged()
         return buffer to null

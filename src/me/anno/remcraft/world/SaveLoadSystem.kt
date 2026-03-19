@@ -11,6 +11,10 @@ import me.anno.io.Streams.writeBE32
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.UnknownBlock
 import me.anno.remcraft.rendering.v2.dimension
+import me.anno.remcraft.world.Index.getIndex
+import me.anno.remcraft.world.Index.indexToX
+import me.anno.remcraft.world.Index.indexToY
+import me.anno.remcraft.world.Index.indexToZ
 import me.anno.utils.OS
 import me.anno.utils.assertions.assertEquals
 import org.joml.Vector3i
@@ -64,7 +68,7 @@ class SaveLoadSystem(name: String) {
             val y = stream.read()
             val z = stream.read()
             val b = blockIds[stream.readBE16()]
-            answer[dimension.getIndex(x, y, z)] = b
+            answer[getIndex(x, y, z)] = b
         }
 
         return answer
@@ -96,9 +100,9 @@ class SaveLoadSystem(name: String) {
 
         stream.writeBE32(blocks.size)
         for ((k, v) in blocks) {
-            stream.write(dimension.indexToX(k))
-            stream.write(dimension.indexToY(k))
-            stream.write(dimension.indexToZ(k))
+            stream.write(indexToX(k))
+            stream.write(indexToY(k))
+            stream.write(indexToZ(k))
             stream.writeBE16(idMapping[v]!!)
         }
 

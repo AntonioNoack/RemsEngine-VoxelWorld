@@ -5,11 +5,14 @@ import me.anno.ecs.components.mesh.MeshAttributes.color0
 import me.anno.mesh.vox.model.VoxelModel
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.world.Chunk
+import me.anno.remcraft.world.Index.sizeX
+import me.anno.remcraft.world.Index.sizeY
+import me.anno.remcraft.world.Index.sizeZ
 import me.anno.utils.pooling.ByteBufferPool
 import me.anno.utils.types.Floats.roundToIntOr
 import java.nio.ByteBuffer
 
-class ChunkLoaderModel(val chunk: Chunk) : VoxelModel(csx, csy, csz) {
+class ChunkLoaderModel(val chunk: Chunk) : VoxelModel(sizeX, sizeY, sizeZ) {
     override fun getBlock(x: Int, y: Int, z: Int): Int {
         return chunk.getBlock(x, y, z).id.toInt()
     }

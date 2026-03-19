@@ -8,9 +8,20 @@ import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.block.Metadata
 import me.anno.remcraft.block.types.ChangingBlock
 import me.anno.remcraft.entity.RemcraftEntity
-import me.anno.utils.pooling.JomlPools
+import me.anno.remcraft.world.Index.bitsX
+import me.anno.remcraft.world.Index.bitsY
+import me.anno.remcraft.world.Index.bitsZ
+import me.anno.remcraft.world.Index.getIndex
+import me.anno.remcraft.world.Index.indexToX
+import me.anno.remcraft.world.Index.indexToY
+import me.anno.remcraft.world.Index.indexToZ
+import me.anno.remcraft.world.Index.sizeX
+import me.anno.remcraft.world.Index.sizeY
+import me.anno.remcraft.world.Index.sizeZ
+import me.anno.remcraft.world.Index.totalSize
 import me.anno.utils.structures.arrays.IntArrayList
 import org.joml.Vector3i
+import speiger.primitivecollections.IntToObjectHashMap
 
 class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
 
@@ -21,18 +32,18 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     var z0 = z0
         private set
 
-    var chunkX = x0 shr dimension.bitsX
+    var xi = x0 shr bitsX
         private set
-    var chunkY = y0 shr dimension.bitsY
+    var yi = y0 shr bitsY
         private set
-    var chunkZ = z0 shr dimension.bitsZ
+    var zi = z0 shr bitsZ
         private set
 
-    var x1 = x0 + dimension.sizeX
+    var x1 = x0 + sizeX
         private set
-    var y1 = y0 + dimension.sizeY
+    var y1 = y0 + sizeY
         private set
-    var z1 = z0 + dimension.sizeZ
+    var z1 = z0 + sizeZ
         private set
 
     var stage = 0
@@ -40,8 +51,8 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     // what is the maximum number of block types? int32, I think
     // int16 will be enough without mods
     // probably still is good enough with metadata :)
-    val blocks = ShortArray(dimension.totalSize)
-    val metadata = HashMap<Int, Metadata>()
+    val blocks = ShortArray(totalSize)
+    val metadata = IntToObjectHashMap<Metadata>()
 
     val entities = ArrayList<RemcraftEntity>()
     val blockUpdates = IntArrayList()
@@ -70,10 +81,9 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
      * update center and all sides
      * */
     fun processBlockUpdate(i: Int) {
-        val (lx, ly, lz) = dimension.decodeIndex(i, JomlPools.vec3i.borrow())
-        val x = lx + x0
-        val y = ly + y0
-        val z = lz + z0
+        val x = indexToX(i) + x0
+        val y = indexToY(i) + y0
+        val z = indexToZ(i) + z0
 
         processBlockUpdate(x, y, z)
         processBlockUpdate(x - 1, y, z)
@@ -86,36 +96,41 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
 
     fun processBlockUpdate(x: Int, y: Int, z: Int) {
         val chunk = dimension.getChunkAt(x, y, z) ?: return
-        val index = chunk.getIndex(x, y, z)
+        val index = getIndex(x, y, z)
         val type = chunk.getBlock(index) as? ChangingBlock ?: return
         type.onBlockUpdate(x, y, z, chunk.getMetadata(index), chunk)
     }
 
-    fun set(x: Int, y: Int, z: Int) {
-        x0 = x
-        y0 = y
-        z0 = z
-        chunkX = x0 shr dimension.bitsX
-        chunkY = y0 shr dimension.bitsY
-        chunkZ = z0 shr dimension.bitsZ
-        x1 = x0 + dimension.sizeX
-        y1 = y0 + dimension.sizeY
-        z1 = z0 + dimension.sizeZ
+    fun set(xi: Int, yi: Int, zi: Int, stage: Int) {
+        x0 = xi shl bitsX
+        y0 = yi shl bitsY
+        z0 = zi shl bitsZ
+        this@Chunk.xi = xi
+        this@Chunk.yi = yi
+        this@Chunk.zi = zi
+        x1 = x0 + sizeX
+        y1 = y0 + sizeY
+        z1 = z0 + sizeZ
+        this.stage = stage
     }
 
     fun clear() {
         blocks.fill(0)
         metadata.clear()
         entities.clear()
-        stage = 0
     }
 
-    fun getIndex(localX: Int, localY: Int, localZ: Int): Int {
-        return dimension.getIndex(localX, localY, localZ)
+    fun copyInto(chunk: Chunk) {
+        check(chunk !== this)
+        blocks.copyInto(chunk.blocks)
+        chunk.metadata.clear()
+        chunk.metadata.addAll(metadata)
+        chunk.entities.clear()
+        chunk.entities.addAll(entities)
     }
 
     fun getBlockId(localX: Int, localY: Int, localZ: Int): Short {
-        return blocks[dimension.getIndex(localX, localY, localZ)]
+        return blocks[getIndex(localX, localY, localZ)]
     }
 
     fun getBlock(localX: Int, localY: Int, localZ: Int): BlockType {
@@ -139,8 +154,7 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     fun getOrCreateMetadata(index: Int): Metadata = metadata.getOrPut(index, ::Metadata)
 
     fun setBlock(x: Int, y: Int, z: Int, block: Short): Boolean {
-        val index = dimension.getIndex(x, y, z)
-        return setBlock(index, block)
+        return setBlock(getIndex(x, y, z), block)
     }
 
     fun setBlock(index: Int, block: Short): Boolean {
@@ -161,7 +175,7 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     }
 
     fun setBlock(x: Int, y: Int, z: Int, block: BlockType, metadata: Metadata?): Boolean {
-        val index = dimension.getIndex(x, y, z)
+        val index = getIndex(x, y, z)
         val changed0 = setBlock(x, y, z, block.id)
         val oldMetadata = this.metadata[index]
         if (metadata != null) this.metadata[index] = metadata
@@ -170,20 +184,9 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         return changed0 || changed1
     }
 
-    fun setBlockWithin(lx: Int, ly: Int, lz: Int, block: BlockType): Boolean {
-        val dim = dimension
-        return if (lx in 0 until dim.sizeX && ly in 0 until dim.sizeY && lz in 0 until dim.sizeZ) {
-            setBlock(lx, ly, lz, block)
-        } else false
-    }
-
     fun setBlockIfAir(lx: Int, ly: Int, lz: Int, block: BlockType): Boolean {
-        val dim = dimension
-        return if (lx in 0 until dim.sizeX &&
-            ly in 0 until dim.sizeY &&
-            lz in 0 until dim.sizeZ
-        ) {
-            val index = dim.getIndex(lx, ly, lz)
+        return if (lx in 0 until sizeX && ly in 0 until sizeY && lz in 0 until sizeZ) {
+            val index = getIndex(lx, ly, lz)
             if (blocks[index] == 0.toShort()) {
                 blocks[index] = block.id
                 true
@@ -192,7 +195,7 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
     }
 
     fun setBlockQuickly(x: Int, y: Int, z: Int, block: Short) {
-        blocks[dimension.getIndex(x, y, z)] = block
+        blocks[getIndex(x, y, z)] = block
     }
 
     fun setBlockQuickly(x: Int, y: Int, z: Int, block: BlockType) {
@@ -203,7 +206,7 @@ class Chunk(val dimension: Dimension, x0: Int, y0: Int, z0: Int) : Saveable() {
         super.save(writer)
         writer.writeObjectList(this, "entities", entities)
         writer.writeInt("decorator", stage)
-        for ((key, value) in metadata) {
+        metadata.forEach { key, value ->
             writer.writeObject(this, "m$key", value)
         }
         writer.writeShortArray("blocks", blocks)

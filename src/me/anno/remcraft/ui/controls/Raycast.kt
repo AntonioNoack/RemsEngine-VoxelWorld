@@ -15,8 +15,6 @@ import org.joml.Vector3d
 import org.joml.Vector3f
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.min
 
 object Raycast {
 
@@ -29,67 +27,66 @@ object Raycast {
         val end = query.end
         val min = start.min(end, Vector3d())
         val max = start.max(end, Vector3d())
-        val dir = query.direction
 
-        val localPos = Vector3f()
-        val localDir = Vector3f()
-        val tmpM = Matrix4x3()
-        CollisionSystem.animals.query(min, max) { target ->
-            if (target != player && (target !is PlayerEntity || !target.gameMode.isGhost())) {
+        if (false) {
+            // todo when this is active, tracing is broken, why? :(
+            val dir = query.direction
 
-                target.model.fill(target.transform!!) { mesh, transform ->
-                    transform.validate()
+            val localPos = Vector3f()
+            val localDir = Vector3f()
+            val tmpM = Matrix4x3()
+            CollisionSystem.animals.query(min, max) { target ->
+                if (target != player && (target !is PlayerEntity || !target.gameMode.isGhost())) {
 
-                    val gt = transform.globalTransform
-                    localPos.set(start)
+                    target.model.fill(target.transform!!) { mesh, transform ->
+                        transform.validate()
 
-                    val gti = gt.invert(tmpM)
-                    gti.transformDirection(dir, localDir)
-                    gti.transformPosition(localPos)
+                        val gt = transform.globalTransform
+                        localPos.set(start)
 
-                    val distance = mesh.getBounds()
-                        .whereIsRayIntersecting(
-                            localPos.x, localPos.y, localPos.z,
-                            1f / localDir.x, 1f / localDir.y, 1f / localDir.z,
-                            0f
-                        ).toDouble()
+                        val gti = gt.invert(tmpM)
+                        gti.transformDirection(dir, localDir)
+                        gti.transformPosition(localPos)
 
-                    if (distance < query.result.distance) {
-                        query.result.distance = distance
-                        query.result.shadingNormalWS.set(dir)
-                        query.result.geometryNormalWS.set(dir)
-                        query.result.component = target
+                        val distance = mesh.getBounds()
+                            .whereIsRayIntersecting(
+                                localPos.x, localPos.y, localPos.z,
+                                1f / localDir.x, 1f / localDir.y, 1f / localDir.z,
+                                0f
+                            ).toDouble()
+
+                        if (distance < query.result.distance) {
+                            query.result.distance = distance
+                            query.result.shadingNormalWS.set(dir)
+                            query.result.geometryNormalWS.set(dir)
+                            query.result.component = target
+                            query.end.set(query.direction).normalize(distance).add(query.start)
+                        }
                     }
                 }
+
+                false
             }
 
-            false
-        }
-
-        // todo bug: there is regions, where our cursor no longer works :(
-        //  -> it skips blocks???
-
-        if (query.result.component is Animal) {
-            val dist = query.result.distance
-            end.set(start.x + dir.x * dist, start.y + dir.y * dist, start.z + dir.z * dist)
+            if (query.result.component is Animal) {
+                val dist = query.result.distance
+                end.set(start.x + dir.x * dist, start.y + dir.y * dist, start.z + dir.z * dist)
+            }
         }
 
         val queryBounds = AABBi(
-            floor(min(start.x, end.x)).toInt(),
-            floor(min(start.x, end.y)).toInt(),
-            floor(min(start.x, end.z)).toInt(),
-
-            ceil(max(start.x, end.x)).toInt(),
-            ceil(max(start.x, end.y)).toInt(),
-            ceil(max(start.x, end.z)).toInt(),
+            floor(min.x).toInt(),
+            floor(min.y).toInt(),
+            floor(min.z).toInt(),
+            ceil(max.x).toInt(),
+            ceil(max.y).toInt(),
+            ceil(max.z).toInt(),
         )
 
         val hitBlock =
             BlockTracing.blockTrace(query, (query.result.distance * 3).toInt(), queryBounds) { xi, yi, zi ->
                 val block = dimension.getBlockAt(xi, yi, zi) ?: BlockRegistry.Air
                 val hit = if (block is DetailedBlockVisuals) {
-
-                    // todo test this code...
 
                     start.mul(DETAIL_SIZE.toDouble())
                     query.result.distance *= DETAIL_SIZE
@@ -99,13 +96,13 @@ object Raycast {
                         .setMax(xi * 16 + 16, yi * 16 + 16, zi * 16 + 16)
 
                     val detail = block.getModel()
-                    val hitDetails = BlockTracing.blockTrace(query, DETAIL_SIZE * 3, detailBounds) { xi, yi, zi ->
-                        if (detail.getVoxel(xi, yi, zi)) BlockTracing.SOLID_BLOCK
+                    val hitDetails = BlockTracing.blockTrace(query, DETAIL_SIZE * 3, detailBounds) { dxi, dyi, dzi ->
+                        if (detail.getVoxel(dxi - xi * 16, dyi - yi * 16, dzi - zi * 16)) BlockTracing.SOLID_BLOCK
                         else BlockTracing.AIR_BLOCK
                     }
 
                     start.mul(1.0 / DETAIL_SIZE)
-                    query.result.distance *= 1.0 / DETAIL_SIZE
+                    query.result.distance /= DETAIL_SIZE
 
                     if (hitDetails) {
                         query.result.positionWS.mul(1.0 / DETAIL_SIZE)

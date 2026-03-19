@@ -17,6 +17,7 @@ import me.anno.remcraft.entity.physics.CollisionSystem
 import me.anno.remcraft.rendering.createLighting
 import me.anno.remcraft.ui.ItemSlot
 import me.anno.remcraft.ui.controls.RemcraftControls
+import me.anno.remcraft.world.Index
 import me.anno.remcraft.world.SampleDimensions
 import me.anno.remcraft.world.SaveLoadSystem
 import me.anno.ui.base.groups.PanelList
@@ -35,10 +36,6 @@ val saveSystem = SaveLoadSystem("Remcraft")
 val dimension = SampleDimensions.perlin2dDim.apply {
     timeoutMillis = 250
 }
-
-val csx = dimension.sizeX
-val csy = dimension.sizeY
-val csz = dimension.sizeZ
 
 lateinit var chunkLoader: ChunkLoaderBase<*>
 lateinit var entities: Entity
