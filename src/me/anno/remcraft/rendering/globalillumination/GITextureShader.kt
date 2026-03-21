@@ -14,7 +14,7 @@ object GITextureShader : ECSMeshShader("gi-textured") {
                 concatDefines(key).toString() +
                         // discardByCullingPlane +
                         "vec4 color = texture(diffuseMap,uv);\n" +
-                        "finalColor = 0.1 * color.rgb;\n" +
+                        "finalColor = 0.01 * color.rgb;\n" +
                         "finalAlpha = color.a;\n" +
                         normalTanBitanCalculation +
                         // normalMapCalculation +

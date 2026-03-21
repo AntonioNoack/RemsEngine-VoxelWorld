@@ -1,5 +1,7 @@
 package me.anno.remcraft.rendering.globalillumination
 
+import me.anno.engine.debug.DebugLine
+import me.anno.engine.debug.DebugShapes
 import me.anno.engine.raycast.BlockTracing
 import me.anno.engine.raycast.RayQuery
 import me.anno.maths.Maths.mix
@@ -74,7 +76,7 @@ class GlobalIllumination(val dimension: Dimension) {
     private val query = RayQuery(Vector3d(), Vector3f(0f, 0f, 1f), 1e6)
 
     val connections = PackedIntF3Lists(1 shl 16, raysPerFace, -1)
-    val skyEffect = FloatArrayList(1 shl 16)
+    val skyEffect = FloatArrayList(1 shl 16).apply { size = capacity }
 
     fun addChunk(chunk: Chunk) {
         // for each solid face,
@@ -161,6 +163,10 @@ class GlobalIllumination(val dimension: Dimension) {
                 } else numSkyHits++
             }
 
+            if (selfFace >= skyEffect.capacity) {
+                skyEffect.resize(selfFace * 2)
+                skyEffect.size = skyEffect.capacity
+            }
             skyEffect[selfFace] = numSkyHits * baseWeight
         }
     }
@@ -203,8 +209,8 @@ class GlobalIllumination(val dimension: Dimension) {
         tmp.size = faces.size * 3
         light.fill(0f)
 
-        addSkyEffect(skyColors)
-        shadowCasting(sunDir, sunColors)
+        addSkyLight(skyColors)
+        addSunLight(sunDir, sunColors)
 
         for (i in 0 until numIterations) {
             val src = if (i.hasFlag(1)) tmp else light
@@ -225,7 +231,7 @@ class GlobalIllumination(val dimension: Dimension) {
         }
     }
 
-    fun addSkyEffect(skyColors: List<Vector3f>) {
+    fun addSkyLight(skyColors: List<Vector3f>) {
         val light = light.values
         val skyEffect = skyEffect.values
         faces.forEach { hash, faceId ->
@@ -238,7 +244,7 @@ class GlobalIllumination(val dimension: Dimension) {
         }
     }
 
-    fun shadowCasting(dir: Vector3f, sunColors: List<Vector3f?>) {
+    fun addSunLight(dir: Vector3f, sunColors: List<Vector3f?>) {
         val query = query
         query.direction.set(dir)
 
@@ -281,6 +287,12 @@ class GlobalIllumination(val dimension: Dimension) {
                         if (hit) BlockTracing.SOLID_BLOCK
                         else BlockTracing.AIR_BLOCK
                     }
+
+                    if (false && sunIsBlocked) {
+                        val ray = DebugLine(Vector3d(query.start), Vector3d(query.end), -1, 1e3f)
+                        DebugShapes.showDebugArrow(ray)
+                    }
+
                     if (!sunIsBlocked) numSunHits++
                 }
 

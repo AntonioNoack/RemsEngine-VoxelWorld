@@ -6,7 +6,6 @@ import me.anno.ecs.components.mesh.MeshAttributes.color0
 import me.anno.ecs.components.mesh.material.Material
 import me.anno.engine.OfficialExtensions
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
-import me.anno.maths.MinMax
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.BlockType
@@ -14,6 +13,7 @@ import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companio
 import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companion.decodeX
 import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companion.decodeY
 import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companion.decodeZ
+import me.anno.remcraft.world.Dimension
 import me.anno.remcraft.world.SampleDimensions
 import me.anno.utils.Color.rgb
 import me.anno.utils.OS.res
@@ -29,22 +29,30 @@ fun main() {
 
     OfficialExtensions.initForTests()
 
-    val dimension = SampleDimensions.perlin2dDim
+    val simpleWorld = false
+    val dimension =
+        if (simpleWorld) Dimension(emptyList())
+        else SampleDimensions.perlin2dDim
     val gi = GlobalIllumination(dimension)
 
-    val dx = 1
-    val dz = 1
-    val y0 = 1
-    val y1 = 2
-
-    if (false) {
+    if (simpleWorld) {
         fun set(x: Int, y: Int, z: Int, type: BlockType) {
             dimension.getChunkAt(x, y, z)!!
                 .setBlockQuickly(x, y, z, type.id)
         }
 
-        set(1, 1, 1, BlockRegistry.Stone)
+        for (di in -5..5) {
+            for (dj in -5..5) {
+                set(di, 1, dj, BlockRegistry.Stone)
+            }
+        }
+        // set(1, 1, 1, BlockRegistry.Stone)
     }
+
+    val dx = 1
+    val dz = 1
+    val y0 = if (simpleWorld) 0 else 1
+    val y1 = if (simpleWorld) 0 else 2
 
     for (xi in -dx..dx) {
         for (zi in -dz..dz) {
@@ -60,9 +68,9 @@ fun main() {
     val defaultSky = Skybox()
     val sunDir = Vector3f(defaultSky.sunBaseDir)
         .rotate(defaultSky.sunRotation)
-        .normalize(-1f)
+        .normalize()
     val sunColors = BlockSide.entries.map { side ->
-        val brightness = -5f * sunDir.dot(side.x.toFloat(), side.y.toFloat(), side.z.toFloat())
+        val brightness = 5f * sunDir.dot(side.x.toFloat(), side.y.toFloat(), side.z.toFloat())
         if (brightness > 0f) {
             Vector3f(1f, 1f, 0.9f).mul(brightness)
         } else null
@@ -106,7 +114,7 @@ fun createDebugMesh(gi: GlobalIllumination, light: FloatArray): Mesh {
         val cr = light[faceId * 3 + 0]
         val cg = light[faceId * 3 + 1]
         val cb = light[faceId * 3 + 2]
-        val f = 0.2f // 1f / (MinMax.max(cr, cg, cb) + 1e-9f)
+        val f = 0.2f // max brightness is 5 -> 1/5
         val color = rgb(cr * f, cg * f, cb * f)
 
         val block = gi.dimension.getBlockAt(x, y, z) ?: BlockRegistry.Stone
@@ -154,7 +162,7 @@ fun createDebugMesh(gi: GlobalIllumination, light: FloatArray): Mesh {
         shader = GITextureShader
         linearFiltering = false
         diffuseMap = res.getChild("textures/blocks/Blocks.png")
-        emissiveBase.set(1f)
+        emissiveBase.set(3f)
     }.ref)
 
     return mesh
