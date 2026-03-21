@@ -7,6 +7,7 @@ import me.anno.engine.raycast.RayQuery
 import me.anno.maths.Maths.mix
 import me.anno.maths.Maths.sq
 import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.rendering.v2.ChunkIndex.encodeChunkIndex
 import me.anno.remcraft.world.Chunk
 import me.anno.remcraft.world.Dimension
@@ -19,6 +20,7 @@ import me.anno.utils.Color.g01
 import me.anno.utils.Color.r01
 import me.anno.utils.structures.arrays.FloatArrayList
 import me.anno.utils.types.Booleans.hasFlag
+import org.apache.logging.log4j.LogManager
 import org.joml.AABBi
 import org.joml.Vector3d
 import org.joml.Vector3f
@@ -28,6 +30,8 @@ import kotlin.math.*
 
 class GlobalIllumination(val dimension: Dimension) {
     companion object {
+        private val LOGGER = LogManager.getLogger(GlobalIllumination::class)
+
         fun decodeX(hash: Long): Int = hash.shl(16).toInt().shr(16)
         fun decodeY(hash: Long): Int = hash.toInt().shr(16)
         fun decodeZ(hash: Long): Int = hash.shr(16).toInt().shr(16)
@@ -40,6 +44,18 @@ class GlobalIllumination(val dimension: Dimension) {
             val zi = z.and(0xffff).toLong()
             val si = side.ordinal.toLong()
             return xi + yi.shl(16) + zi.shl(32) + si.shl(48)
+        }
+
+        fun getPosX(x: Int, side: BlockSide, du: Float, dv: Float): Double {
+            return x + 0.5 * (side.x + 1) + du * side.y + dv * side.z
+        }
+
+        fun getPosY(y: Int, side: BlockSide, du: Float, dv: Float): Double {
+            return y + 0.5 * (side.y + 1) + du * side.z + dv * side.x
+        }
+
+        fun getPosZ(z: Int, side: BlockSide, du: Float, dv: Float): Double {
+            return z + 0.5 * (side.z + 1) + du * side.x + dv * side.y
         }
     }
 
@@ -78,6 +94,19 @@ class GlobalIllumination(val dimension: Dimension) {
     val connections = PackedIntF3Lists(1 shl 16, raysPerFace, -1)
     val skyEffect = FloatArrayList(1 shl 16).apply { size = capacity }
 
+    fun getColor(selfBlock: BlockType, dst: Vector3f): Vector3f {
+        val selfColor = selfBlock.color
+        var selfR = selfColor.r01()
+        var selfG = selfColor.g01()
+        var selfB = selfColor.b01()
+        val selfC = (selfR + selfG + selfB) / 3f
+        val grayness = 0.7f
+        selfR = mix(selfR, selfC, grayness)
+        selfG = mix(selfG, selfC, grayness)
+        selfB = mix(selfB, selfC, grayness)
+        return dst.set(selfR, selfG, selfB)
+    }
+
     fun addChunk(chunk: Chunk) {
         // for each solid face,
         //  find target faces,
@@ -87,8 +116,12 @@ class GlobalIllumination(val dimension: Dimension) {
         val maxSteps = ceil(maxDistance * 3).toInt()
         val bounds = AABBi().all()
 
-        val baseWeight = 1f / raysPerFace
+        val baseWeight = 0.2f / raysPerFace
+        val baseSkyWeight = 1f / raysPerFace
         val random = Random(encodeChunkIndex(chunk.xi, chunk.yi, chunk.zi))
+        val selfColor = Vector3f()
+        val otherColor = Vector3f()
+
         forEachFace(chunk) { x, y, z, side ->
             val gx = x + chunk.x0
             val gy = y + chunk.y0
@@ -96,15 +129,7 @@ class GlobalIllumination(val dimension: Dimension) {
 
             val selfFace = getFace(gx, gy, gz, side)
             val selfBlock = dimension.getBlockAt(gx, gy, gz)!!
-            val selfColor = selfBlock.color
-            var selfR = selfColor.r01()
-            var selfG = selfColor.g01()
-            var selfB = selfColor.b01()
-            val selfC = (selfR + selfG + selfB) / 3f
-            val grayness = 0.7f
-            selfR = mix(selfR, selfC, grayness)
-            selfG = mix(selfG, selfC, grayness)
-            selfB = mix(selfB, selfC, grayness)
+            getColor(selfBlock, selfColor)
 
             // calculate r,g,b contribution
             var numSkyHits = 0
@@ -151,14 +176,18 @@ class GlobalIllumination(val dimension: Dimension) {
                     }
 
                     val otherFace = getFace(ox, oy, oz, otherSide)
-                    val weight = baseWeight / max(1f, sq(res.distance).toFloat()) *
+                    val weight = baseWeight / (1f + sq(res.distance).toFloat()) *
                             abs(nor.dot(dirX, dirY, dirZ)) // [0,1]
-                    if (selfFace >= connections.size) {
-                        connections.resizeTo(selfFace * 2)
-                    }
+
+                    if (selfFace >= connections.size) connections.resizeTo(selfFace * 2)
+
+                    val otherBlock = dimension.getBlockAt(ox, oy, oz)!!
+                    getColor(otherBlock, otherColor)
+
                     connections.addUnique(
                         selfFace, otherFace,
-                        weight * selfR, weight * selfG, weight * selfB
+                        selfColor.x * weight, selfColor.y * weight, selfColor.z * weight,
+                        otherColor.x * weight, otherColor.y * weight, otherColor.z * weight
                     )
                 } else numSkyHits++
             }
@@ -167,7 +196,7 @@ class GlobalIllumination(val dimension: Dimension) {
                 skyEffect.resize(selfFace * 2)
                 skyEffect.size = skyEffect.capacity
             }
-            skyEffect[selfFace] = numSkyHits * baseWeight
+            skyEffect[selfFace] = numSkyHits * baseSkyWeight
         }
     }
 
@@ -197,16 +226,19 @@ class GlobalIllumination(val dimension: Dimension) {
     val light = FloatArrayList(1 shl 16)
     val tmp = FloatArrayList(1 shl 16)
 
+    private fun prepareLight(light: FloatArrayList) {
+        light.ensureCapacity(faces.size * 3)
+        light.size = faces.size * 3
+    }
+
     fun lightTransport(
         sunDir: Vector3f,
         sunColors: List<Vector3f?>,
         skyColors: List<Vector3f>,
         numIterations: Int,
     ): FloatArrayList {
-        light.ensureCapacity(faces.size * 3)
-        light.size = faces.size * 3
-        tmp.ensureCapacity(faces.size * 3)
-        tmp.size = faces.size * 3
+        prepareLight(light)
+        prepareLight(tmp)
         light.fill(0f)
 
         addSkyLight(skyColors)
@@ -222,12 +254,17 @@ class GlobalIllumination(val dimension: Dimension) {
 
     fun lightTransportI(src: FloatArray, dst: FloatArray) {
         src.copyInto(dst, 0, 0, 3 * faces.size)
-        connections.forEach { srcI, dstI, r, g, b ->
+        connections.forEach { srcI, dstI, r0, g0, b0, r1, g1, b1 ->
             val srcI3 = srcI * 3
             val dstI3 = dstI * 3
-            dst[dstI3 + 0] += src[srcI3 + 0] * r
-            dst[dstI3 + 1] += src[srcI3 + 1] * g
-            dst[dstI3 + 2] += src[srcI3 + 2] * b
+            // forward
+            dst[dstI3 + 0] += src[srcI3 + 0] * r0
+            dst[dstI3 + 1] += src[srcI3 + 1] * g0
+            dst[dstI3 + 2] += src[srcI3 + 2] * b0
+            // backward
+            dst[srcI3 + 0] += src[dstI3 + 0] * r1
+            dst[srcI3 + 1] += src[dstI3 + 1] * g1
+            dst[srcI3 + 2] += src[dstI3 + 2] * b1
         }
     }
 
@@ -267,7 +304,6 @@ class GlobalIllumination(val dimension: Dimension) {
                 var numSunHits = 0
                 val side = decodeSide(hash)
                 repeat(numSunRays) {
-                    // todo why do so few rays hit nothing???
                     val du = random.nextFloat() - 0.5f
                     val dv = random.nextFloat() - 0.5f
                     val posX = getPosX(x, side, du, dv) + side.x * 0.1f
@@ -307,19 +343,6 @@ class GlobalIllumination(val dimension: Dimension) {
             }
         }
 
-        // todo why do only soo few faces receive light???
-        println("Receive light: $receiveLight / ${faces.size}")
-    }
-
-    fun getPosX(x: Int, side: BlockSide, du: Float, dv: Float): Double {
-        return x + 0.5 * (side.x + 1) + du * side.y + dv * side.z
-    }
-
-    fun getPosY(y: Int, side: BlockSide, du: Float, dv: Float): Double {
-        return y + 0.5 * (side.y + 1) + du * side.z + dv * side.x
-    }
-
-    fun getPosZ(z: Int, side: BlockSide, du: Float, dv: Float): Double {
-        return z + 0.5 * (side.z + 1) + du * side.x + dv * side.y
+        LOGGER.info("$receiveLight/${faces.size} Faces received some direct sunlight")
     }
 }

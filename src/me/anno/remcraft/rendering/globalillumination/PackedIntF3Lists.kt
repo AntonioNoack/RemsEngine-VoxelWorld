@@ -33,54 +33,79 @@ class PackedIntF3Lists(
         val initialCapacityPerValue = max(initialCapacityPerValue, 1)
         val totalCapacity = size * initialCapacityPerValue + (initialCapacityPerValue == 1).toInt()
         values = IntArray(totalCapacity)
-        floats = FloatArray(totalCapacity * 3)
+        floats = FloatArray(totalCapacity * 6)
         clear()
     }
 
-    fun addUnique(index: Int, value: Int, x: Float, y: Float, z: Float) {
+    fun addUnique(
+        index: Int, value: Int,
+        x0: Float, y0: Float, z0: Float,
+        x1: Float, y1: Float, z1: Float,
+    ) {
         var pos = offsets[index]
+        val values = values
         while (true) {
             val valueI = values[pos]
             if (valueI == invalidValue) {
-                return add(index, value, x, y, z)
+                return add(index, value, x0, y0, z0, x1, y1, z1)
             }
 
             if (valueI == value) {
-                val pos3 = pos * 3
-                floats[pos3 + 0] += x
-                floats[pos3 + 1] += y
-                floats[pos3 + 2] += z
+                val pos6 = pos * 6
+                val floats = floats
+                floats[pos6 + 0] += x0
+                floats[pos6 + 1] += y0
+                floats[pos6 + 2] += z0
+                floats[pos6 + 3] += x1
+                floats[pos6 + 4] += y1
+                floats[pos6 + 5] += z1
                 return
             }
             pos++
         }
     }
 
-    fun add(index: Int, value: Int, x: Float, y: Float, z: Float) {
+    fun add(
+        index: Int, value: Int,
+        x0: Float, y0: Float, z0: Float,
+        x1: Float, y1: Float, z1: Float,
+    ) {
         var index = index
         var value = value
-        var x = x
-        var y = y
-        var z = z
+        var x0 = x0
+        var y0 = y0
+        var z0 = z0
+        var x1 = x1
+        var y1 = y1
+        var z1 = z1
 
+        val offsets = offsets
         while (true) {
             if (index >= offsets.size) println("Illegal index! $index vs $size, ${offsets.size}")
             val pos = offsets[index] + getSize(index)
-            val pos3 = pos * 3
+            val pos6 = pos * 6
 
             // check if next cell is free for end marker
             if (pos + 1 >= values.size) grow()
 
+            val values = values
             val wouldBeOverridden = values[pos + 1]
-            val wboX = floats[pos3 + 3]
-            val wboY = floats[pos3 + 4]
-            val wboZ = floats[pos3 + 5]
+            val floats = floats
+            val x2 = floats[pos6 + 6]
+            val y2 = floats[pos6 + 7]
+            val z2 = floats[pos6 + 8]
+            val x3 = floats[pos6 + 9]
+            val y3 = floats[pos6 + 10]
+            val z3 = floats[pos6 + 11]
 
             // insert value and new end marker
             values[pos] = value
-            floats[pos3 + 0] = x
-            floats[pos3 + 1] = y
-            floats[pos3 + 2] = z
+            floats[pos6 + 0] = x0
+            floats[pos6 + 1] = y0
+            floats[pos6 + 2] = z0
+            floats[pos6 + 3] = x1
+            floats[pos6 + 4] = y1
+            floats[pos6 + 5] = z1
             values[pos + 1] = invalidValue
 
             index++
@@ -88,9 +113,12 @@ class PackedIntF3Lists(
                 // Need to move suffix forward (shift right until free space)
                 offsets[index] = pos + 2
                 value = wouldBeOverridden
-                x = wboX
-                y = wboY
-                z = wboZ
+                x0 = x2
+                y0 = y2
+                z0 = z2
+                x1 = x3
+                y1 = y3
+                z1 = z3
             } else break
         }
     }
@@ -106,27 +134,27 @@ class PackedIntF3Lists(
         throw IndexOutOfBoundsException("row=$index col=$index2")
     }
 
-    inline fun forEach(index: Int, callback: (Int, Float, Float, Float) -> Unit): Int {
-        val pos0 = offsets[index]
-        var pos = pos0
-        while (true) {
-            val value = values[pos]
-            if (value == invalidValue) return pos - pos0
-            val pos3 = pos * 3
-            callback(value, floats[pos3], floats[pos3 + 1], floats[pos3 + 2])
-            pos++
-        }
+    fun interface ForEachCallback {
+        fun call(
+            index: Int, value: Int,
+            x0: Float, y0: Float, z0: Float,
+            x1: Float, y1: Float, z1: Float,
+        )
     }
 
-    inline fun forEach(callback: (index: Int, value: Int, Float, Float, Float) -> Unit) {
+    fun forEach(callback: ForEachCallback) {
         for (index in 0 until size) {
             val pos0 = offsets[index]
             var pos = pos0
             while (true) {
                 val value = values[pos]
                 if (value == invalidValue) break
-                val pos3 = pos * 3
-                callback(index, value, floats[pos3], floats[pos3 + 1], floats[pos3 + 2])
+                val pos6 = pos * 6
+                callback.call(
+                    index, value,
+                    floats[pos6 + 0], floats[pos6 + 1], floats[pos6 + 2],
+                    floats[pos6 + 3], floats[pos6 + 4], floats[pos6 + 5],
+                )
                 pos++
             }
         }
@@ -165,7 +193,7 @@ class PackedIntF3Lists(
         val newValues = values.copyOf(values.size * 2)
         newValues.fill(invalidValue, values.size, newValues.size)
         this.values = newValues
-        floats = floats.copyOf(newValues.size * 3)
+        floats = floats.copyOf(newValues.size * 6)
     }
 
     /**
@@ -205,7 +233,7 @@ class PackedIntF3Lists(
         if (requiredSize > oldNumValues) {
             values = values.copyOf(requiredSize)
             values.fill(invalidValue, oldNumValues, requiredSize)
-            floats = floats.copyOf(requiredSize * 3)
+            floats = floats.copyOf(requiredSize * 6)
         }
 
         offsets = offsets.copyOf(newSize)
