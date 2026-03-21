@@ -11,6 +11,8 @@ import kotlin.math.sin
 class RavineDecorator(density: Float, seed: Long) :
     NNNDecorator(density, Vector3i(240, 120, 240), seed) {
 
+    override val readsPreviousStage: Boolean get() = false
+
     override fun decorate(chunk: Chunk, lx: Int, ly: Int, lz: Int) {
 
         var x = lx.toFloat()

@@ -20,10 +20,12 @@ class PerlinWorldGenerator(
     minHeight: Float,
     maxHeight: Float,
     seed: Long
-) : Decorator() {
+) : Decorator {
 
     val minY = -1024
     val heightNoise = PerlinNoise(seed, log2(maxHeight - minHeight).roundToInt(), 0.5f, minHeight, maxHeight)
+
+    override val readsPreviousStage: Boolean get() = false
 
     fun getHeightAt(x: Int, z: Int) = heightNoise[x * scale, z * scale].toInt()
 

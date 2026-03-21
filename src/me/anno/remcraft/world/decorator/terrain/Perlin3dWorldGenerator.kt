@@ -25,11 +25,13 @@ class Perlin3dWorldGenerator(
     grassBlocks: List<BlockType>,
     sandBlocks: List<BlockType>,
     seed: Long
-) : Decorator() {
+) : Decorator {
 
     companion object {
         val densities = threadLocal { FloatArray(totalSize) }
     }
+
+    override val readsPreviousStage: Boolean get() = false
 
     val grassBlocks = grassBlocks.map { it.id }.toShortArray()
     val sandBlocks = sandBlocks.map { it.id }.toShortArray()

@@ -17,22 +17,19 @@ import me.anno.remcraft.world.Index.maskX
 import me.anno.remcraft.world.Index.maskY
 import me.anno.remcraft.world.Index.maskZ
 import me.anno.remcraft.world.decorator.Decorator
+import me.anno.remcraft.world.decorator.StageOptimizer.optimizeStages
 import me.anno.utils.pooling.ObjectPool
 import org.joml.Vector3f
 import org.joml.Vector3i
 import org.joml.Vector4i
 
-class Dimension(val stages: List<Decorator>) {
+class Dimension(stages: List<Decorator>) {
 
     companion object {
         val chunkPool = ObjectPool(4096) { Chunk(dimension) }
     }
 
-    init {
-        check(stages.isNotEmpty()) {
-            "At least one stage must be defined"
-        }
-    }
+    val stages = optimizeStages(stages)
 
     val gravity = Vector3f(0f, -9.81f, 0f)
 
@@ -69,6 +66,7 @@ class Dimension(val stages: List<Decorator>) {
         return chunks.getEntry(key, timeoutMillis, generatorImpl)
     }
 
+    @Suppress("unused")
     fun getChunkIfLoaded(chunkX: Int, chunkY: Int, chunkZ: Int, stageId: Int): Promise<Chunk>? {
         if (stageId < 0) throw IllegalArgumentException("Invalid StageID $stageId")
         val stageId = clamp(stageId, 0, stages.size - 1)
@@ -121,13 +119,6 @@ class Dimension(val stages: List<Decorator>) {
     fun getChunkAt(globalX: Int, globalY: Int, globalZ: Int, stage: Int = Int.MAX_VALUE): Chunk? =
         getChunk(globalX shr bitsX, globalY shr bitsY, globalZ shr bitsZ, stage).waitFor()
 
-    fun unload(chunk: Chunk) {
-        /*for (stageId in 0 until stages.size) {
-            chunks.getEntryWithoutGenerator(Vector4i(chunk.xi, chunk.yi, chunk.zi, stageId))
-                ?.destroy()
-        }*/
-    }
-
     fun invalidateAt(x: Int, y: Int, z: Int, newBlock: BlockType) {
         val chunkId = coordsToChunkId(x, y, z)
         // todo chunk invalidation is extremely slow
@@ -153,6 +144,7 @@ class Dimension(val stages: List<Decorator>) {
         return Vector3i(x shr bitsX, y shr bitsY, z shr bitsZ)
     }
 
+    @Suppress("unused")
     fun destroy() {
         chunks.clear()
     }

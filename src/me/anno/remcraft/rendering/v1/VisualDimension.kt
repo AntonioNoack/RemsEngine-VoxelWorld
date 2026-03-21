@@ -138,11 +138,6 @@ class VisualDimension : MeshSpawner(), OnUpdate {
         visualChunks.removeIf { (_, visualChunk) ->
             if (!visualChunk.wasSeen && visualChunk.hasMesh) {
                 visualChunk.destroy()
-                // free memory
-                val chunk = visualChunk.chunk
-                if (chunk != null) {
-                    dimension.unload(chunk)
-                }
                 true
             } else false
         }

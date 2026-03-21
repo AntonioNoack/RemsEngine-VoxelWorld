@@ -10,7 +10,10 @@ import me.anno.remcraft.world.Index.sizeZ
 import me.anno.remcraft.world.decorator.Decorator
 import kotlin.math.min
 
-class FlatWorldGenerator(val layers: List<BlockType>) : Decorator() {
+class FlatWorldGenerator(val layers: List<BlockType>) : Decorator {
+
+    override val readsPreviousStage: Boolean get() = false
+
     override fun decorate(chunk: Chunk) {
         val blocks = chunk.blocks
         if (chunk.y0 < 0) return

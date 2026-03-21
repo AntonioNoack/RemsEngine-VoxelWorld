@@ -6,6 +6,8 @@ import me.anno.ecs.components.light.DirectionalLight
 import me.anno.ecs.components.light.sky.Skybox
 import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.ui.render.RenderView
+import me.anno.maths.Maths.sq
+import me.anno.remcraft.rendering.v2.player
 
 fun createLighting(): Entity {
     val scene = Entity("Lighting")
@@ -20,8 +22,11 @@ fun createLighting(): Entity {
             val rv = RenderView.currentInstance
             if (rv != null) {
                 sun.needsUpdate1 = true
-                sunEntity.transform.localPosition = rv.orbitCenter
-                sunEntity.transform.teleportUpdate()
+                val player = player
+                if (sunEntity.transform.localPosition.distanceSquared(player.position) > sq(16.0)) {
+                    sunEntity.transform.localPosition = player.position
+                    sunEntity.transform.teleportUpdate()
+                }
                 sunEntity.validateTransform()
                 sun.onUpdate()
             }

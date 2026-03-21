@@ -17,12 +17,11 @@ class PyramidDecorator(
 ) : SurfaceDecorator(surfaceBlock, Vector3i(halfSize + 10, halfSize + 10, halfSize + 10), density, seed) {
 
     override fun decorate(chunk: Chunk, lx: Int, ly: Int, lz: Int) {
-
-        println("Generating pyramid ${chunk.x0 + lx},${chunk.z0 + lz} in ${chunk.x0},${chunk.z0} ($lx,$ly,$lz)")
-
         val halfSize = halfSize
         val material = material
-        for (dy in max(-10, -ly) until min(halfSize, sizeY - ly)) {
+        val y0 = max(-10, -ly)
+        val y1 = min(halfSize, sizeY - ly)
+        for (dy in y0 until y1) {
             val y = ly + dy
             val radius = halfSize - 1 - dy
             val x0 = max(lx - radius, 0)

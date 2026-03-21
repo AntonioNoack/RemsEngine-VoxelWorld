@@ -11,6 +11,8 @@ import kotlin.math.sin
 class CaveDecorator(density: Float, seed: Long) :
     NNNDecorator(density, Vector3i(128, 64, 128), seed) {
 
+    override val readsPreviousStage: Boolean get() = false
+
     override fun decorate(chunk: Chunk, lx: Int, ly: Int, lz: Int) {
 
         var x = lx.toFloat()

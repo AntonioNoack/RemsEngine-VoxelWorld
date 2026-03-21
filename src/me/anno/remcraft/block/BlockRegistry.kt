@@ -5,6 +5,7 @@ import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.block.impl.*
 import me.anno.remcraft.block.shapes.DoubleSlabBlock
 import me.anno.remcraft.block.shapes.FenceBlock
+import me.anno.remcraft.block.shapes.LayerBlock
 import me.anno.remcraft.block.shapes.SlabBlock
 import me.anno.utils.Color.black
 import me.anno.utils.Color.withAlpha
@@ -29,6 +30,8 @@ object BlockRegistry {
     val TallGrass = TallGrassBlock("remcraft.grass.tall", black or 0x55aa44, NameDesc("Tall Grass"))
     val Dirt = BlockType("remcraft.dirt", black or 0x997755, 112, NameDesc("Dirt"))
 
+    val Snow = BlockType("remcraft.snow", black or 0xffffff, 17 * 16 + 12, NameDesc("Snow"))
+
     val Water = WaterBlock("remcraft.water", trans or 0x3344ff, 8 * 16 + 2, NameDesc("Water"))
     val Lava = LavaBlock("remcraft.lava", trans or 0xd97520, 9 * 16 + 7, NameDesc("Lava"))
 
@@ -44,9 +47,17 @@ object BlockRegistry {
     val Furnace = FurnaceBlock("remcraft.furnace", black or 0x333333, 3 * 16 + 11, NameDesc("Furnace"))
     val Hopper = HopperBlock("remcraft.hopper", black or 0x333339, 3 * 16 + 13, NameDesc("Hopper"))
 
+    val SnowLayers = List(9) { depth ->
+        when (depth) {
+            0 -> Air
+            in 1..7 -> LayerBlock(Snow, depth)
+            else -> Snow
+        }
+    }
+
     val initialBlocks = listOf(
         Air, Unknown, Stone,
-        Grass, Dirt, TallGrass,
+        Grass, Dirt, TallGrass, Snow,
         Water, Lava,
         Log, Leaves, Cactus,
         Sand, Sandstone, Gravel,
@@ -79,6 +90,10 @@ object BlockRegistry {
     init {
         for (block in initialBlocks) {
             register(block)
+        }
+
+        for (layer in SnowLayers) {
+            if (layer is LayerBlock) register(layer)
         }
 
         for (block in masonryBlocks) {

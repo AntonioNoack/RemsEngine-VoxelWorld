@@ -1,7 +1,6 @@
 package me.anno.remcraft.world
 
 import me.anno.cache.ICacheData
-import me.anno.engine.Events.addEvent
 import me.anno.engine.debug.DebugAABB
 import me.anno.engine.debug.DebugShapes
 import me.anno.io.base.BaseWriter
@@ -11,7 +10,6 @@ import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.block.Metadata
 import me.anno.remcraft.block.types.ChangingBlock
 import me.anno.remcraft.entity.RemcraftEntity
-import me.anno.remcraft.rendering.v2.ChunkIndex.encodeChunkIndex
 import me.anno.remcraft.rendering.v2.chunkLoader
 import me.anno.remcraft.world.Dimension.Companion.chunkPool
 import me.anno.remcraft.world.Index.bitsX
@@ -79,8 +77,6 @@ class Chunk(val dimension: Dimension) : Saveable(), ICacheData {
 
     fun afterBlockChangeI(x: Int, y: Int, z: Int) {
         afterBlockChange(x, y, z)
-        addEvent(50) { afterBlockChange(x, y, z) }
-        addEvent(150) { afterBlockChange(x, y, z) }
 
         val bounds = AABBd(
             x - 0.05, y - 0.05, z - 0.05,
@@ -123,11 +119,13 @@ class Chunk(val dimension: Dimension) : Saveable(), ICacheData {
 
     fun set(xi: Int, yi: Int, zi: Int, stage: Int) {
         if (++numUsed % 1000 == 0) {
-            // todo this should not be called that often!!!
-            println(
-                "Chunk stats: $numCreated created, $numUsed used, $numRecycled destroyed, " +
-                        "($xi,$yi,$zi) $stage), ${chunkLoader.loadedChunks.size} chunks loaded, ${chunkLoader.loadingPattern.size} pattern size"
-            )
+            try {
+                println(
+                    "Chunk stats: $numCreated created, $numUsed used, $numRecycled destroyed, " +
+                            "($xi,$yi,$zi) $stage), ${chunkLoader.loadedChunks.size} chunks loaded, ${chunkLoader.loadingPattern.size} pattern size"
+                )
+            } catch (e: Exception) {
+            }
         }
 
         x0 = xi shl bitsX

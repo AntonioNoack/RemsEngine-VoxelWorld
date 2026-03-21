@@ -12,6 +12,8 @@ abstract class SurfaceDecorator(
     maxExtends: Vector3i, density: Float, seed: Long
 ) : N1NDecorator(density, maxExtends, seed) {
 
+    override val readsPreviousStage: Boolean get() = true
+
     override fun decorate(chunk: Chunk, lx: Int, lz: Int) {
         // find the surface y
         // it might be +1/-1 from us...

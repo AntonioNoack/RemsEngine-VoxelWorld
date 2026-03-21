@@ -15,6 +15,7 @@ import me.anno.gpu.WindowManagement
 import me.anno.input.MouseLock.unlockMouse
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.BlockUpdateSystem
+import me.anno.remcraft.coasters.Minecart
 import me.anno.remcraft.entity.*
 import me.anno.remcraft.entity.RemcraftEntity.Companion.spawnEntity
 import me.anno.remcraft.entity.physics.CollisionSystem
@@ -57,7 +58,6 @@ fun invalidateChunk(coords: Vector3i) {
             synchronized(invalidChunks) {
                 invalidChunks.remove(encoded)
             }
-            println("calling generateChunk($coords)")
             chunkLoader.generateChunk(coords)
         }
     }
@@ -102,11 +102,19 @@ fun main() {
     dimension.setBlockAt(2, 76, 0, BlockRegistry.byUUID["remcraft.sandstone.slab[3]"]!!, null)
     dimension.setBlockAt(3, 76, 0, BlockRegistry.byUUID["remcraft.sandstone.fence"]!!, null)
 
+    BlockRegistry.SnowLayers.subList(1, 8).forEachIndexed { index, block ->
+        dimension.setBlockAt(index, 76, 1, block, null)
+    }
+
     entities = Entity("Entities", scene)
     spawnEntity(player)
 
     spawnEntity(BoarEntity(), Vector3d(-2.0, 77.0, 0.0))
     spawnEntity(BoarSkeletonEntity(), Vector3d(2.0, 77.0, 0.0))
+
+    // todo spawn a little rail, too
+    spawnEntity(Minecart(), Vector3d(0.0, 77.0, -5.0))
+
     if (false) spawnEntity(
         MovingBlock(ItemSlot(BlockRegistry.Sand, 1, null)),
         Vector3d(0.5, 90.5, 0.5)

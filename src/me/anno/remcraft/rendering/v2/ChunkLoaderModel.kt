@@ -13,6 +13,7 @@ import me.anno.utils.types.Floats.roundToIntOr
 import java.nio.ByteBuffer
 
 class ChunkLoaderModel(val chunk: Chunk) : VoxelModel(sizeX, sizeY, sizeZ) {
+
     override fun getBlock(x: Int, y: Int, z: Int): Int {
         return chunk.getBlock(x, y, z).id.toInt()
     }

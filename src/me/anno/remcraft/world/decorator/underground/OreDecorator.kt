@@ -23,6 +23,8 @@ class OreDecorator(density: Float = 0.1f, seed: Long = 5123L) :
         }
     }
 
+    override val readsPreviousStage: Boolean get() = true
+
     override fun decorate(chunk: Chunk, lx: Int, ly: Int, lz: Int) {
         if (sumChance <= 0f) return
         if (chunk.getBlock(lx, ly, lz) != BlockRegistry.Stone) return

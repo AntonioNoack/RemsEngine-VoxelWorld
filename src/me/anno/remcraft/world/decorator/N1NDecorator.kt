@@ -7,7 +7,7 @@ import me.anno.remcraft.world.Index.sizeX
 import me.anno.remcraft.world.Index.sizeZ
 import org.joml.Vector3i
 
-abstract class N1NDecorator(val density: Float, val maxExtends: Vector3i, seed: Long = 5123L) : Decorator() {
+abstract class N1NDecorator(val density: Float, val maxExtends: Vector3i, seed: Long = 5123L) : Decorator {
 
     val random = FullNoise(seed)
 

@@ -16,7 +16,7 @@ abstract class NNNDecorator(
     val density: Float,
     val maxExtends: Vector3i,
     seed: Long = 5123L
-) : Decorator() {
+) : Decorator {
 
     val random = FullNoise(seed)
 

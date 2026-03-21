@@ -7,7 +7,10 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.iterator
 
-class SaveSystemDecorator: Decorator() {
+class SaveSystemDecorator: Decorator {
+
+    override val readsPreviousStage: Boolean get() = false
+
     override fun decorate(chunk: Chunk) {
         val chunkId = Vector3i(chunk.xi, chunk.yi, chunk.zi)
         saveSystem.get(chunkId) { changesInChunk ->
