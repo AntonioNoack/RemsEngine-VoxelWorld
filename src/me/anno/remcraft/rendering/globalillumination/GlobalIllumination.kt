@@ -6,12 +6,10 @@ import me.anno.maths.Maths.mix
 import me.anno.maths.Maths.sq
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.block.BlockType
+import me.anno.remcraft.rendering.globalillumination.ChunkFaces.forEachFace
 import me.anno.remcraft.rendering.v2.ChunkIndex.encodeChunkIndex
 import me.anno.remcraft.world.Chunk
 import me.anno.remcraft.world.Dimension
-import me.anno.remcraft.world.Index.sizeX
-import me.anno.remcraft.world.Index.sizeY
-import me.anno.remcraft.world.Index.sizeZ
 import me.anno.remcraft.world.Index.totalSize
 import me.anno.utils.Color.b01
 import me.anno.utils.Color.g01
@@ -123,10 +121,10 @@ class GlobalIllumination(val dimension: Dimension) {
         val selfColor = Vector3f()
         val otherColor = Vector3f()
 
-        forEachFace(chunk) { x, y, z, side ->
-            val gx = x + chunk.x0
-            val gy = y + chunk.y0
-            val gz = z + chunk.z0
+        chunk.forEachFace { lx, ly, lz, side ->
+            val gx = lx + chunk.x0
+            val gy = ly + chunk.y0
+            val gz = lz + chunk.z0
 
             val selfFace = getFace(gx, gy, gz, side)
             val selfBlock = dimension.getBlockAt(gx, gy, gz)!!
@@ -198,29 +196,6 @@ class GlobalIllumination(val dimension: Dimension) {
                 skyEffect.size = skyEffect.capacity
             }
             skyEffect[selfFace] = numSkyHits * baseSkyWeight
-        }
-    }
-
-    fun interface ForEachFaceCallback {
-        fun call(x: Int, y: Int, z: Int, side: BlockSide)
-    }
-
-    fun forEachFace(chunk: Chunk, callback: ForEachFaceCallback) {
-        for (z in 0 until sizeZ) {
-            for (y in 0 until sizeY) {
-                for (x in 0 until sizeX) {
-                    val selfSolid = chunk.getBlock(x, y, z).isSolid
-                    if (!selfSolid) continue
-                    for (side in BlockSide.entries) {
-                        val otherSolid = dimension // todo use own chunk for 99% of cases (much faster)
-                            .getBlockAt(chunk.x0 + x + side.x, chunk.y0 + y + side.y, chunk.z0 + z + side.z)!!
-                            .isSolid
-                        if (!otherSolid) {
-                            callback.call(x, y, z, side)
-                        }
-                    }
-                }
-            }
         }
     }
 

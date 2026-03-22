@@ -257,6 +257,14 @@ class Chunk(val dimension: Dimension) : Saveable(), ICacheData {
         }
     }
 
+    fun getBlockAround(lx: Int, ly: Int, lz: Int): BlockType? {
+        return if (lx in 0 until sizeX && ly in 0 until sizeY && lz in 0 until sizeZ) {
+            getBlock(getIndex(lx, ly, lz))
+        } else {
+            dimension.getBlockAt(x0 + lx, y0 + ly, z0 + lz)
+        }
+    }
+
     override val className = "Chunk"
 
     init {
