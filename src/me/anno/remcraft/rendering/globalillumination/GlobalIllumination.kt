@@ -1,7 +1,5 @@
 package me.anno.remcraft.rendering.globalillumination
 
-import me.anno.engine.debug.DebugLine
-import me.anno.engine.debug.DebugShapes
 import me.anno.engine.raycast.BlockTracing
 import me.anno.engine.raycast.RayQuery
 import me.anno.maths.Maths.mix
@@ -26,7 +24,33 @@ import org.joml.Vector3d
 import org.joml.Vector3f
 import speiger.primitivecollections.LongToIntHashMap
 import java.util.*
-import kotlin.math.*
+import kotlin.math.abs
+import kotlin.math.cbrt
+import kotlin.math.ceil
+import kotlin.math.floor
+
+// todo perfect graphics?
+//  a) we can do block-tracing in real-time -> we can trace a ray to the sun if need-be
+//  b) complex:
+//  1st degree via shadow map, and explicit light-source->block-face transfer functions
+//  2nd degree via face->face transfer functions (w < 1, decay with distance, angle, ... max 7 radius)
+//  three or so iterations of 2nd degree; all is diffuse
+//  blur neighboring parallel faces: our rendering needs to know what face we're on, and what our neighbors are
+
+// this is very complex :/
+//  we need the following:
+//  - dynamic buffer of all faces
+//    - pos
+//    - side
+//    - transfer functions (offset, count?) -> to all other buffers = invalidation complex
+//  - 1st degree & 2nd degree compute shaders
+//  - using light data in rendering (each storing face index & neighbors)
+
+// lights can be explicitly modeled as a cpu-computed list
+//  light-level (flicker for flame) * transmission * faceList
+
+// according to sb on Reddit, we only need ~20 random faces per face, and 7 iterations for it to get stable
+// this is called Radiosity
 
 class GlobalIllumination(val dimension: Dimension) {
     companion object {
@@ -58,29 +82,6 @@ class GlobalIllumination(val dimension: Dimension) {
             return z + 0.5 * (side.z + 1) + du * side.x + dv * side.y
         }
     }
-
-    // todo perfect graphics?
-    //  a) we can do block-tracing in real-time -> we can trace a ray to the sun if need-be
-    //  b) complex:
-    //  1st degree via shadow map, and explicit light-source->block-face transfer functions
-    //  2nd degree via face->face transfer functions (w < 1, decay with distance, angle, ... max 7 radius)
-    //  three or so iterations of 2nd degree; all is diffuse
-    //  blur neighboring parallel faces: our rendering needs to know what face we're on, and what our neighbors are
-
-    // todo this is very complex :/
-    //  we need the following:
-    //  - dynamic buffer of all faces
-    //    - pos
-    //    - side
-    //    - transfer functions (offset, count?) -> to all other buffers = invalidation complex
-    //  - 1st degree & 2nd degree compute shaders
-    //  - using light data in rendering (each storing face index & neighbors)
-
-    // todo lights can be explicitly modelled as a cpu-computed list
-    //  light-level (flicker for flame) * transmission * faceList
-
-    // todo according to sb on Reddit, we only need ~20 random faces per face, and 7 iterations for it to get stable
-    // todo this is called Radiosity
 
     val faces = LongToIntHashMap(1 shl 16)
     fun getFace(x: Int, y: Int, z: Int, side: BlockSide): Int {
@@ -322,11 +323,6 @@ class GlobalIllumination(val dimension: Dimension) {
                         val hit = dimension.getBlockAt(xi, yi, zi)!!.isSolid
                         if (hit) BlockTracing.SOLID_BLOCK
                         else BlockTracing.AIR_BLOCK
-                    }
-
-                    if (false && sunIsBlocked) {
-                        val ray = DebugLine(Vector3d(query.start), Vector3d(query.end), -1, 1e3f)
-                        DebugShapes.showDebugArrow(ray)
                     }
 
                     if (!sunIsBlocked) numSunHits++

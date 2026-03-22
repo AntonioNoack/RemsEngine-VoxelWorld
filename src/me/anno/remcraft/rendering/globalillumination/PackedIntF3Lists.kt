@@ -211,17 +211,6 @@ class PackedIntF3Lists(
         }
     }
 
-    /**
-     * Clears all values for this index
-     * */
-    fun clear(index: Int) {
-        val size = getSize(index)
-        val offset = offsets[index]
-        for (i in 0 until size) {
-            values[offset + i] = invalidValue
-        }
-    }
-
     fun resizeTo(newSize: Int) {
         val oldSize = size
         val cellsPerSize = ceilDiv(values.size, oldSize)

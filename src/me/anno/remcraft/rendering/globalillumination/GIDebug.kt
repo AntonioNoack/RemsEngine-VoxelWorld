@@ -27,11 +27,9 @@ import org.joml.Vector3f
 // implement a prototype on the CPU-side for now
 fun main() {
 
-    // todo issue: corners are way too bright -> we need multiple sun-rays per block
-
     OfficialExtensions.initForTests()
 
-    val simpleWorld = true
+    val simpleWorld = false
     val dimension =
         if (simpleWorld) Dimension(emptyList())
         else SampleDimensions.perlin2dDim
