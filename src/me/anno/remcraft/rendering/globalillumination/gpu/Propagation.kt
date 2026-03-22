@@ -71,7 +71,7 @@ val propagationShader = ComputeShader(
             "   int numRays = 1;\n" +
             "   float baseWeight = 0.5 / float(numRays);\n" +
             "   for (int i=0; i<numRays; i++) {\n" +
-            "       ivec4 selfFace = FaceData[i];\n" +
+            "       ivec4 selfFace = FaceData[idx];\n" +
             // todo sample randomly, [-0.5, +0.5]
             "       float du = 0.0;\n" +
             "       float dv = 0.0;\n" +

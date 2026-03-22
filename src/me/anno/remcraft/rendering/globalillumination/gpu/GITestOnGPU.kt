@@ -1,6 +1,12 @@
 package me.anno.remcraft.rendering.globalillumination.gpu
 
+import me.anno.ecs.Component
+import me.anno.ecs.Entity
+import me.anno.ecs.components.mesh.MeshComponent
+import me.anno.ecs.systems.OnUpdate
+import me.anno.engine.DefaultAssets.flatCube
 import me.anno.engine.OfficialExtensions
+import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
 import me.anno.gpu.GFX
 import me.anno.gpu.buffer.Attribute
 import me.anno.gpu.buffer.AttributeType
@@ -8,6 +14,7 @@ import me.anno.gpu.buffer.CompactAttributeLayout.Companion.bind
 import me.anno.gpu.buffer.ComputeBuffer
 import me.anno.gpu.buffer.GPUBuffer
 import me.anno.gpu.shader.builder.ShaderPrinting
+import me.anno.input.Input
 import me.anno.jvm.HiddenOpenGLContext
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.rendering.globalillumination.ChunkFaces.forEachFace
@@ -51,8 +58,8 @@ fun encodeSideLocal(x: Int, y: Int, z: Int, side: BlockSide): Int {
 val intAttr = bind(Attribute("data", AttributeType.UINT32, 1))
 val lightAttr = bind(Attribute("data", AttributeType.UINT32, 4))
 
-fun IntArrayList.createBuffer(): GPUBuffer {
-    val buffer = ComputeBuffer("chunks", intAttr, size)
+fun IntArrayList.createBuffer(name: String): GPUBuffer {
+    val buffer = ComputeBuffer(name, intAttr, size)
     val nio = buffer.getOrCreateNioBuffer()
     nio.asIntBuffer().put(values, 0, size)
     nio.position(size)
@@ -60,17 +67,15 @@ fun IntArrayList.createBuffer(): GPUBuffer {
     return buffer
 }
 
-fun createLightBuffer(numFaces: Int): GPUBuffer {
-    val buffer = ComputeBuffer("light", lightAttr, numFaces)
+fun createLightBuffer(name: String, numFaces: Int): GPUBuffer {
+    val buffer = ComputeBuffer(name, lightAttr, numFaces)
     buffer.uploadEmpty(numFaces * 4 * 4L)
     buffer.zeroElements(0, numFaces)
     return buffer
 }
 
 fun IntArrayList.add(x: Int, y: Int, z: Int, side: Int) {
-    add(x)
-    add(y)
-    add(z)
+    add(x, y, z)
     add(side)
 }
 
@@ -127,9 +132,6 @@ fun main() {
         chunk.forEachFace { x, y, z, side ->
             val hash = 1 + encodeSideLocal(x, y, z, side)
             faceData.add(chunk.x0 + x, chunk.y0 + y, chunk.z0 + z, side.ordinal)
-            if (numFaces == 10) {
-                println("Added faces: ${faceData.toList()}")
-            }
             faces.put(hash, numFaces++)
         }
 
@@ -145,44 +147,63 @@ fun main() {
 
     val chunkMapI = pushMap(chunkMap)
 
-    HiddenOpenGLContext.createOpenGL()
-
-    val chunkBuffer = chunkData.createBuffer()
-    val faceBuffer = faceData.createBuffer()
-    val lightBuffer0 = createLightBuffer(numFaces)
-    val lightBuffer1 = createLightBuffer(numFaces)
-
     // todo we don't have that many chunks, so we could store them in a dense map
 
     // create light buffers
     // todo initialize with some sun light?
+    class GPUData {
+        val chunkBuffer = chunkData.createBuffer("gi-chunks")
+        val faceBuffer = faceData.createBuffer("gi-faces")
+        val lightBuffer0 = createLightBuffer("gi-lightBuffer0", numFaces)
+        val lightBuffer1 = createLightBuffer("gi-lightBuffer1", numFaces)
+    }
 
+    val data by lazy { GPUData() }
 
+    fun compute() {
+        val shader = propagationShader
+        shader.use()
+        shader.v1i("chunkMap", chunkMapI)
+        shader.v1i("numFaces", numFaces)
+        shader.v1i("maxSteps", 100)
+        shader.v3i("skyLight", 66, 67, 68)
 
-    val shader = propagationShader
-    shader.use()
-    shader.v1i("chunkMap", chunkMapI)
-    shader.v1i("numFaces", numFaces)
-    shader.v1i("maxSteps", 100)
-    shader.v3i("skyLight", 100, 120, 150)
+        // bind all buffers
+        shader.bindBuffer(0, data.lightBuffer0)
+        shader.bindBuffer(1, data.lightBuffer1)
+        shader.bindBuffer(2, data.chunkBuffer)
+        shader.bindBuffer(3, data.faceBuffer)
 
-    // bind all buffers
-    shader.bindBuffer(0, lightBuffer0)
-    shader.bindBuffer(1, lightBuffer1)
-    shader.bindBuffer(2, chunkBuffer)
-    shader.bindBuffer(3, faceBuffer)
+        shader.runBySize(numFaces)
+        GFX.check()
 
-    shader.runBySize(numFaces)
-    GFX.check()
+        glMemoryBarrier(BARRIER_BITS)
+        GFX.check()
 
-    glMemoryBarrier(BARRIER_BITS)
-    GFX.check()
+        ShaderPrinting.printFromBuffer()
+        GFX.check()
 
-    ShaderPrinting.printFromBuffer()
-    GFX.check()
+        // read back buffers for testing
+        val lightValues = data.lightBuffer1.readAsIntArray()
+        println(lightValues.toList())
+    }
 
-    // read back buffers for testing
-    val lightValues = lightBuffer1.readAsIntArray()
-    println(lightValues.toList())
+    if (true) {
 
+        // todo continue debugging...
+
+        HiddenOpenGLContext.createOpenGL()
+        compute()
+
+    } else {
+        val scene = Entity()
+            .add(MeshComponent(flatCube))
+            .add(object : Component(), OnUpdate {
+                override fun onUpdate() {
+                    if (!Input.isKeyDown('x')) return
+                    compute()
+                }
+            })
+        testSceneWithUI("Scene", scene)
+    }
 }
