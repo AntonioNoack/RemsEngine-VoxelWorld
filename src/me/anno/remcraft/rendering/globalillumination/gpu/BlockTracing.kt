@@ -15,25 +15,27 @@ fun hashChunkId(xi: Int, yi: Int, zi: Int): Int {
     return 1 + xd + yd.shl(10) + zd.shl(20)
 }
 
+// todo implement skipping whole chunks
+// todo implement half-transparent blocks:
+//  pass-through is decided randomly (+ needs another bit :/)
+
 val blockTracing = """
         int HashChunkId(ivec3 chunkId) {
             chunkId = chunkId & 0x3ff;
             return 1 + chunkId.x + (chunkId.y<<10) + (chunkId.z<<20);
         }
-        bool GetBlockInChunk(int chunkData, ivec3 blockPos) {
+        int GetBlockInChunk(int chunkData, ivec3 blockPos) {
             blockPos = blockPos & ivec3($maskX,$maskY,$maskZ);
             int offset = blockPos.x + (blockPos.y << ${bitsX + bitsZ}) + (blockPos.z << $bitsX);
-            int idx = int(gl_GlobalInvocationID.x);
-            int blockPattern = ChunkData[chunkData + (offset >> 5)];
-            int blockMask = 1 << (offset & 31);
-            return (blockPattern & blockMask) == blockMask;
+            int blockPattern = ChunkData[chunkData + (offset >> 4)];
+            return (blockPattern >> ((offset & 15) * 2)) & 3;
         }
         int GetDataOffset(int chunkData) {
             if (chunkData == -1) return -1;
             int capacity = ChunkData[chunkData];
             return chunkData + capacity * 2 + 1;
         }
-        bool blockTracing(
+        float blockTracing(
             vec3 localStart, vec3 dir,
             out float hitDistance,
             out ivec4 hitFace,
@@ -66,11 +68,11 @@ val blockTracing = """
             hitDistance = -1.0;
             
             HashMap chunkHashMap = HashMap(ChunkData[chunkMap], chunkMap + 1);
+            float opacity = 0.0;
             
-            int idx = int(gl_GlobalInvocationID.x);
             ivec3 dirSignI = ivec3(dirSign);
             for (int i=0; i<=maxSteps; i++) {
-                if (i == maxSteps) return false;
+                if (i == maxSteps) return opacity;
                 
                 nextDist = min(dist3.x, min(dist3.y, dist3.z));
                 bool continueTracing = true;
@@ -86,8 +88,10 @@ val blockTracing = """
                 }
                 
                 if (chunkData != -1) {
-                    bool hitBlock = GetBlockInChunk(chunkData, blockPos);
-                    continueTracing = !hitBlock;
+                    int hitBlock = GetBlockInChunk(chunkData, blockPos);
+                    // todo could be tinted!?
+                    if (hitBlock == 1) opacity = mix(opacity, 0.99, 0.5); 
+                    continueTracing = hitBlock != 2;
                 }
                 
                 /*if (skippingDist >= 1.0) {
@@ -119,6 +123,6 @@ val blockTracing = """
             hitFace = ivec4(blockPos, faceId);
             hitChunkData = chunkData0;
             
-            return true;
+            return 1.0;
         }
     """.trimIndent()

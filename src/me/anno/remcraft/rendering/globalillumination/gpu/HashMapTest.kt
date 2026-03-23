@@ -32,7 +32,7 @@ val hashMapTestShader = ComputeShader(
             ShaderPrinting.PRINTING_LIB +
             ShaderPrinting.definePrintCall(GLSLType.V1I, GLSLType.V1I, GLSLType.V1I, GLSLType.V1I) +
 
-            gpuHashMap +
+            hashMap +
 
             "void main() {\n" +
             "   int queryId = int(gl_GlobalInvocationID.x);\n" +

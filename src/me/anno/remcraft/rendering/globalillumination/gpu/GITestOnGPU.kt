@@ -5,6 +5,7 @@ import me.anno.ecs.Entity
 import me.anno.ecs.EntityQuery.getComponent
 import me.anno.ecs.components.light.sky.Skybox
 import me.anno.ecs.components.mesh.MeshComponent
+import me.anno.ecs.components.mesh.material.MaterialCache
 import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.DefaultAssets.flatCube
 import me.anno.engine.OfficialExtensions
@@ -16,7 +17,6 @@ import me.anno.gpu.buffer.CompactAttributeLayout.Companion.bind
 import me.anno.gpu.buffer.ComputeBuffer
 import me.anno.gpu.buffer.GPUBuffer
 import me.anno.gpu.shader.builder.ShaderPrinting
-import me.anno.jvm.HiddenOpenGLContext
 import me.anno.maths.Packing.pack32
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.block.BlockRegistry
@@ -31,6 +31,7 @@ import org.apache.logging.log4j.LogManager
 import org.joml.Vector3f
 import org.lwjgl.opengl.GL46C.*
 import speiger.primitivecollections.IntToIntHashMap
+import kotlin.math.max
 import kotlin.random.Random
 
 // todo do block-tracing on the GPU,
@@ -55,9 +56,6 @@ import kotlin.random.Random
 //  add sun-light
 //  raytracing/propagation
 //  decay for sun-light/previous stage?
-
-// todo results look as if some chunks cannot be traced properly... hash-mismatch?
-//  -> bruteforce checking all hashes, then validate
 
 fun encodeSideLocal(x: Int, y: Int, z: Int, side: BlockSide): Int {
     return 1 + getIndex(x, y, z) + side.ordinal * totalSize
@@ -110,11 +108,34 @@ fun pushMap(chunkData: IntArrayList, map: IntToIntHashMap): Int {
     return offset
 }
 
+fun pushBlocks(chunkData: IntArrayList, chunk: Chunk) {
+    // encode bits into integer in 32-chunks (128kB -> 4kB)
+    val blocks = chunk.blocks
+    check(blocks.size == totalSize)
+    val air = BlockRegistry.Air.id
+    for (index in blocks.indices step 16) {
+        var bits = 0
+        for (di in 0 until 16) {
+            val blockId = blocks[index + di]
+            if (blockId != air) {
+                val blockType = BlockRegistry.byId(blockId) ?: BlockRegistry.Stone
+                val isSolid = blockType.isSolid && blockType != BlockRegistry.Leaves
+                val type = if (isSolid) 2 else 1
+                bits = bits or (type shl (di * 2))
+            }
+        }
+        chunkData.add(bits)
+    }
+}
+
 fun main() {
 
+    // todo number of iterations is not just a more-stable result, but gets blown out
+    //  -> trace sun-rays every iteration???
     val numIterations = 20
     val simpleWorld = false
     val interpolateColors = true
+    val testDirectLighting = true
 
     LogManager.disableLoggers("CacheSection,Saveable,ExtensionManager")
     OfficialExtensions.initForTests()
@@ -123,22 +144,6 @@ fun main() {
     val chunkData = IntArrayList()
     val chunkMap = IntToIntHashMap(0)
     val faceData = IntArrayList()
-
-    fun pushBlocks(chunk: Chunk) {
-        // encode bits into integer in 32-chunks (128kB -> 4kB)
-        val blocks = chunk.blocks
-        check(blocks.size == totalSize)
-        val air = BlockRegistry.Air.id
-        for (index in blocks.indices step 32) {
-            var bits = 0
-            for (di in 0 until 32) {
-                if (blocks[index + di] != air) {
-                    bits = bits or (1 shl di)
-                }
-            }
-            chunkData.add(bits)
-        }
-    }
 
     var numFaces = 0
     val dimension = createWorld(simpleWorld) { chunk ->
@@ -163,7 +168,7 @@ fun main() {
         chunkData.ensureExtra(mapSize + blockSize)
 
         val entry = pushMap(chunkData, faceMap)
-        pushBlocks(chunk)
+        pushBlocks(chunkData, chunk)
 
         val chunkHash = hashChunkId(chunk.xi, chunk.yi, chunk.zi)
         chunkMap[chunkHash] = entry
@@ -206,16 +211,15 @@ fun main() {
         shader.v1i("maxSteps", 1000)
         shader.v1i("baseSeed", random.nextInt())
         shader.v3f("sunDir", sunDir)
-        shader.v3is("sunLight", BlockSide.entries.flatMap { side ->
-            val product = 1000f * sunDir.dot(side.x.toFloat(), side.y.toFloat(), side.z.toFloat())
-            if (product > 0f) {
-                listOf(
-                    (sunColor.x * product).toInt(),
-                    (sunColor.y * product).toInt(),
-                    (sunColor.z * product).toInt()
-                )
-            } else listOf(0, 0, 0)
-        }.toIntArray())
+        shader.v3fs("sunLight", BlockSide.entries.flatMap { side ->
+            val dir = sunDir.dot(side.x.toFloat(), side.y.toFloat(), side.z.toFloat())
+            val brightness = max(1000f * dir, 0f)
+            listOf(
+                sunColor.x * brightness,
+                sunColor.y * brightness,
+                sunColor.z * brightness
+            )
+        }.toFloatArray())
         shader.v1i("raysPerFace", 100)
 
         // bind all buffers
@@ -240,11 +244,10 @@ fun main() {
 
         computeSunLight()
 
-        // todo weird results
-        //   0: as expected, except for a few light bleeds
-        //   1: looks nice for 2/4 quarters... -> signedness/hashes???
-        //  10: looks broken
-        //  50: absolutely broken
+        val justSunLight = if (testDirectLighting) {
+            data.srcBuffer.readAsIntArray()
+        } else IntArray(0)
+
         val shader = propagationShader
         shader.use()
         shader.v1i("chunkMap", chunkMapI)
@@ -276,27 +279,37 @@ fun main() {
         GFX.check()
 
         // read back buffers for testing
-        return data.srcBuffer.readAsIntArray()
+        val allLight = data.srcBuffer.readAsIntArray()
+        if (testDirectLighting) {
+            for (i in allLight.indices) {
+                allLight[i] -= justSunLight[i]
+            }
+        }
+        return allLight
     }
 
-    if (false) {
-        HiddenOpenGLContext.createOpenGL()
-        println(compute().toList().take(100))
-    } else {
-        val scene = Entity()
-            .add(MeshComponent(flatCube))
-            .add(object : Component(), OnUpdate {
-                var needsInit = true
-                override fun onUpdate() {
-                    if (needsInit) {
-                        needsInit = false
-                        val data = compute()
-                        println(data.toList().take(100))
-                        val newMesh = createDebugMesh(dimension, faceData, data, interpolateColors)
-                        getComponent(MeshComponent::class)!!.meshFile = newMesh.ref
+    val scene = Entity()
+        .add(MeshComponent(flatCube))
+        .add(object : Component(), OnUpdate {
+            var needsInit = true
+            override fun onUpdate() {
+                if (needsInit) {
+                    needsInit = false
+                    val data1 = compute()
+                    println(data1.toList().take(100))
+                    val newMesh = createDebugMesh(dimension, faceData, data1, interpolateColors)
+                    if (testDirectLighting) {
+                        val material = MaterialCache[newMesh.materials[0]]!!
+                        val shader = GIDirectSunTextureShader
+                        shader.sunDir.set(sunDir)
+                        shader.sunColor.set(sunColor).mul(7f)
+                        shader.chunkMap = chunkMapI
+                        shader.chunkBuffer = data.chunkBuffer
+                        material.shader = shader
                     }
+                    getComponent(MeshComponent::class)!!.meshFile = newMesh.ref
                 }
-            })
-        testSceneWithUI("Scene", scene)
-    }
+            }
+        })
+    testSceneWithUI("Scene", scene)
 }

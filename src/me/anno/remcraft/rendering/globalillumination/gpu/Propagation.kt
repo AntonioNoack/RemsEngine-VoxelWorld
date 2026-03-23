@@ -114,9 +114,9 @@ val propagationShader = ComputeShader(
             ShaderPrinting.definePrintCall(GLSLType.V1F) +
             ShaderPrinting.definePrintCall(GLSLType.V3F, GLSLType.V3F) +
 
-            gpuHashMap +
-            blockTracing +
             randomness +
+            hashMap +
+            blockTracing +
             getSide +
             loadFace +
 
@@ -156,8 +156,8 @@ val propagationShader = ComputeShader(
             "       ivec4 hitFace = ivec4(0);\n" +
             "       int hitChunkData = 0;\n" +
 
-            "       bool hitBlock = blockTracing(pos, dir, hitDistance, hitFace, hitChunkData);\n" +
-            "       if (hitBlock) {\n" +
+            "       float opacity = blockTracing(pos, dir, hitDistance, hitFace, hitChunkData);\n" +
+            "       if (opacity == 1.0) {\n" +
             "           float weight = baseWeight / (1.0 + hitDistance * hitDistance);\n" +
             // find faceIndex of target
             //  -> find face in chunk's buffer
