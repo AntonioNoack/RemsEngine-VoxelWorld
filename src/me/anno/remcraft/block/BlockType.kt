@@ -7,9 +7,9 @@ import me.anno.remcraft.audio.playBreakBlockSound
 import me.anno.remcraft.audio.playStartFallingSound
 import me.anno.remcraft.block.BlockColor.getBlockColor
 import me.anno.remcraft.block.types.CustomBlockBounds
-import me.anno.remcraft.entity.RemcraftEntity.Companion.spawnEntity
 import me.anno.remcraft.entity.ItemEntity
 import me.anno.remcraft.entity.MovingBlock
+import me.anno.remcraft.entity.RemcraftEntity.Companion.spawnEntity
 import me.anno.remcraft.entity.XpOrbEntity
 import me.anno.remcraft.item.ItemType
 import me.anno.remcraft.rendering.v2.dimension
@@ -69,6 +69,7 @@ open class BlockType(typeUUID: String, val color0: Int, texId: Int, nameDesc: Na
 
     var friction = 5f
 
+    var droppedCount = 1
     var droppedType: ItemType = this
     var droppedXpOrbs = 0
 
@@ -84,14 +85,12 @@ open class BlockType(typeUUID: String, val color0: Int, texId: Int, nameDesc: Na
         return dst.set(size).translate(cx, cy, cz)
     }
 
-    fun toItem(metadata: Metadata?) = ItemSlot(this, 1, metadata)
-
     fun startFalling(x: Int, y: Int, z: Int, metadata: Metadata?): Boolean {
         val ownChunk = dimension.getChunkAt(x, y, z) ?: return false
         ownChunk.setBlock(x, y, z, BlockRegistry.Air)
         ownChunk.afterBlockChangeI(x, y, z)
         playStartFallingSound(getDropPosition(x, y, z), this)
-        spawnEntity(MovingBlock(toItem(metadata)), getDropPosition(x, y, z))
+        spawnEntity(MovingBlock(ItemSlot(this, 1, metadata)), getDropPosition(x, y, z))
         return true
     }
 
@@ -105,7 +104,7 @@ open class BlockType(typeUUID: String, val color0: Int, texId: Int, nameDesc: Na
         ownChunk.afterBlockChangeI(x, y, z)
         playBreakBlockSound(getDropPosition(x, y, z), this)
         // todo if tool has silktouch, drop this and no xp
-        dropItem(x, y, z, toItem(metadata))
+        dropItem(x, y, z, ItemSlot(droppedType, droppedCount, metadata))
         repeat(droppedXpOrbs) { dropXpOrb(x, y, z) }
         return true
     }
