@@ -29,7 +29,7 @@ import org.joml.AABBd
 import org.joml.Vector3i
 import speiger.primitivecollections.IntToObjectHashMap
 
-class Chunk(val dimension: Dimension) : Saveable(), ICacheData {
+class Chunk : Saveable(), ICacheData {
 
     companion object {
         var numCreated = 0
@@ -57,6 +57,8 @@ class Chunk(val dimension: Dimension) : Saveable(), ICacheData {
         private set
     var z1 = sizeZ
         private set
+
+    lateinit var dimension: Dimension
 
     var stage = 0
 
@@ -117,7 +119,7 @@ class Chunk(val dimension: Dimension) : Saveable(), ICacheData {
         type.onBlockUpdate(x, y, z, chunk.getMetadata(index), chunk)
     }
 
-    fun set(xi: Int, yi: Int, zi: Int, stage: Int) {
+    fun set(dim: Dimension, xi: Int, yi: Int, zi: Int, stage: Int) {
         if (++numUsed % 1000 == 0) {
             try {
                 println(
@@ -127,7 +129,7 @@ class Chunk(val dimension: Dimension) : Saveable(), ICacheData {
             } catch (e: Exception) {
             }
         }
-
+        dimension = dim
         x0 = xi shl bitsX
         y0 = yi shl bitsY
         z0 = zi shl bitsZ

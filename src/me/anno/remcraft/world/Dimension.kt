@@ -6,7 +6,6 @@ import me.anno.maths.Maths.clamp
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.block.Metadata
-import me.anno.remcraft.rendering.v2.dimension
 import me.anno.remcraft.rendering.v2.invalidateChunk
 import me.anno.remcraft.rendering.v2.saveSystem
 import me.anno.remcraft.world.Index.bitsX
@@ -26,7 +25,7 @@ import org.joml.Vector4i
 class Dimension(stages: List<Decorator>) {
 
     companion object {
-        val chunkPool = ObjectPool(4096) { Chunk(dimension) }
+        val chunkPool = ObjectPool(4096, ::Chunk)
     }
 
     val stages = optimizeStages(stages)
@@ -41,13 +40,13 @@ class Dimension(stages: List<Decorator>) {
             // load previous stage, then decorate
             getChunk(key.x, key.y, key.z, key.w - 1).waitFor { prevChunk ->
                 val chunk = chunkPool.create()
-                chunk.set(key.x, key.y, key.z, key.w - 1)
+                chunk.set(this, key.x, key.y, key.z, key.w - 1)
                 prevChunk!!.copyInto(chunk)
                 prepareChunk(key, chunk, result)
             }
         } else {
             val chunk = chunkPool.create()
-            chunk.set(key.x, key.y, key.z, key.w - 1)
+            chunk.set(this, key.x, key.y, key.z, key.w - 1)
             chunk.clear()
             prepareChunk(key, chunk, result)
         }

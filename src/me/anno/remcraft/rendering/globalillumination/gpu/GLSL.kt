@@ -6,6 +6,7 @@ import org.joml.Vector4i
 
 
 fun sign(f: Float): Float = kotlin.math.sign(f)
+fun sign(f: Double): Double = kotlin.math.sign(f)
 
 fun sign(dir: Vector3f): Vector3f {
     return Vector3f(sign(dir.x), sign(dir.y), sign(dir.z))
@@ -47,6 +48,10 @@ data class Vector3u(val x: UInt, val y: UInt, val z: UInt) {
     infix fun shr(o: Vector3i): Vector3u {
         return Vector3u(x shr o.x, y shr o.y, z shr o.z)
     }
+}
+
+infix fun Vector3i.shr(o: Vector3i): Vector3i {
+    return Vector3i(x shr o.x, y shr o.y, z shr o.z)
 }
 
 fun uvec3(v: UInt): Vector3u {

@@ -26,10 +26,10 @@ object GITextureShader : ECSMeshShader("gi-textured") {
                         Variable(GLSLType.V3F, "lightLevel"),
                 concatDefines(key).toString() +
                         "vec4 color = texture(diffuseMap,uv);\n" +
-                        "finalColor = 0.01 * color.rgb;\n" +
+                        "finalColor = vec3(0.0);\n" +
                         "finalAlpha = color.a;\n" +
                         normalTanBitanCalculation +
-                        "finalEmissive = color.rgb * lightLevel;\n" +
+                        "finalEmissive = color.rgb * (lightLevel + 0.001);\n" +
                         finalMotionCalculation
             ).add(ShaderLib.quatRot)
                 .add(ShaderLib.brightness)

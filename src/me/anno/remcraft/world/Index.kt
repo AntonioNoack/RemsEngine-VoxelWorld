@@ -24,6 +24,7 @@ object Index {
         )
     }
 
+    // (y,z,x)
     fun getUnsafeIndex(localX: Int, localY: Int, localZ: Int): Int {
         return localX or (localZ or localY.shl(bitsZ)).shl(bitsX)
     }

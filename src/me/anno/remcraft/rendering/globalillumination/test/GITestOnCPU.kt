@@ -44,5 +44,5 @@ fun main() {
         skyColors, 20
     )
 
-    testSceneWithUI("GIMesh", createDebugMesh(gi, light.values))
+    testSceneWithUI("GIMesh", createDebugMesh(gi, light.values, true))
 }

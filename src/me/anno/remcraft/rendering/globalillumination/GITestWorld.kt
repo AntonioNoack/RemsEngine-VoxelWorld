@@ -31,14 +31,17 @@ fun createWorld(
             }
         }
 
-        fill(-5, 0, -5, 11, 1, 11, BlockRegistry.Stone)
-        fill(-3, 3, -3, 6, 1, 6, BlockRegistry.Stone)
+        fill(-9, 0, -9, 19, 1, 19, BlockRegistry.Stone)
+        fill(-7, 3, -7, 15, 1, 15, BlockRegistry.Stone)
+
+        fill(-9, 32, -9, 19, 1, 19, BlockRegistry.Stone)
+        fill(-7, 35, -7, 15, 1, 15, BlockRegistry.Stone)
     }
 
     val dx = 1
     val dz = 1
     val y0 = if (simpleWorld) 0 else 1
-    val y1 = if (simpleWorld) 0 else 2
+    val y1 = if (simpleWorld) 1 else 2
 
     for (xi in -dx..dx) {
         for (zi in -dz..dz) {

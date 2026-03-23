@@ -2,6 +2,8 @@ package me.anno.remcraft.rendering.globalillumination.gpu
 
 import me.anno.ecs.Component
 import me.anno.ecs.Entity
+import me.anno.ecs.EntityQuery.getComponent
+import me.anno.ecs.components.light.sky.Skybox
 import me.anno.ecs.components.mesh.MeshComponent
 import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.DefaultAssets.flatCube
@@ -14,42 +16,48 @@ import me.anno.gpu.buffer.CompactAttributeLayout.Companion.bind
 import me.anno.gpu.buffer.ComputeBuffer
 import me.anno.gpu.buffer.GPUBuffer
 import me.anno.gpu.shader.builder.ShaderPrinting
-import me.anno.input.Input
 import me.anno.jvm.HiddenOpenGLContext
+import me.anno.maths.Packing.pack32
 import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.rendering.globalillumination.ChunkFaces.forEachFace
+import me.anno.remcraft.rendering.globalillumination.createDebugMesh
 import me.anno.remcraft.rendering.globalillumination.createWorld
 import me.anno.remcraft.world.Chunk
 import me.anno.remcraft.world.Index.getIndex
 import me.anno.remcraft.world.Index.totalSize
 import me.anno.utils.structures.arrays.IntArrayList
 import org.apache.logging.log4j.LogManager
+import org.joml.Vector3f
 import org.lwjgl.opengl.GL46C.*
 import speiger.primitivecollections.IntToIntHashMap
+import kotlin.random.Random
 
 // todo do block-tracing on the GPU,
 //  with dynamically loaded chunks
 
-
-// todo IntToIntHashMap, just as a shader
+// IntToIntHashMap, just as a shader
 //  data: (keys, values, capacity)
 //  -> skip key=0 by adding 1 to all keys / reserving one value
 
 // chunk data:
 // capacity, [blocks: id,r,g,b], [2x capacity]
 
-// todo convert chunk into list of faces,
+// convert chunk into list of faces,
 //  dense block lookup,
 //  and face -> faceId lookup (local?)
 
-// todo two levels of HashMap:
+// two levels of HashMap:
 //  chunkId -> chunk (pointer),
 //  x,y,z,side -> faceId
 
-// todo shaders, that we need:
+// shaders, that we need:
 //  add sun-light
 //  raytracing/propagation
 //  decay for sun-light/previous stage?
+
+// todo results look as if some chunks cannot be traced properly... hash-mismatch?
+//  -> bruteforce checking all hashes, then validate
 
 fun encodeSideLocal(x: Int, y: Int, z: Int, side: BlockSide): Int {
     return 1 + getIndex(x, y, z) + side.ordinal * totalSize
@@ -74,9 +82,9 @@ fun createLightBuffer(name: String, numFaces: Int): GPUBuffer {
     return buffer
 }
 
-fun IntArrayList.add(x: Int, y: Int, z: Int, side: Int) {
-    add(x, y, z)
-    add(side)
+fun IntArrayList.add(xy: Int, zs: Int, color: Int, unused: Int) {
+    add(xy, zs, color)
+    add(unused)
 }
 
 val IntToIntHashMap.capacity get() = content.mask + 1
@@ -86,93 +94,134 @@ private const val BARRIER_BITS =
             GL_BUFFER_UPDATE_BARRIER_BIT or
             GL_ELEMENT_ARRAY_BARRIER_BIT
 
+fun pushMap(chunkData: IntArrayList, map: IntToIntHashMap): Int {
+    val offset = chunkData.size
+    val capacity = map.capacity
+    chunkData.ensureExtra(capacity * 2 + 1)
+    chunkData.add(capacity)
+    val keys = map.content.keys
+    val values = map.content.values
+    for (i in 0 until capacity) {
+        chunkData.add(keys[i].toInt())
+    }
+    for (i in 0 until capacity) {
+        chunkData.add(values[i].toInt())
+    }
+    return offset
+}
+
 fun main() {
+
+    val numIterations = 20
+    val simpleWorld = false
+    val interpolateColors = true
 
     LogManager.disableLoggers("CacheSection,Saveable,ExtensionManager")
     OfficialExtensions.initForTests()
 
     // this will contain all hashMaps and blocks
     val chunkData = IntArrayList()
-    val chunkMap = IntToIntHashMap(-1)
+    val chunkMap = IntToIntHashMap(0)
     val faceData = IntArrayList()
 
-    fun pushMap(map: IntToIntHashMap): Int {
-        val offset = chunkData.size
-        val capacity = map.capacity
-        chunkData.ensureExtra(capacity * 2 + 1)
-        chunkData.add(capacity)
-        val keys = map.content.keys
-        val values = map.content.values
-        for (i in 0 until capacity) {
-            chunkData.add(keys[i].toInt())
-        }
-        for (i in 0 until capacity) {
-            chunkData.add(values[i].toInt())
-        }
-        return offset
-    }
-
     fun pushBlocks(chunk: Chunk) {
+        // encode bits into integer in 32-chunks (128kB -> 4kB)
         val blocks = chunk.blocks
         check(blocks.size == totalSize)
-        for (index in blocks.indices) {
-            val block = blocks[index]
-            if (block == 0.toShort()) {
-                chunkData.add(0)
-            } else {
-                val color = chunk.getBlock(index).color
-                chunkData.add(color or 0xff000000.toInt())
+        val air = BlockRegistry.Air.id
+        for (index in blocks.indices step 32) {
+            var bits = 0
+            for (di in 0 until 32) {
+                if (blocks[index + di] != air) {
+                    bits = bits or (1 shl di)
+                }
             }
+            chunkData.add(bits)
         }
     }
 
     var numFaces = 0
-    createWorld(true) { chunk ->
-        val faces = IntToIntHashMap(-1)
+    val dimension = createWorld(simpleWorld) { chunk ->
+
+        val faceMap = IntToIntHashMap(0)
         chunk.forEachFace { x, y, z, side ->
-            val hash = 1 + encodeSideLocal(x, y, z, side)
-            faceData.add(chunk.x0 + x, chunk.y0 + y, chunk.z0 + z, side.ordinal)
-            faces.put(hash, numFaces++)
+            val block = chunk.getBlock(x, y, z)
+            val gx = chunk.x0 + x
+            val gy = chunk.y0 + y
+            val gz = chunk.z0 + z
+            faceData.add(
+                pack32(gy, gx),
+                pack32(side.ordinal, gz),
+                block.color, 0
+            )
+            val faceId = encodeSideLocal(x, y, z, side)
+            faceMap.put(faceId, numFaces++)
         }
 
-        val mapSize = 1 + faces.capacity * 2
+        val mapSize = 1 + faceMap.capacity * 2
         val blockSize = totalSize
         chunkData.ensureExtra(mapSize + blockSize)
 
-        val entry = pushMap(faces)
+        val entry = pushMap(chunkData, faceMap)
         pushBlocks(chunk)
 
-        chunkMap[HashChunkId(chunk.xi, chunk.yi, chunk.zi)] = entry
+        val chunkHash = hashChunkId(chunk.xi, chunk.yi, chunk.zi)
+        chunkMap[chunkHash] = entry
     }
 
-    val chunkMapI = pushMap(chunkMap)
+    val chunkMapI = pushMap(chunkData, chunkMap)
 
     // todo we don't have that many chunks, so we could store them in a dense map
 
     // create light buffers
-    // todo initialize with some sun light?
     class GPUData {
         val chunkBuffer = chunkData.createBuffer("gi-chunks")
         val faceBuffer = faceData.createBuffer("gi-faces")
-        val lightBuffer0 = createLightBuffer("gi-lightBuffer0", numFaces)
-        val lightBuffer1 = createLightBuffer("gi-lightBuffer1", numFaces)
+        var srcBuffer = createLightBuffer("gi-lightBuffer0", numFaces)
+        var dstBuffer = createLightBuffer("gi-lightBuffer1", numFaces)
+
+        fun swap() {
+            val tmp = srcBuffer
+            srcBuffer = dstBuffer
+            dstBuffer = tmp
+        }
     }
 
     val data by lazy { GPUData() }
 
-    fun compute() {
-        val shader = propagationShader
+    val defaultSky = Skybox()
+    val sunDir = Vector3f(defaultSky.sunBaseDir)
+        .rotate(defaultSky.sunRotation)
+        .normalize()
+
+    val sunColor = Vector3f(1f, 1f, 0.9f)
+
+    val random = Random(15456)
+    fun computeSunLight() {
+
+        val shader = sunLightShader
         shader.use()
         shader.v1i("chunkMap", chunkMapI)
         shader.v1i("numFaces", numFaces)
-        shader.v1i("maxSteps", 100)
-        shader.v3i("skyLight", 66, 67, 68)
+        shader.v1i("maxSteps", 1000)
+        shader.v1i("baseSeed", random.nextInt())
+        shader.v3f("sunDir", sunDir)
+        shader.v3is("sunLight", BlockSide.entries.flatMap { side ->
+            val product = 1000f * sunDir.dot(side.x.toFloat(), side.y.toFloat(), side.z.toFloat())
+            if (product > 0f) {
+                listOf(
+                    (sunColor.x * product).toInt(),
+                    (sunColor.y * product).toInt(),
+                    (sunColor.z * product).toInt()
+                )
+            } else listOf(0, 0, 0)
+        }.toIntArray())
+        shader.v1i("raysPerFace", 100)
 
         // bind all buffers
-        shader.bindBuffer(0, data.lightBuffer0)
-        shader.bindBuffer(1, data.lightBuffer1)
         shader.bindBuffer(2, data.chunkBuffer)
         shader.bindBuffer(3, data.faceBuffer)
+        shader.bindBuffer(1, data.dstBuffer)
 
         shader.runBySize(numFaces)
         GFX.check()
@@ -180,28 +229,72 @@ fun main() {
         glMemoryBarrier(BARRIER_BITS)
         GFX.check()
 
+        data.swap()
+
+        ShaderPrinting.printFromBuffer()
+        GFX.check()
+
+    }
+
+    fun compute(): IntArray {
+
+        computeSunLight()
+
+        // todo weird results
+        //   0: as expected, except for a few light bleeds
+        //   1: looks nice for 2/4 quarters... -> signedness/hashes???
+        //  10: looks broken
+        //  50: absolutely broken
+        val shader = propagationShader
+        shader.use()
+        shader.v1i("chunkMap", chunkMapI)
+        shader.v1i("numFaces", numFaces)
+        shader.v1i("maxSteps", 1000)
+        shader.v3i("skyLight", 660 / numIterations, 670 / numIterations, 680 / numIterations)
+        shader.v1i("raysPerFace", 100)
+
+        // bind all buffers
+        shader.bindBuffer(2, data.chunkBuffer)
+        shader.bindBuffer(3, data.faceBuffer)
+
+        repeat(numIterations) {
+            data.srcBuffer.copyElementsTo(data.dstBuffer, 0L, 0L, numFaces.toLong())
+
+            shader.v1i("baseSeed", random.nextInt())
+            shader.bindBuffer(0, data.srcBuffer)
+            shader.bindBuffer(1, data.dstBuffer)
+            shader.runBySize(numFaces)
+            GFX.check()
+
+            glMemoryBarrier(BARRIER_BITS)
+            GFX.check()
+
+            data.swap()
+        }
+
         ShaderPrinting.printFromBuffer()
         GFX.check()
 
         // read back buffers for testing
-        val lightValues = data.lightBuffer1.readAsIntArray()
-        println(lightValues.toList())
+        return data.srcBuffer.readAsIntArray()
     }
 
-    if (true) {
-
-        // todo continue debugging...
-
+    if (false) {
         HiddenOpenGLContext.createOpenGL()
-        compute()
-
+        println(compute().toList().take(100))
     } else {
         val scene = Entity()
             .add(MeshComponent(flatCube))
             .add(object : Component(), OnUpdate {
+                var needsInit = true
                 override fun onUpdate() {
-                    if (!Input.isKeyDown('x')) return
-                    compute()
+                    if (needsInit) {
+                        needsInit = false
+                        val data = compute()
+                        println(data.toList().take(100))
+                        val newMesh = createDebugMesh(dimension, faceData, data, interpolateColors)
+                        getComponent(MeshComponent::class)!!.meshFile = newMesh.ref
+                    }
                 }
             })
         testSceneWithUI("Scene", scene)

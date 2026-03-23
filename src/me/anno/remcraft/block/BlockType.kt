@@ -5,6 +5,7 @@ import me.anno.language.translation.NameDesc
 import me.anno.maths.Maths
 import me.anno.remcraft.audio.playBreakBlockSound
 import me.anno.remcraft.audio.playStartFallingSound
+import me.anno.remcraft.block.BlockColor.getBlockColor
 import me.anno.remcraft.block.types.CustomBlockBounds
 import me.anno.remcraft.entity.RemcraftEntity.Companion.spawnEntity
 import me.anno.remcraft.entity.ItemEntity
@@ -19,7 +20,7 @@ import org.joml.AABBf
 import org.joml.Vector3d
 import org.joml.Vector3i
 
-open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: NameDesc) :
+open class BlockType(typeUUID: String, val color0: Int, texId: Int, nameDesc: NameDesc) :
     ItemType(typeUUID, InvalidRef, texId, nameDesc) {
 
     companion object {
@@ -59,10 +60,12 @@ open class BlockType(typeUUID: String, val color: Int, texId: Int, nameDesc: Nam
 
     var id: Short = -1
 
-    val isSolid get() = color.a() == 255
-    val isFluid get() = color.a() in 1 until 255
+    val isSolid get() = color0.a() == 255
+    val isFluid get() = color0.a() in 1 until 255
     val isWalkable get() = !isSolid && !isFluid
     val isGrassy = "grass" in typeUUID
+
+    val color = getBlockColor(texId)
 
     var friction = 5f
 
