@@ -14,9 +14,6 @@ import org.apache.logging.log4j.LogManager
 import org.joml.Vector3i
 import speiger.primitivecollections.IntToIntHashMap
 
-// todo results look as if some chunks cannot be traced properly... hash-mismatch?
-//  -> bruteforce checking all hashes, then validate
-
 val hashMapTestShader = ComputeShader(
     "hashMapTest", Vector3i(256, 1, 1),
     listOf(
@@ -49,6 +46,11 @@ val hashMapTestShader = ComputeShader(
             "}\n"
 )
 
+/**
+ * results look as if some chunks cannot be traced properly... hash-mismatch?
+ *  -> bruteforce checking all hashes, then validate
+ *  -> chunkId function had collisions and 0 values (not supported on GPU)
+ * */
 fun main() {
 
     val simpleWorld = true

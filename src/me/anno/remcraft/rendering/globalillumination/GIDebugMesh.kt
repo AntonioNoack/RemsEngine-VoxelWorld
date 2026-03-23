@@ -16,7 +16,6 @@ import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companio
 import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companion.getPosX
 import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companion.getPosY
 import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companion.getPosZ
-import me.anno.remcraft.rendering.globalillumination.gpu.sign
 import me.anno.remcraft.world.Dimension
 import me.anno.utils.OS.res
 import me.anno.utils.structures.arrays.FloatArrayList
@@ -27,6 +26,7 @@ import org.joml.Vector3i
 import speiger.primitivecollections.LongToIntHashMap
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sign
 import kotlin.math.sqrt
 
 fun createDebugMesh(
