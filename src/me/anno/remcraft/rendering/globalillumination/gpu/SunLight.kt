@@ -2,8 +2,19 @@ package me.anno.remcraft.rendering.globalillumination.gpu
 
 import me.anno.gpu.shader.ComputeShader
 import me.anno.gpu.shader.GLSLType
+import me.anno.gpu.shader.builder.ShaderPrinting
 import me.anno.gpu.shader.builder.Variable
 import org.joml.Vector3i
+
+val sunApplyCode =
+    "" +
+            "   if (numSunHits > 0.0) {\n" +
+            "       float sunBrightness = max(sunLightI.r,max(sunLightI.g,sunLightI.b));\n" +
+            "       atomicAdd(dstLight[selfFaceId].r, uint(numSunHits * sunLightI.r));\n" +
+            "       atomicAdd(dstLight[selfFaceId].g, uint(numSunHits * sunLightI.g));\n" +
+            "       atomicAdd(dstLight[selfFaceId].b, uint(numSunHits * sunLightI.b));\n" +
+            "       atomicAdd(dstLight[selfFaceId].a, uint(numSunHits * sunBrightness));\n" +
+            "   }\n"
 
 val sunLightShader = ComputeShader(
     "sunLight", Vector3i(256, 1, 1),
@@ -28,18 +39,15 @@ val sunLightShader = ComputeShader(
         Variable(GLSLType.V3F, "sunLight", 6),
     ), "" +
 
+            ShaderPrinting.PRINTING_LIB +
+            ShaderPrinting.definePrintCall(GLSLType.V1F, GLSLType.V1F, GLSLType.V3F) +
+
             randomness +
             hashMap +
             blockTracing +
             getSide +
             loadFace +
-
-            "void atomicAddColor(int idx, vec3 color) {\n" +
-            "   uvec3 rgb = uvec3(color);\n" +
-            "   atomicAdd(dstLight[idx].x, rgb.x);\n" +
-            "   atomicAdd(dstLight[idx].y, rgb.y);\n" +
-            "   atomicAdd(dstLight[idx].z, rgb.z);\n" +
-            "}\n" +
+            atomicAddColor +
 
             "void main() {\n" +
             "   int selfFaceId = int(gl_GlobalInvocationID.x);\n" +
@@ -51,7 +59,7 @@ val sunLightShader = ComputeShader(
             "   vec3 sunLightI = sunLight[selfFace.w];\n" +
             "   if (dot(selfSide, sunDir) <= 0.0 || sunLightI.x+sunLightI.y+sunLightI.z <= 0.0) return;\n" + // early-out for back faces
 
-            "   float numHits = 0.0;\n" +
+            "   float numSunHits = 0.0;\n" +
             "   HashMap chunkHashMap = HashMap(ChunkData[chunkMap], chunkMap + 1);\n" +
             "   uint seed = createSeed(uint(baseSeed), uint(selfFaceId), 1u);\n" +
             "   for (int i=0; i<raysPerFace; i++) {\n" +
@@ -63,12 +71,8 @@ val sunLightShader = ComputeShader(
             "       float hitDistance = 0.0;\n" +
             "       ivec4 hitFace = ivec4(0);\n" +
             "       int hitChunkData = 0;\n" +
-            "       numHits += 1.0 - blockTracing(pos, sunDir, hitDistance, hitFace, hitChunkData);\n" +
+            "       numSunHits += 1.0 - blockTracing(pos, sunDir, hitDistance, hitFace, hitChunkData);\n" +
             "   }\n" +
-            "   if (numHits > 0.0) {\n" +
-            "       atomicAdd(dstLight[selfFaceId].r, uint(numHits * sunLightI.r));\n" +
-            "       atomicAdd(dstLight[selfFaceId].g, uint(numHits * sunLightI.g));\n" +
-            "       atomicAdd(dstLight[selfFaceId].b, uint(numHits * sunLightI.b));\n" +
-            "   }\n" +
+            sunApplyCode +
             "}\n"
 )

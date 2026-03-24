@@ -2,6 +2,8 @@ package me.anno.remcraft.entity
 
 import me.anno.Time
 import me.anno.gpu.drawing.GFXx2D.getSize
+import me.anno.remcraft.block.BlockColor.NUM_TEX_X
+import me.anno.remcraft.block.BlockColor.NUM_TEX_Y
 import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.entity.model.CuboidCreator
 import me.anno.remcraft.entity.model.ItemModel
@@ -24,18 +26,16 @@ class ItemEntity(val stack: ItemSlot) : MovingEntity(halfExtents, blockTexture) 
             val mesh = if (type is BlockType) {
                 CuboidCreator.createMonoCuboid(
                     16, 16, 16,
-                    type.texId.and(15) * 16,
-                    type.texId.shr(4) * 16,
-                    getSize(256, 512),
+                    type.texX * 16, type.texY * 16,
+                    getSize(NUM_TEX_X * 16, NUM_TEX_Y * 16),
                     halfExtents.x
                 )
             } else {
                 // todo get item texture, item id etc...
                 PlaneCreator.createPlane(
                     1, 1,
-                    type.texId.and(15),
-                    type.texId.shr(4),
-                    getSize(32, 64)
+                    type.texX, type.texY,
+                    getSize(NUM_TEX_X, NUM_TEX_Y)
                 )
             }
             ItemModel(mesh)

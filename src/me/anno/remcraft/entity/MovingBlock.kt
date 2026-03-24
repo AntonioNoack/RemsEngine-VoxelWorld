@@ -4,6 +4,8 @@ import me.anno.ecs.systems.OnUpdate
 import me.anno.gpu.drawing.GFXx2D.getSize
 import me.anno.remcraft.audio.playDropItemSound
 import me.anno.remcraft.audio.playSetBlockSound
+import me.anno.remcraft.block.BlockColor.NUM_TEX_X
+import me.anno.remcraft.block.BlockColor.NUM_TEX_Y
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.entity.model.Model
@@ -30,7 +32,7 @@ class MovingBlock(val stack: ItemSlot) : MovingEntity(halfExtents, texture), OnU
             MovingBlockModel(
                 16, 16, 16,
                 texId.and(15) * 16, texId.shr(4) * 16,
-                getSize(256, 512)
+                getSize(NUM_TEX_X * 16, NUM_TEX_Y * 16)
             )
         }
     }

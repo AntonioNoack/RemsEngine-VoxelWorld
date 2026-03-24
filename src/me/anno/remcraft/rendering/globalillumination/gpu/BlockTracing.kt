@@ -15,10 +15,6 @@ fun hashChunkId(xi: Int, yi: Int, zi: Int): Int {
     return 1 + xd + yd.shl(10) + zd.shl(20)
 }
 
-// todo implement skipping whole chunks
-// todo implement half-transparent blocks:
-//  pass-through is decided randomly (+ needs another bit :/)
-
 val blockTracing = """
         int HashChunkId(ivec3 chunkId) {
             chunkId = chunkId & 0x3ff;
@@ -72,21 +68,24 @@ val blockTracing = """
             
             ivec3 dirSignI = ivec3(dirSign);
             for (int i=0; i<=maxSteps; i++) {
-                if (i == maxSteps) return opacity;
+                if (i >= maxSteps) return opacity;
                 
                 nextDist = min(dist3.x, min(dist3.y, dist3.z));
-                bool continueTracing = true;
-                float skippingDist = 0.0;
                 
                 // check block is here:
                 ivec3 newChunkId = blockPos >> ivec3($bitsX,$bitsY,$bitsZ);
+                
                 if (newChunkId != chunkId) {
                     // if chunkId has changed, change chunk
                     chunkData0 = HashMapGet(chunkHashMap, HashChunkId(newChunkId));
                     chunkData = GetDataOffset(chunkData0);
                     chunkId = newChunkId;
+                    
+                    // all chunks should be dense -> when there is a gap, we're finished
+                    if (chunkData == -1) return opacity;
                 }
                 
+                bool continueTracing = true;
                 if (chunkData != -1) {
                     int hitBlock = GetBlockInChunk(chunkData, blockPos);
                     // todo could be tinted!?
@@ -94,14 +93,7 @@ val blockTracing = """
                     continueTracing = hitBlock != 2;
                 }
                 
-                /*if (skippingDist >= 1.0) {
-                    // todo if a chunk is missing, skip it quickly...
-                   vec3 blockPosF = floor(localStart + dir * (dist + skippingDist));
-                   blockPos = ivec3(blockPosF);
-                   dist3 = (dirSign*.5+.5 + blockPosF - localStart)/dir;
-                   nextDist = min(dist3.x, min(dist3.y, dist3.z));
-                   dist = nextDist;
-               } else*/ if (continueTracing) {
+                if (continueTracing) {
                    if (nextDist == dist3.x) {
                        blockPos.x += dirSignI.x;
                        dist3.x += invUStep.x;

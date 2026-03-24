@@ -1,6 +1,7 @@
 package me.anno.remcraft.block.impl
 
 import me.anno.language.translation.NameDesc
+import me.anno.remcraft.block.BlockColor.NUM_TEX_X
 import me.anno.remcraft.block.BlockType
 import me.anno.remcraft.block.builder.BlockBuilder
 import me.anno.remcraft.block.types.CustomBlockBounds
@@ -10,8 +11,8 @@ import me.anno.utils.Color.a
 import org.joml.AABBf
 import javax.imageio.ImageIO
 
-class TallGrassBlock(typeUUID: String, color: Int, nameDesc: NameDesc) :
-    BlockType(typeUUID, color, 226, nameDesc), DetailedBlockVisuals, CustomBlockBounds {
+class TallGrassBlock(typeUUID: String, color: Int, texId: Int, nameDesc: NameDesc) :
+    BlockType(typeUUID, color, texId, nameDesc), DetailedBlockVisuals, CustomBlockBounds {
 
     // todo make walk-through-able
 
@@ -21,7 +22,7 @@ class TallGrassBlock(typeUUID: String, color: Int, nameDesc: NameDesc) :
             ?: throw IllegalStateException("Missing GrassTexture")
         private val model = BlockBuilder()
             .apply {
-                val texId = 226
+                val texId = 14 * NUM_TEX_X + 2
                 for (x in 0 until grassTexture.width) {
                     var y = 0
                     while (y < grassTexture.height) {

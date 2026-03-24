@@ -4,6 +4,7 @@ import me.anno.ecs.Component
 import me.anno.ecs.Entity
 import me.anno.ecs.EntityQuery.getComponent
 import me.anno.ecs.components.light.sky.Skybox
+import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.MeshComponent
 import me.anno.ecs.components.mesh.material.MaterialCache
 import me.anno.ecs.systems.OnUpdate
@@ -18,12 +19,15 @@ import me.anno.gpu.buffer.ComputeBuffer
 import me.anno.gpu.buffer.GPUBuffer
 import me.anno.gpu.shader.builder.ShaderPrinting
 import me.anno.maths.Packing.pack32
+import me.anno.maths.Packing.unpackHighFrom32
+import me.anno.maths.Packing.unpackLowFrom32
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.rendering.globalillumination.ChunkFaces.forEachFace
 import me.anno.remcraft.rendering.globalillumination.createDebugMesh
 import me.anno.remcraft.rendering.globalillumination.createWorld
 import me.anno.remcraft.world.Chunk
+import me.anno.remcraft.world.Dimension
 import me.anno.remcraft.world.Index.getIndex
 import me.anno.remcraft.world.Index.totalSize
 import me.anno.utils.structures.arrays.IntArrayList
@@ -87,7 +91,7 @@ fun IntArrayList.add(xy: Int, zs: Int, color: Int, unused: Int) {
 
 val IntToIntHashMap.capacity get() = content.mask + 1
 
-private const val BARRIER_BITS =
+const val BARRIER_BITS =
     GL_SHADER_STORAGE_BARRIER_BIT or
             GL_BUFFER_UPDATE_BARRIER_BIT or
             GL_ELEMENT_ARRAY_BARRIER_BIT
@@ -297,7 +301,7 @@ fun main() {
                     needsInit = false
                     val data1 = compute()
                     println(data1.toList().take(100))
-                    val newMesh = createDebugMesh(dimension, faceData, data1, interpolateColors)
+                    val newMesh = createDebugMesh(dimension, faceData, data1, sunColor, interpolateColors)
                     if (testDirectLighting) {
                         val material = MaterialCache[newMesh.materials[0]]!!
                         val shader = GIDirectSunTextureShader
@@ -312,4 +316,36 @@ fun main() {
             }
         })
     testSceneWithUI("Scene", scene)
+}
+
+fun createDebugMesh(
+    dimension: Dimension,
+    faces: IntArrayList,
+    light: IntArray, sunColor: Vector3f,
+    interpolateColors: Boolean,
+): Mesh {
+    val lightScale = 5f / light.max()
+    val f = 1f / sunColor.max()
+    val fr = sunColor.x * f
+    val fg = sunColor.y * f
+    val fb = sunColor.z * f
+    return createDebugMesh(dimension, interpolateColors) { callback ->
+        for (i in faces.indices step 4) {
+            val faceId = i shr 2
+            val ki = faces[i]
+            val kj = faces[i + 1]
+            val x = unpackLowFrom32(ki, true)
+            val y = unpackHighFrom32(ki, true)
+            val z = unpackLowFrom32(kj, true)
+            val sideId = unpackHighFrom32(kj, false)
+            val side = BlockSide.entries[sideId]
+
+            val directSunLight = light[faceId * 4 + 3]
+            val cr = (light[faceId * 4 + 0] - directSunLight * fr) * lightScale
+            val cg = (light[faceId * 4 + 1] - directSunLight * fg) * lightScale
+            val cb = (light[faceId * 4 + 2] - directSunLight * fb) * lightScale
+
+            callback(x, y, z, side, cr, cg, cb)
+        }
+    }
 }

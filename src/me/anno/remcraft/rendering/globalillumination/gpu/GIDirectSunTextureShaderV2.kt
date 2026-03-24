@@ -11,16 +11,16 @@ import me.anno.gpu.shader.builder.ShaderStage
 import me.anno.gpu.shader.builder.Variable
 import me.anno.gpu.shader.builder.VariableMode
 import me.anno.gpu.shader.renderer.Renderer
-import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.world.Index.bitsX
 import me.anno.remcraft.world.Index.bitsY
 import me.anno.remcraft.world.Index.bitsZ
 import org.joml.Vector3f
 
-object GIDirectSunTextureShader : ECSMeshShader("gi-textured") {
+object GIDirectSunTextureShaderV2 : ECSMeshShader("gi-textured") {
 
     var chunkMap = 0
     lateinit var chunkBuffer: GPUBuffer
+    lateinit var faceBuffer: GPUBuffer
 
     val sunDir = Vector3f()
     val sunColor = Vector3f()
@@ -35,14 +35,15 @@ object GIDirectSunTextureShader : ECSMeshShader("gi-textured") {
         shader.v1i("maxSteps", 100)
         shader.v1i("chunkMap", chunkMap)
         shader.bindBuffer(0, chunkBuffer)
+        shader.bindBuffer(1, faceBuffer)
     }
 
     override fun createVertexStages(key: ShaderKey): List<ShaderStage> {
         return super.createVertexStages(key) + ShaderStage(
-            "lightLevel", listOf(
-                Variable(GLSLType.V3F, "lightLevels", VariableMode.ATTR),
-                Variable(GLSLType.V3F, "lightLevel", VariableMode.OUT)
-            ), "lightLevel = lightLevels;\n"
+            "faceIds", listOf(
+                Variable(GLSLType.V4I, "faceIds", VariableMode.ATTR),
+                Variable(GLSLType.V4I, "faceId", VariableMode.OUT)
+            ), "faceId = faceIds;\n"
         )
     }
 
@@ -52,7 +53,7 @@ object GIDirectSunTextureShader : ECSMeshShader("gi-textured") {
                 "gi-material",
                 createFragmentVariables(key) +
                         listOf(
-                            Variable(GLSLType.V3F, "lightLevel"),
+                            Variable(GLSLType.V4I, "faceId"),
                             Variable(GLSLType.V3F, "sunDir"),
                             Variable(GLSLType.V3F, "sunColor"),
                             Variable(GLSLType.V3F, "cameraPosition"),
@@ -63,6 +64,9 @@ object GIDirectSunTextureShader : ECSMeshShader("gi-textured") {
                             Variable(GLSLType.BUFFER, "chunkData")
                                 .defineBufferFormat("int[] ChunkData;")
                                 .binding(0),
+                            Variable(GLSLType.BUFFER, "faceData")
+                                .defineBufferFormat("uvec4[] FaceData;")
+                                .binding(1),
                         ),
                 concatDefines(key).toString() +
                         // todo make leaves properly transparent...
@@ -70,6 +74,27 @@ object GIDirectSunTextureShader : ECSMeshShader("gi-textured") {
                         "finalColor = vec3(0.0);\n" +
                         "finalAlpha = color.a;\n" +
                         normalTanBitanCalculation +
+                        // query lighting from face-data
+                        // todo interpolation...
+                        "HashMap chunkHashMap = HashMap(ChunkData[chunkMap], chunkMap + 1);\n" +
+                        "ivec3 blockPos = faceId.xyz;\n" +
+                        "ivec3 chunkId = blockPos >> ivec3($bitsX,$bitsY,$bitsZ);\n" +
+                        "int chunkData0 = HashMapGet(chunkHashMap, HashChunkId(chunkId));\n" +
+                        "vec3 lightLevel = vec3(0.0, 0.0, 1.0);\n" +
+                        "if (chunkData0 != -1) {\n" +
+                        "   HashMap faceMap = HashMap(ChunkData[chunkData0], chunkData0+1);\n" +
+                        "   int sideId = faceId.w;\n" +
+                        "   int faceId1 = HashMapGet(faceMap, encodeSideLocal(faceId));\n" +
+                        "   if (faceId1 != -1) {\n" +
+                        "       vec4 rawColor = vec4(FaceData[faceId1]);\n" +
+                        // remove direct sunlight
+                        "       float sunFactor = rawColor.a / max(sunColor.r,max(sunColor.g,sunColor.b));\n" +
+                        "       lightLevel = rawColor.rgb - sunColor * sunFactor;\n" +
+                        "       lightLevel = max(lightLevel, vec3(0.0));\n" +
+                        "       lightLevel *= 0.0001;\n" +
+                        "   }\n" +
+                        "}\n" +
+
                         // run sun-tracing for primary ray for 100% sharp shadows
                         "float hitDistance = 0.0; ivec4 hitFace = ivec4(0); int hitChunkData = 0;\n" +
                         "vec3 lightLevelI = lightLevel;\n" +

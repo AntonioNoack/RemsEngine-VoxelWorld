@@ -10,10 +10,12 @@ import me.anno.gpu.drawing.DrawTexts.drawText
 import me.anno.gpu.drawing.GFXx2D.getSize
 import me.anno.input.Key
 import me.anno.io.files.InvalidRef
+import me.anno.remcraft.block.BlockColor.NUM_TEX_X
+import me.anno.remcraft.block.BlockColor.NUM_TEX_Y
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.block.BlockType
-import me.anno.remcraft.block.types.DetailedBlockVisuals
 import me.anno.remcraft.block.builder.BlockBuilder
+import me.anno.remcraft.block.types.DetailedBlockVisuals
 import me.anno.remcraft.entity.PlayerEntity
 import me.anno.remcraft.entity.model.CuboidCreator
 import me.anno.remcraft.rendering.v2.TextureMaterial
@@ -48,9 +50,9 @@ class ItemPanel(val slot: ItemSlot, val index: Int) :
                     if (true) {
                         val mesh = CuboidCreator.createMonoCuboid(
                             16, 16, 16,
-                            type.texId.and(15) * 16,
-                            type.texId.shr(4) * 16,
-                            getSize(256, 512)
+                            type.texX * 16,
+                            type.texY * 16,
+                            getSize(NUM_TEX_X * 16, NUM_TEX_Y * 16)
                         )
                         mesh.materials = FileCacheList.of(blockMaterial)
                         mesh

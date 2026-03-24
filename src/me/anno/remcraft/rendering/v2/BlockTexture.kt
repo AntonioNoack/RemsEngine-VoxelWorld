@@ -2,6 +2,8 @@ package me.anno.remcraft.rendering.v2
 
 import me.anno.gpu.texture.Texture2DArray
 import me.anno.image.ImageCache
+import me.anno.remcraft.block.BlockColor.NUM_TEX_X
+import me.anno.remcraft.block.BlockColor.NUM_TEX_Y
 import me.anno.utils.OS.res
 import org.apache.logging.log4j.LogManager
 
@@ -17,7 +19,7 @@ object BlockTexture {
             .waitFor { src ->
                 if (src != null) {
                     LOGGER.info("Loaded $src from $srcFile")
-                    val imageList = src.split(src.width / 16, src.height / 16)
+                    val imageList = src.split(NUM_TEX_X, NUM_TEX_Y)
                     texture.create(imageList, false) { _, err ->
                         if (err == null) LOGGER.info("Created Atlas Texture from $srcFile, $src")
                         else err.printStackTrace()

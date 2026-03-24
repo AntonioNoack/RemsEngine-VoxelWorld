@@ -2,7 +2,6 @@ package me.anno.remcraft.rendering.globalillumination.gpu
 
 import me.anno.gpu.shader.ComputeShader
 import me.anno.gpu.shader.GLSLType
-import me.anno.gpu.shader.builder.ShaderPrinting
 import me.anno.gpu.shader.builder.Variable
 import me.anno.mesh.vox.meshing.BlockSide
 import me.anno.remcraft.world.Index.bitsX
@@ -57,6 +56,57 @@ val loadFace = "" +
         "   return ivec4(x,y,z,side);\n" +
         "}\n"
 
+val propagationCore = "" +
+        // sample randomly, [-0.5, +0.5]
+        "       float du = nextFloat(seed)-0.5;\n" +
+        "       float dv = nextFloat(seed)-0.5;\n" +
+        "       vec3 pos = getPos(selfFace,du,dv) + 0.01 * selfSide;\n" +
+        // sample randomly, then normalize
+        "       vec3 dir = selfSide * 1.001;\n" +
+        "       dir.x += nextFloat(seed)*2.0-1.0;\n" +
+        "       dir.y += nextFloat(seed)*2.0-1.0;\n" +
+        "       dir.z += nextFloat(seed)*2.0-1.0;\n" +
+        "       dir = normalize(dir);\n" +
+
+        //"       if(selfFaceId<10) println(\"Starting ray [%d,%d] -> [%d,%d,%d,%d] from (%f,%f,%f) += t * (%f,%f,%f)\", " +
+        //"           selfFaceId, i, selfFace.x, selfFace.y, selfFace.z, selfFace.w, pos, dir);\n" +
+
+        "       float hitDistance = 0.0;\n" +
+        "       ivec4 hitFace = ivec4(0);\n" +
+        "       int hitChunkData = 0;\n" +
+
+        "       float opacity = blockTracing(pos, dir, hitDistance, hitFace, hitChunkData);\n" +
+        "       if (opacity == 1.0) {\n" +
+        "           float weight = baseWeight / (1.0 + hitDistance * hitDistance);\n" +
+        // find faceIndex of target
+        //  -> find face in chunk's buffer
+        "           HashMap faceMap = HashMap(ChunkData[hitChunkData], hitChunkData+1);\n" +
+        "           int otherFaceId = HashMapGet(faceMap, encodeSideLocal(hitFace));\n" +
+        "           if (otherFaceId == -1) continue;\n" + // error, hit missing face :(
+        // "           if (selfFaceId == 0) println(\"Found distance %f\", hitDistance);\n" +
+        "           vec3 otherColor = vec3(0.0);\n" +
+        "           loadFace(FaceData[otherFaceId], otherColor);\n" +
+        // "           if (selfFaceId == 0) println(\"Colors self: (%f,%f,%f), other: (%f,%f,%f)\", selfColor, otherColor);\n" +
+        // add cross-illumination:
+        "           atomicAddColor(otherFaceId, weight *  selfColor * vec3(srcLight[ selfFaceId].rgb));\n" +
+        "           atomicAddColor( selfFaceId, weight * otherColor * vec3(srcLight[otherFaceId].rgb));\n" +
+        "       } else {\n" +
+        // add sky-contribution to dst
+        // todo make side/direction-dependent
+        "           atomicAdd(dstLight[selfFaceId].x, uint(skyLight.x));\n" +
+        "           atomicAdd(dstLight[selfFaceId].y, uint(skyLight.y));\n" +
+        "           atomicAdd(dstLight[selfFaceId].z, uint(skyLight.z));\n" +
+        "       }\n"
+
+
+val atomicAddColor = "" +
+        "void atomicAddColor(int idx, vec3 color) {\n" +
+        "   uvec3 rgb = uvec3(color);\n" +
+        "   atomicAdd(dstLight[idx].x, rgb.x);\n" +
+        "   atomicAdd(dstLight[idx].y, rgb.y);\n" +
+        "   atomicAdd(dstLight[idx].z, rgb.z);\n" +
+        "}\n"
+
 val propagationShader = ComputeShader(
     "propagation", Vector3i(256, 1, 1),
     listOf(
@@ -80,52 +130,12 @@ val propagationShader = ComputeShader(
         Variable(GLSLType.V1I, "maxSteps"),
         Variable(GLSLType.V1I, "baseSeed"),
         Variable(GLSLType.V1I, "raysPerFace"),
-    ), "" +
-
-            ShaderPrinting.PRINTING_LIB +
-            ShaderPrinting.definePrintCall(
-                listOf(
-                    GLSLType.V1I, GLSLType.V1I,
-                    GLSLType.V1I, GLSLType.V1I, GLSLType.V1I, GLSLType.V1I,
-                    GLSLType.V3F, GLSLType.V3F
-                )
-            ) +
-            ShaderPrinting.definePrintCall(listOf(GLSLType.V1I)) +
-            ShaderPrinting.definePrintCall(listOf(GLSLType.V1I, GLSLType.V1I)) +
-            ShaderPrinting.definePrintCall(listOf(GLSLType.V1I, GLSLType.V1I, GLSLType.V1I)) +
-            ShaderPrinting.definePrintCall(listOf(GLSLType.V4I)) +
-            ShaderPrinting.definePrintCall(
-                listOf(GLSLType.V1I, GLSLType.V3I, GLSLType.V1I)
-            ) +
-            ShaderPrinting.definePrintCall(
-                listOf(
-                    GLSLType.V1I, GLSLType.V1I,
-                    GLSLType.V3I, GLSLType.V1I,
-                )
-            ) +
-            ShaderPrinting.definePrintCall(
-                listOf(
-                    GLSLType.V1I, GLSLType.V1I,
-                    GLSLType.V3I, GLSLType.V3I, GLSLType.V1I,
-                )
-            ) +
-            ShaderPrinting.definePrintCall(GLSLType.V1I, GLSLType.V1I, GLSLType.V1I, GLSLType.V1I) +
-            ShaderPrinting.definePrintCall(GLSLType.V1I, GLSLType.V1I, GLSLType.V1I, GLSLType.V3I) +
-            ShaderPrinting.definePrintCall(GLSLType.V1F) +
-            ShaderPrinting.definePrintCall(GLSLType.V3F, GLSLType.V3F) +
-
-            randomness +
+    ), randomness +
             hashMap +
             blockTracing +
             getSide +
             loadFace +
-
-            "void atomicAddColor(int idx, vec3 color) {\n" +
-            "   uvec3 rgb = uvec3(color);\n" +
-            "   atomicAdd(dstLight[idx].x, rgb.x);\n" +
-            "   atomicAdd(dstLight[idx].y, rgb.y);\n" +
-            "   atomicAdd(dstLight[idx].z, rgb.z);\n" +
-            "}\n" +
+            atomicAddColor +
 
             "void main() {\n" +
             "   int selfFaceId = int(gl_GlobalInvocationID.x);\n" +
@@ -138,46 +148,7 @@ val propagationShader = ComputeShader(
             "   ivec4 selfFace = loadFace(FaceData[selfFaceId], selfColor);\n" +
             "   vec3 selfSide = getSide(selfFace.w);\n" +
             "   for (int i=0; i<raysPerFace; i++) {\n" +
-            // sample randomly, [-0.5, +0.5]
-            "       float du = nextFloat(seed)-0.5;\n" +
-            "       float dv = nextFloat(seed)-0.5;\n" +
-            "       vec3 pos = getPos(selfFace,du,dv) + 0.01 * selfSide;\n" +
-            // sample randomly, then normalize
-            "       vec3 dir = selfSide * 1.001;\n" +
-            "       dir.x += nextFloat(seed)*2.0-1.0;\n" +
-            "       dir.y += nextFloat(seed)*2.0-1.0;\n" +
-            "       dir.z += nextFloat(seed)*2.0-1.0;\n" +
-            "       dir = normalize(dir);\n" +
-
-            //"       if(selfFaceId<10) println(\"Starting ray [%d,%d] -> [%d,%d,%d,%d] from (%f,%f,%f) += t * (%f,%f,%f)\", " +
-            //"           selfFaceId, i, selfFace.x, selfFace.y, selfFace.z, selfFace.w, pos, dir);\n" +
-
-            "       float hitDistance = 0.0;\n" +
-            "       ivec4 hitFace = ivec4(0);\n" +
-            "       int hitChunkData = 0;\n" +
-
-            "       float opacity = blockTracing(pos, dir, hitDistance, hitFace, hitChunkData);\n" +
-            "       if (opacity == 1.0) {\n" +
-            "           float weight = baseWeight / (1.0 + hitDistance * hitDistance);\n" +
-            // find faceIndex of target
-            //  -> find face in chunk's buffer
-            "           HashMap faceMap = HashMap(ChunkData[hitChunkData], hitChunkData+1);\n" +
-            "           int otherFaceId = HashMapGet(faceMap, encodeSideLocal(hitFace));\n" +
-            "           if (otherFaceId == -1) continue;\n" + // error, hit missing face :(
-            // "           if (selfFaceId == 0) println(\"Found distance %f\", hitDistance);\n" +
-            "           vec3 otherColor = vec3(0.0);\n" +
-            "           loadFace(FaceData[otherFaceId], otherColor);\n" +
-            // "           if (selfFaceId == 0) println(\"Colors self: (%f,%f,%f), other: (%f,%f,%f)\", selfColor, otherColor);\n" +
-            // add cross-illumination:
-            "           atomicAddColor(otherFaceId, weight *  selfColor * vec3(srcLight[ selfFaceId].rgb));\n" +
-            "           atomicAddColor( selfFaceId, weight * otherColor * vec3(srcLight[otherFaceId].rgb));\n" +
-            "       } else {\n" +
-            // add sky-contribution to dst
-            // todo make side/direction-dependent
-            "           atomicAdd(dstLight[selfFaceId].x, uint(skyLight.x));\n" +
-            "           atomicAdd(dstLight[selfFaceId].y, uint(skyLight.y));\n" +
-            "           atomicAdd(dstLight[selfFaceId].z, uint(skyLight.z));\n" +
-            "       }\n" +
+            propagationCore +
             "   }\n" +
             "}\n"
 )

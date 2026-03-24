@@ -2,6 +2,7 @@ package me.anno.remcraft.block
 
 import me.anno.language.translation.NameDesc
 import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.remcraft.block.BlockColor.NUM_TEX_X
 import me.anno.remcraft.block.impl.*
 import me.anno.remcraft.block.shapes.DoubleSlabBlock
 import me.anno.remcraft.block.shapes.FenceBlock
@@ -17,35 +18,35 @@ object BlockRegistry {
 
     val Air = AirBlock
     val Unknown = UnknownBlock
-    val Stone = BlockType("remcraft.stone", black or 0x778899, 3 * 16 + 0, NameDesc("Stone"))
+    val Stone = BlockType("remcraft.stone", black or 0x778899, 3 * NUM_TEX_X + 0, NameDesc("Stone"))
 
-    val IronOre = BlockType("remcraft.iron.ore", black or 0x777777, 5 * 16 + 6, NameDesc("Iron Ore"))
+    val IronOre = BlockType("remcraft.iron.ore", black or 0x777777, 6 * NUM_TEX_X + 24, NameDesc("Iron Ore"))
         .apply { droppedXpOrbs = 3 /* todo drop special items */ }
-    val GoldOre = BlockType("remcraft.gold.ore", black or 0xaaaa88, 6 * 16 + 6, NameDesc("Gold Ore"))
+    val GoldOre = BlockType("remcraft.gold.ore", black or 0xaaaa88, 6 * NUM_TEX_X + 22, NameDesc("Gold Ore"))
         .apply { droppedXpOrbs = 4 /* todo drop special items */ }
-    val DiamondOre = BlockType("remcraft.diamond.ore", black or 0x77cccc, 3 * 16 + 1, NameDesc("Diamond Ore"))
+    val DiamondOre = BlockType("remcraft.diamond.ore", black or 0x77cccc, 6 * NUM_TEX_X + 21, NameDesc("Diamond Ore"))
         .apply { droppedXpOrbs = 5 /* todo drop special items */ }
 
-    val Grass = BlockType("remcraft.grass", black or 0x55aa33, 226, NameDesc("Grass"))
-    val TallGrass = TallGrassBlock("remcraft.grass.tall", black or 0x55aa44, NameDesc("Tall Grass"))
-    val Dirt = BlockType("remcraft.dirt", black or 0x997755, 112, NameDesc("Dirt"))
+    val Grass = BlockType("remcraft.grass", black or 0x55aa33, 14 * NUM_TEX_X + 2, NameDesc("Grass"))
+    val TallGrass = TallGrassBlock("remcraft.grass.tall", black or 0x55aa44, 14 * NUM_TEX_X + 2, NameDesc("Tall Grass"))
+    val Dirt = BlockType("remcraft.dirt", black or 0x997755, 7 * NUM_TEX_X + 0, NameDesc("Dirt"))
 
-    val Snow = BlockType("remcraft.snow", black or 0xffffff, 17 * 16 + 12, NameDesc("Snow"))
+    val Snow = BlockType("remcraft.snow", black or 0xffffff, 17 * NUM_TEX_X + 12, NameDesc("Snow"))
 
-    val Water = WaterBlock("remcraft.water", trans or 0x3344ff, 8 * 16 + 2, NameDesc("Water"))
-    val Lava = LavaBlock("remcraft.lava", trans or 0xd97520, 9 * 16 + 7, NameDesc("Lava"))
+    val Water = WaterBlock("remcraft.water", trans or 0x3344ff, 8 * NUM_TEX_X + 2, NameDesc("Water"))
+    val Lava = LavaBlock("remcraft.lava", trans or 0xd97520, 9 * NUM_TEX_X + 7, NameDesc("Lava"))
 
-    val Log = BlockType("remcraft.log", black or 0x835127, 189, NameDesc("Log"))
-    val Leaves = BlockType("remcraft.leaves", black or 0x187423, 240, NameDesc("Leaves"))
-    val Cactus = CactusBlock("remcraft.cactus", black or 0x77975a, 13 * 16 + 15, NameDesc("Cactus"))
+    val Log = BlockType("remcraft.log", black or 0x835127, 11 * NUM_TEX_X + 13, NameDesc("Log"))
+    val Leaves = BlockType("remcraft.leaves", black or 0x187423, 15 * NUM_TEX_X + 0, NameDesc("Leaves"))
+    val Cactus = CactusBlock("remcraft.cactus", black or 0x77975a, 13 * NUM_TEX_X + 15, NameDesc("Cactus"))
 
-    val Sand = SandBlock("remcraft.sand", black or 0xeddc9e, 7 * 16 + 2, NameDesc("Sand"))
-    val Sandstone = BlockType("remcraft.sandstone", black or 0x9f946b, 185, NameDesc("Sandstone"))
-    val Gravel = SandBlock("remcraft.gravel", black or 0x556060, 7 * 16 + 6, NameDesc("Gravel"))
+    val Sand = SandBlock("remcraft.sand", black or 0xeddc9e, 7 * NUM_TEX_X + 2, NameDesc("Sand"))
+    val Sandstone = BlockType("remcraft.sandstone", black or 0x9f946b, 11 * NUM_TEX_X + 9, NameDesc("Sandstone"))
+    val Gravel = SandBlock("remcraft.gravel", black or 0x556060, 7 * NUM_TEX_X + 6, NameDesc("Gravel"))
 
-    val Chest = ChestBlock("remcraft.chest", black or 0x9f946b, 18 * 16 + 12, NameDesc("Chest"))
-    val Furnace = FurnaceBlock("remcraft.furnace", black or 0x333333, 3 * 16 + 11, NameDesc("Furnace"))
-    val Hopper = HopperBlock("remcraft.hopper", black or 0x333339, 3 * 16 + 13, NameDesc("Hopper"))
+    val Chest = ChestBlock("remcraft.chest", black or 0x9f946b, 18 * NUM_TEX_X + 12, NameDesc("Chest"))
+    val Furnace = FurnaceBlock("remcraft.furnace", black or 0x333333, 3 * NUM_TEX_X + 11, NameDesc("Furnace"))
+    val Hopper = HopperBlock("remcraft.hopper", black or 0x333339, 3 * NUM_TEX_X + 13, NameDesc("Hopper"))
 
     val SnowLayers = List(9) { depth ->
         when (depth) {

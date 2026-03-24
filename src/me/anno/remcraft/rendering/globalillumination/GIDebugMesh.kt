@@ -4,9 +4,9 @@ import me.anno.ecs.components.mesh.Mesh
 import me.anno.ecs.components.mesh.material.Material
 import me.anno.gpu.buffer.Attribute
 import me.anno.gpu.buffer.AttributeType
-import me.anno.maths.Packing.unpackHighFrom32
-import me.anno.maths.Packing.unpackLowFrom32
 import me.anno.mesh.vox.meshing.BlockSide
+import me.anno.remcraft.block.BlockColor.NUM_TEX_X
+import me.anno.remcraft.block.BlockColor.NUM_TEX_Y
 import me.anno.remcraft.block.BlockRegistry
 import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companion.decodeSide
 import me.anno.remcraft.rendering.globalillumination.GlobalIllumination.Companion.decodeX
@@ -29,53 +29,7 @@ import kotlin.math.min
 import kotlin.math.sign
 import kotlin.math.sqrt
 
-fun createDebugMesh(
-    dimension: Dimension,
-    faces: IntArrayList,
-    light: IntArray,
-    interpolateColors: Boolean,
-): Mesh {
-    val lightScale = 5f / light.max()
-    return createDebugMesh(dimension, interpolateColors) { callback ->
-        for (i in faces.indices step 4) {
-            val faceId = i shr 2
-            val fx = faces[i]
-            val fy = faces[i + 1]
-            val x = unpackLowFrom32(fx, true)
-            val y = unpackHighFrom32(fx, true)
-            val z = unpackLowFrom32(fy, true)
-            val sideId = unpackHighFrom32(fy, false)
-            val side = BlockSide.entries[sideId]
-
-            val cr = light[faceId * 4 + 0] * lightScale
-            val cg = light[faceId * 4 + 1] * lightScale
-            val cb = light[faceId * 4 + 2] * lightScale
-            callback(x, y, z, side, cr, cg, cb)
-        }
-    }
-}
-
-fun createDebugMesh(
-    gi: GlobalIllumination,
-    light: FloatArray,
-    interpolateColors: Boolean,
-): Mesh {
-    return createDebugMesh(gi.dimension, interpolateColors) { callback ->
-        gi.faces.forEach { hash, faceId ->
-            val x = decodeX(hash)
-            val y = decodeY(hash)
-            val z = decodeZ(hash)
-            val side = decodeSide(hash)
-
-            val cr = light[faceId * 3 + 0]
-            val cg = light[faceId * 3 + 1]
-            val cb = light[faceId * 3 + 2]
-            callback(x, y, z, side, cr, cg, cb)
-        }
-    }
-}
-
-val cube8 = arrayOf(
+private val cube8 = arrayOf(
     Vector3i(0, 0, 0),
     Vector3i(0, 0, 1),
     Vector3i(0, 1, 0),
@@ -142,9 +96,6 @@ fun createDebugMesh(
 
             val block = dimension.getBlockAt(x, y, z) ?: BlockRegistry.Stone
 
-            val texU = block.texId.and(15)
-            val texV = block.texId.shr(4)
-
             fun addBaseData(du: Float, dv: Float) {
                 val px = getPosX(x, side, du, dv).toFloat()
                 val py = getPosY(y, side, du, dv).toFloat()
@@ -153,7 +104,7 @@ fun createDebugMesh(
                 normals.add(side.x.toFloat(), side.y.toFloat(), side.z.toFloat())
                 val u = du + 0.5f
                 val v = dv + 0.5f
-                uvs.add((u + texU) / 16f, 1f - (v + texV) / 32f)
+                uvs.add((u + block.texX) / NUM_TEX_X, 1f - (v + block.texY) / NUM_TEX_Y)
             }
 
             fun getEdgeColor(du: Float, dv: Float, dst: Vector3f) {
@@ -286,9 +237,6 @@ fun createDebugMesh(
 
             val block = dimension.getBlockAt(x, y, z) ?: BlockRegistry.Stone
 
-            val texU = block.texId.and(15)
-            val texV = block.texId.shr(4)
-
             fun add(du: Float, dv: Float) {
                 val px = getPosX(x, side, du, dv).toFloat()
                 val py = getPosY(y, side, du, dv).toFloat()
@@ -298,7 +246,7 @@ fun createDebugMesh(
                 colors.add(cr, cg, cb)
                 val u = du + 0.5f
                 val v = dv + 0.5f
-                uvs.add((u + texU) / 16f, 1f - (v + texV) / 32f)
+                uvs.add((u + block.texX) / NUM_TEX_X, 1f - (v + block.texY) / NUM_TEX_Y)
             }
 
             val du = 0.5f
