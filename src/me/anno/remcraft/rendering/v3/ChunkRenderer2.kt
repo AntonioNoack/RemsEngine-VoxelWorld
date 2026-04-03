@@ -4,6 +4,7 @@ import me.anno.cache.FileCacheList
 import me.anno.ecs.Transform
 import me.anno.ecs.components.mesh.IMesh
 import me.anno.ecs.components.mesh.material.Material
+import me.anno.ecs.components.mesh.material.MaterialBase
 import me.anno.ecs.components.mesh.unique.UniqueMeshRenderer
 import me.anno.engine.ui.render.Frustum
 import me.anno.gpu.buffer.DrawMode
@@ -39,7 +40,7 @@ class ChunkRenderer2(val material: Material) :
 
     override fun forEachMesh(
         pipeline: Pipeline?,
-        callback: (IMesh, Material?, Transform) -> Boolean
+        callback: (IMesh, MaterialBase?, Transform) -> Boolean
     ) {
         val transform = transform ?: Transform()
         for (entry in values) {

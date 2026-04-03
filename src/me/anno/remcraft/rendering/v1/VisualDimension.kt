@@ -5,6 +5,7 @@ import me.anno.ecs.annotations.DebugAction
 import me.anno.ecs.components.mesh.IMesh
 import me.anno.ecs.components.mesh.MeshSpawner
 import me.anno.ecs.components.mesh.material.Material
+import me.anno.ecs.components.mesh.material.MaterialBase
 import me.anno.ecs.systems.OnUpdate
 import me.anno.engine.serialization.NotSerializedProperty
 import me.anno.engine.ui.render.RenderState
@@ -143,7 +144,7 @@ class VisualDimension : MeshSpawner(), OnUpdate {
         }
     }
 
-    override fun forEachMesh(pipeline: Pipeline?, callback: (IMesh, Material?, Transform) -> Boolean) {
+    override fun forEachMesh(pipeline: Pipeline?, callback: (IMesh, MaterialBase?, Transform) -> Boolean) {
         var i = 0
         for ((v, visualChunk) in visualChunks) {
             if (visualChunk.hasMesh) {

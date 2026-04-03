@@ -6,6 +6,7 @@ import me.anno.ecs.Entity
 import me.anno.ecs.systems.Systems.registerSystem
 import me.anno.engine.OfficialExtensions
 import me.anno.engine.ui.ECSTreeView
+import me.anno.engine.ui.render.RenderMode
 import me.anno.engine.ui.render.SceneView
 import me.anno.engine.ui.render.SceneView.Companion.createSceneUI
 import me.anno.engine.ui.render.SceneView.Companion.testSceneWithUI
